@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { HashRouter, MemoryRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ToastProvider } from './components/ui'
 import { StoreProvider } from './lib/store'
@@ -9,6 +9,9 @@ import { PatientForm } from './pages/PatientForm'
 import { Statistiky } from './pages/Statistiky'
 
 // HashRouter → aplikace funguje i jako jediný statický soubor bez serveru.
+// Ve sdílené jednosouborové verzi (build:single) se URL nemění – MemoryRouter.
+const Router = import.meta.env.MODE === 'single' ? MemoryRouter : HashRouter
+
 function EditPatient() {
   const { id } = useParams()
   return <PatientForm key={id} mode="edit" />
@@ -18,7 +21,7 @@ export function App() {
   return (
     <StoreProvider>
       <ToastProvider>
-        <HashRouter>
+        <Router>
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
@@ -30,7 +33,7 @@ export function App() {
             <Route path="vyplnit/:qid" element={<FillQuestionnaire />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </HashRouter>
+        </Router>
       </ToastProvider>
     </StoreProvider>
   )

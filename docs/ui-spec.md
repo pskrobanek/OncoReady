@@ -230,8 +230,23 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
   - **Upravit** otevře modal;
   - **Smazat** (červeně) se ptá na potvrzení.
 - Hromadné smazání: po zaškrtnutí řádků se objeví tlačítko „Smazat vybrané“.
-- Modal *Vytvořit Monitoring* obsahuje pole Start\*, Konec\* a přepínač Aktivní.
-  - Při vytvoření se dotazníky naplánují **každých 7 dní** od začátku do konce. **⚠️ OVĚŘIT** frekvenci a pravidla v produkci.
+- Dialog *Vytvořit/Upravit Monitoring* (široký, max. 1024 px) nemá datumová pole s rozbalovacím kalendářem. Má:
+  - **Vlevo vždy viditelný kalendář se dvěma měsíci vedle sebe** (začátek týdne v pondělí, české názvy):
+    - šipkami se posouvá o měsíc, odkaz „Dnes“ skočí na aktuální měsíc;
+    - dnešní den je podtržený;
+    - 1. klik = **Start**, 2. klik na pozdější den = **Konec**, další klik začne nový výběr;
+    - vybrané období je podbarvené, Start a Konec jsou modré čtverečky;
+    - když je vybraný jen Start, ukazuje se při najetí myší náhled období;
+    - nápověda dole vpravo říká, co kliknout.
+  - **Vpravo:**
+    - výběr **Monitorace**;
+    - **Start\*** a **Konec\*** jako text (např. 7.10.2026);
+    - **Délka od startu**: tlačítka 1 týden / 2 týdny / 3 týdny / 4 týdny / 5 týdnů / 6 týdnů, která nastaví Konec = Start + N týdnů. Aktivní volba je modrá i při ručním výběru, pokud délka odpovídá.
+    - přepínač **Aktivní**;
+    - při vytváření informace „Naplánuje se N dotazníků (týdně)“ podle frekvence zvolené monitorace.
+  - Výchozí Start je dnešek.
+  - Dotazníky se při vytvoření naplánují podle frekvence monitorace (bez ní každých 7 dní). **⚠️ OVĚŘIT** frekvenci a pravidla v produkci.
+  - Na úzkém displeji jsou měsíce i panel pod sebou.
 
 ## Statistiky
 
@@ -324,6 +339,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-07 | Monitoring pacienta: místo datumových polí vždy viditelný dvouměsíční kalendář (klik Start → Konec) a tlačítka délky 1–6 týdnů. |
 | 2026-10-07 | e-Skill: test digitální gramotnosti z repozitáře digital_literacy bez registrace – seznam pacientů se „Zahájit test“, test v novém okně, uložení do karty pacienta, test bez registrace s přiřazením výsledku. |
 | 2026-10-07 | Monitorace (seznam + formulář: název, diagnózy, tag, klasifikace, frekvence, rozsahy pásem), přiřazení monitorace pacientovi, uživatelské pohledy pod Dashboardem, rozšířený filtr (monitorace, klasifikace, tag). |
 | 2026-10-07 | První verze repliky podle screenshotů (Dashboard, Klinický report, Kartotéka, Monitorings, vyplnění dotazníku). |

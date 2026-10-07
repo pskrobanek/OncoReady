@@ -10,6 +10,7 @@ import {
   Checkbox,
   CloseButton,
   ConfirmModal,
+  cx,
   Field,
   LinkAction,
   Modal,
@@ -20,7 +21,8 @@ import {
   Toggle,
   useToast,
 } from '../components/ui'
-import { dateTime, fullDate } from '../lib/format'
+import { addDays, dateTime, fullDate, todayIso } from '../lib/format'
+import { DURATION_WEEKS, RangeCalendar, weeksLabel } from '../components/RangeCalendar'
 import { ESkillResultModal, ScorePill } from '../components/eskill'
 import { useOpenESkillTest } from './ESkill'
 import { PlayIcon } from '@heroicons/react/20/solid'
@@ -291,25 +293,43 @@ function MonitoringModal({
   const { db } = useStore()
   const [programId, setProgramId] = useState<string>(initial?.programId ?? '')
   const program = db.programs.find((p) => p.id === programId)
-  const [start, setStart] = useState(initial?.start ?? '')
+  const [start, setStart] = useState(initial?.start ?? todayIso())
   const [end, setEnd] = useState(initial?.end ?? '')
   const [active, setActive] = useState(initial?.active ?? true)
   const [error, setError] = useState<string | null>(null)
 
+  const every = program?.frequencyDays ?? 7
+  const weeks = start && end ? (Date.parse(end) - Date.parse(start)) / (7 * 86400000) : null
+  let planned = 0
+  if (start && end) for (let d = addDays(start, every); d <= end; d = addDays(d, every)) planned++
+
   const submit = () => {
-    if (!start || !end) return setError('Start i Konec jsou povinné.')
+    if (!start || !end) return setError('Vyberte začátek i konec monitorace.')
     if (end < start) return setError('Konec musí být po začátku.')
     onSave({ programId: programId || null, start, end, active })
   }
 
   return (
-    <Modal open onClose={onClose} width="max-w-xl">
+    <Modal open onClose={onClose} width="max-w-5xl">
       <div className="flex items-center justify-between px-6 pt-6">
         <h2 className="text-base font-semibold text-gray-950">{initial ? 'Upravit Monitoring' : 'Vytvořit Monitoring'}</h2>
         <CloseButton onClick={onClose} />
       </div>
-      <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
-        <div className="sm:col-span-2">
+      <div className="grid gap-6 overflow-y-auto px-6 py-6 lg:grid-cols-[1fr_17rem]">
+        {/* Kalendář – vždy viditelný */}
+        <div className="rounded-xl p-4 ring-1 ring-gray-950/10">
+          <RangeCalendar
+            start={start}
+            end={end}
+            onChange={(s, e) => {
+              setStart(s)
+              setEnd(e)
+              setError(null)
+            }}
+          />
+        </div>
+
+        <div className="flex flex-col gap-5">
           <Field label="Monitorace">
             <select
               value={programId}
@@ -324,24 +344,63 @@ function MonitoringModal({
               ))}
             </select>
           </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-sm font-medium text-gray-950">
+                Start<sup className="text-red-600">*</sup>
+              </div>
+              <div className="mt-1 text-base font-semibold tabular-nums text-gray-950">{start ? fullDate(start) : '—'}</div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-950">
+                Konec<sup className="text-red-600">*</sup>
+              </div>
+              <div className={cx('mt-1 text-base font-semibold tabular-nums', end ? 'text-gray-950' : 'text-gray-300')}>{end ? fullDate(end) : '—'}</div>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 text-sm font-medium text-gray-950">Délka od startu</div>
+            <div className="grid grid-cols-3 gap-2">
+              {DURATION_WEEKS.map((n) => (
+                <button
+                  type="button"
+                  key={n}
+                  disabled={!start}
+                  onClick={() => {
+                    setEnd(addDays(start, n * 7))
+                    setError(null)
+                  }}
+                  className={cx(
+                    'rounded-lg px-2 py-1.5 text-sm font-medium ring-1 transition disabled:opacity-40',
+                    weeks === n ? 'bg-primary-600 text-white ring-primary-600' : 'bg-white text-gray-700 ring-gray-950/10 hover:bg-gray-50',
+                  )}
+                >
+                  {weeksLabel(n)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Toggle checked={active} onChange={setActive} />
+            <span className="text-sm font-medium text-gray-950">Aktivní</span>
+          </div>
+
+          {!initial && (
+            <p className="text-sm text-gray-500">
+              {start && end ? (
+                <>
+                  Naplánuje se <strong className="text-gray-950">{planned}</strong> {planned === 1 ? 'dotazník' : planned >= 2 && planned <= 4 ? 'dotazníky' : 'dotazníků'} ({frequencyLabel(every).toLowerCase()}).
+                </>
+              ) : (
+                <>Dotazníky se naplánují automaticky: {frequencyLabel(every).toLowerCase()} od začátku monitorace.</>
+              )}
+            </p>
+          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
-        <Field label="Start" required>
-          <TextInput type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-        </Field>
-        <Field label="Konec" required>
-          <TextInput type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-        </Field>
-        <div className="flex items-center gap-3 sm:col-span-2">
-          <Toggle checked={active} onChange={setActive} />
-          <span className="text-sm font-medium text-gray-950">Aktivní</span>
-        </div>
-        {!initial && (
-          <p className="text-sm text-gray-500 sm:col-span-2">
-            Dotazníky se naplánují automaticky: {program ? frequencyLabel(program.frequencyDays).toLowerCase() : 'každých 7 dní'} od
-            začátku monitorace.
-          </p>
-        )}
-        {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
       </div>
       <div className="flex gap-3 border-t border-gray-200 px-6 py-4">
         <Button onClick={submit}>{initial ? 'Uložit změny' : 'Vytvořit'}</Button>

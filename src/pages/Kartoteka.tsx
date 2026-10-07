@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, PageHeader, PerPage, resultsLabel, SearchInput } from '../components/ui'
-import { tableName } from '../lib/format'
-import { sortPatients, useStore } from '../lib/store'
+import { fullDate, tableName } from '../lib/format'
+import { planStatus, sortPatients, useStore } from '../lib/store'
+import type { DB } from '../lib/types'
 
 export function Kartoteka() {
   const { db } = useStore()
@@ -39,7 +40,8 @@ export function Kartoteka() {
             <thead className="whitespace-nowrap bg-gray-50/50">
               <tr>
                 <th className="px-6 py-3.5 text-start text-sm font-semibold text-gray-950">Celé jméno</th>
-                <th className="w-2/5 px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Rodné číslo</th>
+                <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Rodné číslo</th>
+                <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Aktivní plán</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -55,11 +57,14 @@ export function Kartoteka() {
                     </Link>
                   </td>
                   <td className="px-3 py-4 text-sm text-gray-950">{p.rodneCislo}</td>
+                  <td className="px-3 py-3">
+                    <PlanCell db={db} patientId={p.id} />
+                  </td>
                 </tr>
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={2} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
                     Nenalezeny žádné záznamy
                   </td>
                 </tr>
@@ -85,6 +90,30 @@ export function Kartoteka() {
           </div>
         </div>
       </Card>
+    </div>
+  )
+}
+
+/** Sloupec „Aktivní plán“: stav monitorace pacienta k dnešku. */
+function PlanCell({ db, patientId }: { db: DB; patientId: string }) {
+  const st = planStatus(db, patientId)
+  if (st.kind === 'none') return <span className="text-sm text-gray-400">Bez plánu</span>
+  const m = st.monitoring
+  const program = db.programs.find((p) => p.id === m.programId)?.name ?? 'Monitorace'
+  const pill = {
+    active: { label: 'Aktivní', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', dot: 'bg-emerald-500', when: `do ${fullDate(m.end)}` },
+    planned: { label: 'Naplánováno', cls: 'bg-primary-50 text-primary-700 ring-primary-600/20', dot: 'bg-primary-500', when: `od ${fullDate(m.start)}` },
+    ended: { label: 'Ukončeno', cls: 'bg-gray-50 text-gray-600 ring-gray-500/20', dot: 'bg-gray-400', when: fullDate(m.end) },
+  }[st.kind]
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${pill.cls}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${pill.dot}`} />
+        {pill.label}
+      </span>
+      <span className={`text-sm ${st.kind === 'ended' ? 'text-gray-400' : 'text-gray-950'}`}>
+        {program} <span className="text-gray-400">· {pill.when}</span>
+      </span>
     </div>
   )
 }

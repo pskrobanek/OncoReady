@@ -176,6 +176,28 @@ export function currentMonitoring(db: DB, patientId: string) {
   return ms.find((m) => m.active) ?? ms[0]
 }
 
+export type PlanStatus =
+  | { kind: 'active'; monitoring: Monitoring }
+  | { kind: 'planned'; monitoring: Monitoring }
+  | { kind: 'ended'; monitoring: Monitoring }
+  | { kind: 'none' }
+
+/**
+ * Stav plánu (monitorace) pacienta k dnešku:
+ * active = označená jako aktivní a dnešek je mezi startem a koncem; planned = aktivní se startem v budoucnu;
+ * ended = poslední monitorace už skončila (nebo není aktivní); none = žádná monitorace.
+ */
+export function planStatus(db: DB, patientId: string): PlanStatus {
+  const today = todayIso()
+  const ms = db.monitorings.filter((m) => m.patientId === patientId).sort((a, b) => b.start.localeCompare(a.start))
+  const running = ms.find((m) => m.active && m.start <= today && m.end >= today)
+  if (running) return { kind: 'active', monitoring: running }
+  const planned = ms.filter((m) => m.active && m.start > today).sort((a, b) => a.start.localeCompare(b.start))[0]
+  if (planned) return { kind: 'planned', monitoring: planned }
+  const last = [...ms].sort((a, b) => b.end.localeCompare(a.end))[0]
+  return last ? { kind: 'ended', monitoring: last } : { kind: 'none' }
+}
+
 /** Výsledky e-Skill pacienta, nejnovější první. */
 export const eskillOf = (db: DB, patientId: string) =>
   db.eskillResults.filter((r) => r.patientId === patientId).sort((a, b) => b.takenAt.localeCompare(a.takenAt))

@@ -200,7 +200,13 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
 ## Kartotéka – přehled
 
 - Drobečková navigace: Kartotéka › Přehled. Nadpis „Kartotéka“, vpravo tlačítko **Vytvořit**.
-- V kartě je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`) a Rodné číslo. Celý řádek je klikací.
+- V kartě je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`), Rodné číslo a **Aktivní plán** (NOVÉ). Celý řádek je klikací.
+- **Aktivní plán** ukazuje stav monitorace pacienta k dnešku:
+  - 🟢 **Aktivní** + název monitorace + „do 11.11.2026“: monitorace je označená jako aktivní a dnešek je mezi startem a koncem;
+  - 🔵 **Naplánováno** + název + „od …“: aktivní monitorace se startem v budoucnu;
+  - ⚪ **Ukončeno** + název + datum konce, celé šedě: poslední monitorace už skončila nebo je vypnutá;
+  - šedé „Bez plánu“: pacient nemá žádnou monitoraci.
+- **⚠️ OVĚŘIT**, jestli má produkce brát jako aktivní jen přepínač „Aktivní“, nebo i datum konce. Replika vyžaduje obojí.
 - Patička: „Zobrazuji X až Y z Z výsledků“, výběr „na stránku“ (výchozí 10) a stránkování.
 
 ## Kartotéka – vytvořit / upravit pacienta
@@ -339,6 +345,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-07 | Kartotéka: sloupec „Aktivní plán“ (Aktivní / Naplánováno / Ukončeno / Bez plánu). |
 | 2026-10-07 | Monitoring pacienta: místo datumových polí vždy viditelný dvouměsíční kalendář (klik Start → Konec) a tlačítka délky 1–6 týdnů. |
 | 2026-10-07 | e-Skill: test digitální gramotnosti z repozitáře digital_literacy bez registrace – seznam pacientů se „Zahájit test“, test v novém okně, uložení do karty pacienta, test bez registrace s přiřazením výsledku. |
 | 2026-10-07 | Monitorace (seznam + formulář: název, diagnózy, tag, klasifikace, frekvence, rozsahy pásem), přiřazení monitorace pacientovi, uživatelské pohledy pod Dashboardem, rozšířený filtr (monitorace, klasifikace, tag). |

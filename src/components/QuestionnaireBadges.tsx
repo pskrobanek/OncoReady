@@ -31,15 +31,16 @@ export function QuestionnaireBadges({
             type="button"
             title={filled ? 'Zobrazit klinický report' : `Nevyplněno (termín ${shortDate(q.scheduledFor)}) – vyplnit dotazník`}
             onClick={() => (filled ? onOpenReport(q) : navigate(`/vyplnit/${q.id}`, { state: { from: location.pathname } }))}
-            className="group flex min-w-[2.1rem] flex-col items-center gap-0.5"
+            className="group flex w-9 flex-col items-center gap-0.5"
           >
             <span
               className={cx(
-                'flex h-7 min-w-[1.9rem] items-center justify-center rounded-md px-1.5 text-sm font-semibold transition group-hover:opacity-80',
+                'flex h-8 w-8 items-center justify-center rounded font-semibold leading-none transition group-hover:opacity-80',
+                filled ? 'text-sm' : 'text-[11px]',
                 BAND_META[status].badge,
               )}
             >
-              {filled ? totalScore(q.answers!) : 'n/a'}
+              {filled ? totalScore(q.answers!) : 'N/A'}
             </span>
             <span className="text-[10px] leading-3 text-gray-400">{filled ? shortDate(q.filledAt!) : '-'}</span>
           </button>

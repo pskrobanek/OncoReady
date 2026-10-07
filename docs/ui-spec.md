@@ -37,9 +37,10 @@ Primární modrá je odhadnutá ze screenshotu. **⚠️ OVĚŘIT** přesný HEX
 Používá se na Dashboardu i v tabulce Monitorings.
 
 - Odznaky stojí v jedné řadě a **nejnovější termín je vlevo**.
-- **Vyplněný dotazník**: barevný čtvereček s celkovým skóre (bílé tučné číslo), pod ním datum vyplnění ve formátu `12.4.` (10 px, šedá).
+- **Rozměr**: vždy **čtverec 32 × 32 px** se zaoblením 4 px (rozestup odznaků 36 px), bez ohledu na obsah.
+- **Vyplněný dotazník**: barevný čtverec s celkovým skóre (bílé tučné číslo, 14 px), pod ním datum vyplnění ve formátu `12.4.` (10 px, šedá).
   - Kliknutím se otevře *Klinický report*.
-- **Nevyplněný dotazník**: šedý odznak „n/a“, pod ním „-“.
+- **Nevyplněný dotazník**: šedý čtverec s textem **„N/A“** (velkými písmeny, tučně, 11 px), pod ním „-“.
   - Kliknutím se otevře *Vyplnění dotazníku*.
 
 ### Pravidla pásma (⚠️ OVĚŘIT – odvozeno ze screenshotů)
@@ -345,6 +346,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-07 | Odznaky dotazníků: vždy čtverec 32 × 32 px, menší zaoblení (4 px), „N/A“ velkými písmeny. |
 | 2026-10-07 | Kartotéka: sloupec „Aktivní plán“ (Aktivní / Naplánováno / Ukončeno / Bez plánu). |
 | 2026-10-07 | Monitoring pacienta: místo datumových polí vždy viditelný dvouměsíční kalendář (klik Start → Konec) a tlačítka délky 1–6 týdnů. |
 | 2026-10-07 | e-Skill: test digitální gramotnosti z repozitáře digital_literacy bez registrace – seznam pacientů se „Zahájit test“, test v novém okně, uložení do karty pacienta, test bez registrace s přiřazením výsledku. |

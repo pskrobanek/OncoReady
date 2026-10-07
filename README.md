@@ -30,6 +30,7 @@ Demo data obnovíte přes avatar **T** vpravo nahoře → **Obnovit demo data**.
 - **Kartotéka**: seznam pacientů, vytvoření, úprava a smazání pacienta.
   - **Monitorings**: vytvoření, úprava a smazání monitorace, akce „Vytvořit dotazník“.
 - **Statistiky**: zástupná stránka (produkční podobu zatím neznáme).
+- **e-Skill**: test digitální gramotnosti (z repozitáře `digital_literacy`, bez registrace) – spuštění u pacienta v novém okně, uložení do karty, test bez registrace s možností přiřadit výsledek.
 
 ## Struktura
 

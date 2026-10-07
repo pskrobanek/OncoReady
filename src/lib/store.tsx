@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { seedDB } from '../data/seed'
-import type { Answers, DashboardView, DB, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
+import type { Answers, DashboardView, DB, ESkillResult, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
 import { addDays, todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
@@ -9,11 +9,17 @@ const KEY = 'oncoready-mvp-db-v2' // při změně struktury dat zvýšit verzi
 function load(): DB {
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return JSON.parse(raw) as DB
+    if (raw) return migrate(JSON.parse(raw))
   } catch {
     /* prázdné nebo nedostupné úložiště → demo data */
   }
   return seedDB()
+}
+
+/** Doplní kolekce přidané v novějších verzích, aby uložená data zůstala zachována. */
+function migrate(db: Partial<DB>): DB {
+  const seed = seedDB()
+  return { ...seed, ...db, eskillResults: db.eskillResults ?? seed.eskillResults } as DB
 }
 
 const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -28,6 +34,21 @@ function useDBState() {
       /* ignorovat */
     }
   }, [db])
+
+  // Synchronizace mezi okny – test e-Skill běží v novém okně a ukládá do stejného úložiště.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === KEY && e.newValue) {
+        try {
+          setDb(migrate(JSON.parse(e.newValue)))
+        } catch {
+          /* ignorovat */
+        }
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   return useMemo(
     () => ({
@@ -48,6 +69,7 @@ function useDBState() {
             patients: s.patients.filter((x) => x.id !== id),
             monitorings: s.monitorings.filter((m) => m.patientId !== id),
             questionnaires: s.questionnaires.filter((q) => !monIds.has(q.monitoringId)),
+            eskillResults: s.eskillResults.filter((r) => r.patientId !== id),
           }
         }),
 
@@ -105,6 +127,14 @@ function useDBState() {
       updateView: (v: DashboardView) => setDb((s) => ({ ...s, views: s.views.map((x) => (x.id === v.id ? v : x)) })),
       deleteView: (id: string) => setDb((s) => ({ ...s, views: s.views.filter((x) => x.id !== id) })),
 
+      // --- e-Skill ---
+      addEskillResult: (r: Omit<ESkillResult, 'id'>) => {
+        const full = { ...r, id: uid('es') }
+        setDb((s) => ({ ...s, eskillResults: [...s.eskillResults, full] }))
+        return full
+      },
+      deleteEskillResult: (id: string) => setDb((s) => ({ ...s, eskillResults: s.eskillResults.filter((r) => r.id !== id) })),
+
       submitQuestionnaire: (id: string, answers: Answers) =>
         setDb((s) => ({
           ...s,
@@ -145,6 +175,10 @@ export function currentMonitoring(db: DB, patientId: string) {
   const ms = db.monitorings.filter((m) => m.patientId === patientId).sort((a, b) => b.start.localeCompare(a.start))
   return ms.find((m) => m.active) ?? ms[0]
 }
+
+/** Výsledky e-Skill pacienta, nejnovější první. */
+export const eskillOf = (db: DB, patientId: string) =>
+  db.eskillResults.filter((r) => r.patientId === patientId).sort((a, b) => b.takenAt.localeCompare(a.takenAt))
 
 export const sortPatients = (ps: Patient[]) =>
   [...ps].sort((a, b) => `${a.prijmeni} ${a.jmeno}`.localeCompare(`${b.prijmeni} ${b.jmeno}`, 'cs'))

@@ -9,6 +9,8 @@ import { FillQuestionnaire } from './pages/FillQuestionnaire'
 import { Kartoteka } from './pages/Kartoteka'
 import { PatientForm } from './pages/PatientForm'
 import { Statistiky } from './pages/Statistiky'
+import { ESkill } from './pages/ESkill'
+import { ESkillTest } from './pages/ESkillTest'
 
 // HashRouter → aplikace funguje i jako jediný statický soubor bez serveru.
 // Ve sdílené jednosouborové verzi (build:single) se URL nemění – MemoryRouter.
@@ -40,8 +42,11 @@ export function App() {
               <Route path="kartoteka/vytvorit" element={<PatientForm key="new" mode="create" />} />
               <Route path="kartoteka/:id/upravit" element={<EditPatient />} />
               <Route path="statistiky" element={<Statistiky />} />
+              <Route path="e-skill" element={<ESkill />} />
             </Route>
             <Route path="vyplnit/:qid" element={<FillQuestionnaire />} />
+            <Route path="e-skill/test" element={<ESkillTest key="anon" />} />
+            <Route path="e-skill/test/:patientId" element={<ESkillTest />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

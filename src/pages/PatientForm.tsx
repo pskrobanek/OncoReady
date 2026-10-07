@@ -20,10 +20,13 @@ import {
   Toggle,
   useToast,
 } from '../components/ui'
-import { fullDate } from '../lib/format'
+import { dateTime, fullDate } from '../lib/format'
+import { ESkillResultModal, ScorePill } from '../components/eskill'
+import { useOpenESkillTest } from './ESkill'
+import { PlayIcon } from '@heroicons/react/20/solid'
 import { frequencyLabel } from '../data/programs'
-import { questionnairesOf, useStore } from '../lib/store'
-import type { Monitoring, Patient, Questionnaire } from '../lib/types'
+import { eskillOf, questionnairesOf, useStore } from '../lib/store'
+import type { ESkillResult, Monitoring, Patient, Questionnaire } from '../lib/types'
 
 const EMPTY: Omit<Patient, 'id'> = { prijmeni: '', jmeno: '', rodneCislo: '', datumNarozeni: '', telefon: '', email: '' }
 
@@ -119,6 +122,8 @@ export function PatientForm({ mode }: { mode: 'create' | 'edit' }) {
       </form>
 
       {existing && <MonitoringsTable patientId={existing.id} />}
+
+      {existing && <ESkillSection patientId={existing.id} />}
 
       <ConfirmModal
         open={confirmDelete}
@@ -345,5 +350,84 @@ function MonitoringModal({
         </Button>
       </div>
     </Modal>
+  )
+}
+
+// ---------------- e-Skill (výsledky testu digitální gramotnosti) ----------------
+
+function ESkillSection({ patientId }: { patientId: string }) {
+  const store = useStore()
+  const toast = useToast()
+  const openTest = useOpenESkillTest()
+  const results = eskillOf(store.db, patientId)
+  const [detail, setDetail] = useState<ESkillResult | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-6 py-4">
+        <h2 className="text-base font-semibold leading-6 text-gray-950">e-Skill</h2>
+        <Button onClick={() => openTest(patientId)}>
+          <PlayIcon className="h-4 w-4" />
+          Zahájit test
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto divide-y divide-gray-200 border-t border-gray-200 text-start">
+          <thead className="whitespace-nowrap bg-gray-50/50">
+            <tr>
+              {['Datum', 'Digitální gramotnost', 'Motorika', 'Správné úkoly', 'Čas testu'].map((h, i) => (
+                <th key={h} className={`${i === 0 ? 'px-6' : 'px-3'} py-3.5 text-start text-sm font-semibold text-gray-950`}>
+                  {h}
+                </th>
+              ))}
+              <th className="px-6 py-3.5" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 whitespace-nowrap">
+            {results.map((r) => (
+              <tr key={r.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setDetail(r)}>
+                <td className="px-6 py-4 text-sm text-gray-950">{dateTime(r.takenAt)}</td>
+                <td className="px-3 py-4">
+                  <ScorePill score={r.literacyScore} />
+                </td>
+                <td className="px-3 py-4 text-sm tabular-nums text-gray-950">{r.motorScore}</td>
+                <td className="px-3 py-4 text-sm tabular-nums text-gray-950">
+                  {r.metrics.correctTasks} / {r.metrics.totalTasks}
+                </td>
+                <td className="px-3 py-4 text-sm tabular-nums text-gray-950">
+                  {r.metrics.speed.toFixed(0)} s{r.timedOut && <span className="ml-1 text-xs text-red-600">(limit)</span>}
+                </td>
+                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-end gap-3">
+                    <LinkAction icon={TrashIcon} color="danger" onClick={() => setDeleting(r.id)}>
+                      Smazat
+                    </LinkAction>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {results.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
+                  Pacient zatím test e-Skill nevyplnil
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <ESkillResultModal result={detail} onClose={() => setDetail(null)} />
+      <ConfirmModal
+        open={!!deleting}
+        title="Smazat výsledek e-Skill"
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          store.deleteEskillResult(deleting!)
+          setDeleting(null)
+          toast('Smazáno')
+        }}
+      />
+    </Card>
   )
 }

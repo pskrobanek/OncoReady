@@ -11,7 +11,8 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
   - pod ním odsazené **pohledy** uživatele a „+ Nový pohled“ (viz *Pohledy*);
   - **Monitorace** (ikona schránky se seznamem);
   - Kartotéka (ikona složek);
-  - Statistiky (ikona sloupcového grafu).
+  - Statistiky (ikona sloupcového grafu);
+  - **e-Skill** (ikona kurzoru).
   - Aktivní položka má světle šedé pozadí, text i ikona jsou v primární modré.
   - Neaktivní položka má šedou ikonu a tmavý text.
 - **Obsah**: šedé pozadí (`gray-50`), bílé karty se zaoblením 12 px a jemným rámečkem.
@@ -236,6 +237,78 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
 
 **⚠️ Zástupná stránka** (chybí screenshot z produkce). Obsahuje 4 dlaždice (pacienti, aktivní monitorace, vyplněné dotazníky, míra vyplnění) a pruhový přehled dotazníků podle pásma.
 
+## e-Skill (test digitální gramotnosti) – NOVÉ
+
+Modul je převzatý z repozitáře `pskrobanek/digital_literacy` (Django aplikace „Therahub“). 1:1 jsou převzaté:
+- otázky dotazníku a 9 úkolů testu;
+- texty v češtině a angličtině;
+- časový limit 2 minuty;
+- výpočet skóre a katalog doporučených aplikací.
+
+**Odstraněno**: registrace pacienta (jméno, datum narození, rodné číslo), heslo webu, souhlasy, přihlášení personálu a samoobsluha GDPR. Pacienta vybírá personál z Kartotéky.
+
+### Přehled (`/e-skill`)
+
+- Drobečková navigace e-Skill › Přehled, nadpis „e-Skill“, vpravo primární tlačítko **Test bez registrace**.
+- Tabulka pacientů (stejný seznam jako Kartotéka). Sloupce:
+  - Celé jméno, Rodné číslo;
+  - **Poslední výsledek**: skóre barvou úrovně a štítek Nízká / Střední / Vysoká, klik otevře detail;
+  - Datum;
+  - Testů (počet);
+  - tlačítko **▶ Zahájit test**.
+- Hledání, „na stránku“ a stránkování jako v Kartotéce.
+
+### Průběh testu (nové okno)
+
+„Zahájit test“ i „Test bez registrace“ otevřou test v **novém okně** (popup 1100×850). Pokud prohlížeč okno zablokuje, test se otevře ve stejném okně. Okno testu nemá menu; v hlavičce je logo, „e-Skill“, jméno pacienta a přepínač jazyka (Čeština / English).
+
+1. **Úvod**: „Test digitální gramotnosti“, popis, tlačítko **Začít**.
+2. **Dotazník**, 4 otázky po jedné:
+   - každá otázka je karta s velkými tlačítky voleb, pod ní ukazatel průběhu;
+   - Q1 (zařízení) dovoluje víc voleb, volba „Žádné“ vylučuje ostatní;
+   - tlačítko Další je aktivní až po odpovědi.
+3. **Úvod testu**: popis a upozornění na limit 2 minuty, tlačítko **Začít test**.
+4. **9 úkolů**:
+   - zelené tlačítko START;
+   - tlačítko „Pokračovat“;
+   - modrý bod;
+   - ikona e-mailu;
+   - odkaz v textu;
+   - „Kontakt“ v menu;
+   - zavřít popup;
+   - napsat slovo;
+   - vybrat datum 15. 2. 2026.
+   
+   Nahoře je pokyn, číslo úkolu a odpočet (posledních 30 s červeně), dole ukazatel průběhu. Správný klik se zvýrazní zeleně, chybný červeně a měří se vzdálenost chybného kliknutí od cíle. Po 2 minutách se test ukončí a nedokončené úkoly se počítají jako chybné.
+5. **Výsledek**: velké skóre 0–100 barvou úrovně, štítek úrovně, „Děkujeme, test je dokončen.“ a 6 dlaždic (motorika, správné úkoly, rychlost, vzdálenost chybných kliknutí, čas psaní, přesnost psaní).
+   - **U pacienta**: výsledek se uloží automaticky. Zobrazí se „Výsledek uložen do karty pacienta X“ a tlačítko **Zavřít**, které zavře okno.
+   - **Bez registrace**: zobrazí se „Výsledek zatím není nikde uložen“ a tlačítka **Zavřít bez uložení** a **Přiřadit pacientovi**. Přiřazení otevře výběr pacienta z Kartotéky s hledáním; po kliknutí na pacienta se výsledek uloží.
+
+Hlavní okno se po uložení aktualizuje samo, bez obnovení stránky.
+
+### Karta pacienta
+
+Pod tabulkou Monitorings je nová karta **e-Skill**:
+- tlačítko **▶ Zahájit test**;
+- tabulka výsledků se sloupci Datum, Digitální gramotnost, Motorika, Správné úkoly, Čas testu (s označením „(limit)“) a akcí Smazat.
+
+Klik na řádek otevře **detail výsledku**:
+- skóre a úroveň, motorické skóre;
+- metriky testu;
+- odpovědi dotazníku;
+- **doporučené aplikace** pro úroveň pacienta (náročnější aplikace jsou vyřazené);
+- vzorec výpočtu.
+
+### Výpočet (převzato)
+
+- **Motorika** = 65 % správné úkoly napoprvé + 15 % rychlost (strop 120 s) + 10 % přesnost kliknutí (strop 500 px) + 5 % rychlost psaní (strop 30 s) + 5 % přesnost psaní.
+- **Digitální gramotnost** = motorika × šíře technologií (0,7 + 0,1 za telefon/tablet/počítač) × L faktor (Q2) × kvalita podpory (Q3) − penalizace dostupnosti pomoci (Q4), omezeno na 0–100.
+- **Úroveň**: ≤ 33 Nízká, ≤ 66 Střední, jinak Vysoká.
+
+**⚠️ OVĚŘIT:**
+- Datum v úkolu 9 je pevně 15. 2. 2026 (jako v originále).
+- Pacient na konci testu vidí své skóre. V originále byl výsledek „uzamčen“ rodným číslem.
+
 ## Otevřené otázky pro produkci
 
 1. Má barvu pásma určovat rozsah skóre z monitorace, nebo současné pravidlo „max. body jedné odpovědi“, nebo obojí?
@@ -251,5 +324,6 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-07 | e-Skill: test digitální gramotnosti z repozitáře digital_literacy bez registrace – seznam pacientů se „Zahájit test“, test v novém okně, uložení do karty pacienta, test bez registrace s přiřazením výsledku. |
 | 2026-10-07 | Monitorace (seznam + formulář: název, diagnózy, tag, klasifikace, frekvence, rozsahy pásem), přiřazení monitorace pacientovi, uživatelské pohledy pod Dashboardem, rozšířený filtr (monitorace, klasifikace, tag). |
 | 2026-10-07 | První verze repliky podle screenshotů (Dashboard, Klinický report, Kartotéka, Monitorings, vyplnění dotazníku). |

@@ -65,10 +65,30 @@ export interface Questionnaire {
   answers: Answers | null
 }
 
+/** Výsledek testu e-Skill (digitální gramotnost). patientId null = test bez registrace (neukládá se). */
+export interface ESkillResult {
+  id: string
+  patientId: string
+  takenAt: string // ISO
+  survey: { q1: string[]; q2: string; q3: string; q4: string }
+  metrics: {
+    correctTasks: number
+    totalTasks: number
+    speed: number
+    avgMisclickDistance: number
+    typingDuration: number | null
+    typingAccuracy: number | null
+  }
+  motorScore: number
+  literacyScore: number
+  timedOut: boolean
+}
+
 export interface DB {
   patients: Patient[]
   monitorings: Monitoring[]
   questionnaires: Questionnaire[]
   programs: MonitoringProgram[]
   views: DashboardView[]
+  eskillResults: ESkillResult[]
 }

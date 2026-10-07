@@ -3,6 +3,7 @@
 import type { Answers, DB, Monitoring, Patient, Questionnaire } from '../lib/types'
 import { QUESTIONS, scaleValueForPoints } from './questionnaire'
 import { seedPrograms, seedViews } from './programs'
+import { seedEskill } from './eskillSeed'
 import type { Band } from '../lib/scoring'
 
 type Entry = { date: string; time?: string; score: number; band: Band; pinned?: Record<string, number> } | { date: string; na: true }
@@ -159,4 +160,5 @@ export const seedDB = (): DB => ({
   questionnaires: structuredClone(mons.flatMap((x) => x.qs)),
   programs: seedPrograms(),
   views: seedViews(),
+  eskillResults: seedEskill(),
 })

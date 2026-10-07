@@ -1,4 +1,4 @@
-import { ChartBarIcon, ClipboardDocumentListIcon, HomeIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, ClipboardDocumentListIcon, CursorArrowRaysIcon, HomeIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
 import { PlusIcon } from '@heroicons/react/20/solid'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
@@ -29,6 +29,7 @@ const NAV = [
   { to: '/monitorace', label: 'Monitorace', icon: ClipboardDocumentListIcon, end: false },
   { to: '/kartoteka', label: 'Kartotéka', icon: RectangleStackIcon, end: false },
   { to: '/statistiky', label: 'Statistiky', icon: ChartBarIcon, end: false },
+  { to: '/e-skill', label: 'e-Skill', icon: CursorArrowRaysIcon, end: false },
 ]
 
 function UserMenu() {

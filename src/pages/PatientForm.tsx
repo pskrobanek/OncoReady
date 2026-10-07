@@ -21,6 +21,7 @@ import {
   useToast,
 } from '../components/ui'
 import { fullDate } from '../lib/format'
+import { frequencyLabel } from '../data/programs'
 import { questionnairesOf, useStore } from '../lib/store'
 import type { Monitoring, Patient, Questionnaire } from '../lib/types'
 
@@ -167,6 +168,7 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
               <th className="w-12 px-6 py-3.5">
                 <Checkbox checked={allChecked} onChange={(v) => setSelected(v ? new Set(monitorings.map((m) => m.id)) : new Set())} />
               </th>
+              <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Monitorace</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Start</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Konec</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Aktivní</th>
@@ -189,6 +191,9 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
                       })
                     }
                   />
+                </td>
+                <td className="px-3 py-4 text-sm text-gray-950">
+                  {store.db.programs.find((p) => p.id === m.programId)?.name ?? <span className="text-gray-400">—</span>}
                 </td>
                 <td className="px-3 py-4 text-sm text-gray-950">{fullDate(m.start)}</td>
                 <td className="px-3 py-4 text-sm text-gray-950">{fullDate(m.end)}</td>
@@ -221,7 +226,7 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
             ))}
             {monitorings.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
                   Žádné monitorace
                 </td>
               </tr>
@@ -276,8 +281,11 @@ function MonitoringModal({
 }: {
   initial: Monitoring | null
   onClose: () => void
-  onSave: (d: { start: string; end: string; active: boolean }) => void
+  onSave: (d: { programId: string | null; start: string; end: string; active: boolean }) => void
 }) {
+  const { db } = useStore()
+  const [programId, setProgramId] = useState<string>(initial?.programId ?? '')
+  const program = db.programs.find((p) => p.id === programId)
   const [start, setStart] = useState(initial?.start ?? '')
   const [end, setEnd] = useState(initial?.end ?? '')
   const [active, setActive] = useState(initial?.active ?? true)
@@ -286,7 +294,7 @@ function MonitoringModal({
   const submit = () => {
     if (!start || !end) return setError('Start i Konec jsou povinné.')
     if (end < start) return setError('Konec musí být po začátku.')
-    onSave({ start, end, active })
+    onSave({ programId: programId || null, start, end, active })
   }
 
   return (
@@ -296,6 +304,22 @@ function MonitoringModal({
         <CloseButton onClick={onClose} />
       </div>
       <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Field label="Monitorace">
+            <select
+              value={programId}
+              onChange={(e) => setProgramId(e.target.value)}
+              className="block w-full rounded-lg border-none bg-white px-3 py-1.5 text-sm leading-6 text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600"
+            >
+              <option value="">— bez monitorace —</option>
+              {db.programs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
         <Field label="Start" required>
           <TextInput type="date" value={start} onChange={(e) => setStart(e.target.value)} />
         </Field>
@@ -308,7 +332,8 @@ function MonitoringModal({
         </div>
         {!initial && (
           <p className="text-sm text-gray-500 sm:col-span-2">
-            Dotazníky se naplánují automaticky každých 7 dní od začátku monitorace.
+            Dotazníky se naplánují automaticky: {program ? frequencyLabel(program.frequencyDays).toLowerCase() : 'každých 7 dní'} od
+            začátku monitorace.
           </p>
         )}
         {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}

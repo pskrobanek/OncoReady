@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { seedDB } from '../data/seed'
-import type { Answers, DB, Monitoring, Patient, Questionnaire } from './types'
+import type { Answers, DashboardView, DB, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
 import { addDays, todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
-const KEY = 'oncoready-mvp-db-v1'
+const KEY = 'oncoready-mvp-db-v2' // při změně struktury dat zvýšit verzi
 
 function load(): DB {
   try {
@@ -44,18 +44,20 @@ function useDBState() {
         setDb((s) => {
           const monIds = new Set(s.monitorings.filter((m) => m.patientId === id).map((m) => m.id))
           return {
+            ...s,
             patients: s.patients.filter((x) => x.id !== id),
             monitorings: s.monitorings.filter((m) => m.patientId !== id),
             questionnaires: s.questionnaires.filter((q) => !monIds.has(q.monitoringId)),
           }
         }),
 
-      /** Nová monitorace – automaticky naplánuje dotazník každých 7 dní od začátku do konce (předpoklad). */
+      /** Nová monitorace pacienta – naplánuje dotazníky podle frekvence zvolené monitorace (bez ní každých 7 dní). */
       createMonitoring: (data: Omit<Monitoring, 'id'>) =>
         setDb((s) => {
           const m = { ...data, id: uid('m') }
+          const every = s.programs.find((p) => p.id === m.programId)?.frequencyDays ?? 7
           const qs: Questionnaire[] = []
-          for (let date = addDays(m.start, 7); date <= m.end; date = addDays(date, 7)) {
+          for (let date = addDays(m.start, every); date <= m.end; date = addDays(date, every)) {
             qs.unshift({ id: uid('q'), monitoringId: m.id, scheduledFor: date, filledAt: null, answers: null })
           }
           return { ...s, monitorings: [...s.monitorings, m], questionnaires: [...s.questionnaires, ...qs] }
@@ -78,6 +80,31 @@ function useDBState() {
             { id: uid('q'), monitoringId, scheduledFor: todayIso(), filledAt: null, answers: null },
           ],
         })),
+      // --- Monitorace (programy) ---
+      createProgram: (data: Omit<MonitoringProgram, 'id'>) => {
+        const p = { ...data, id: uid('pr') }
+        setDb((s) => ({ ...s, programs: [...s.programs, p] }))
+        return p
+      },
+      updateProgram: (p: MonitoringProgram) => setDb((s) => ({ ...s, programs: s.programs.map((x) => (x.id === p.id ? p : x)) })),
+      /** Smazání monitorace jen odpojí pacienty (jejich data zůstanou) a odebere ji z filtrů pohledů. */
+      deleteProgram: (id: string) =>
+        setDb((s) => ({
+          ...s,
+          programs: s.programs.filter((x) => x.id !== id),
+          monitorings: s.monitorings.map((m) => (m.programId === id ? { ...m, programId: null } : m)),
+          views: s.views.map((v) => ({ ...v, filters: { ...v.filters, programIds: v.filters.programIds.filter((x) => x !== id) } })),
+        })),
+
+      // --- Pohledy ---
+      createView: (data: Omit<DashboardView, 'id'>) => {
+        const v = { ...data, id: uid('v') }
+        setDb((s) => ({ ...s, views: [...s.views, v] }))
+        return v
+      },
+      updateView: (v: DashboardView) => setDb((s) => ({ ...s, views: s.views.map((x) => (x.id === v.id ? v : x)) })),
+      deleteView: (id: string) => setDb((s) => ({ ...s, views: s.views.filter((x) => x.id !== id) })),
+
       submitQuestionnaire: (id: string, answers: Answers) =>
         setDb((s) => ({
           ...s,

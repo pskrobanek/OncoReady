@@ -25,6 +25,8 @@ Demo data obnovíte přes avatar **T** vpravo nahoře → **Obnovit demo data**.
 - **Dashboard**: tabulka pacientů s odznaky dotazníků a filtrem podle pásma a data vyplnění.
   - Klik na vyplněný dotazník otevře **Klinický report** s trendem skóre a odpověďmi.
   - Klik na **n/a** otevře vyplnění dotazníku pacientem (např. na tabletu v ambulanci).
+- **Pohledy**: podstránky Dashboardu s uloženou kombinací filtrů (vytvořit, přejmenovat, uložit změny, smazat).
+- **Monitorace**: šablony sledování s diagnózami, tagem, klasifikací, frekvencí odesílání a rozsahy pásem.
 - **Kartotéka**: seznam pacientů, vytvoření, úprava a smazání pacienta.
   - **Monitorings**: vytvoření, úprava a smazání monitorace, akce „Vytvořit dotazník“.
 - **Statistiky**: zástupná stránka (produkční podobu zatím neznáme).

@@ -1,8 +1,11 @@
-import { ChartBarIcon, HomeIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, ClipboardDocumentListIcon, HomeIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
+import { PlusIcon } from '@heroicons/react/20/solid'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
 import { cx, useToast } from './ui'
+import { NameModal } from '../pages/Dashboard'
+import { DEFAULT_FILTERS } from '../data/programs'
 
 export function Logo() {
   // Přibližná rekonstrukce loga OncoReady (kruh ze tří modrých oblouků + text).
@@ -23,6 +26,7 @@ export function Logo() {
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: HomeIcon, end: true },
+  { to: '/monitorace', label: 'Monitorace', icon: ClipboardDocumentListIcon, end: false },
   { to: '/kartoteka', label: 'Kartotéka', icon: RectangleStackIcon, end: false },
   { to: '/statistiky', label: 'Statistiky', icon: ChartBarIcon, end: false },
 ]
@@ -72,6 +76,55 @@ function UserMenu() {
   )
 }
 
+/** Podstránky Dashboardu = uživatelské pohledy (uložené kombinace filtrů). */
+function ViewsNav() {
+  const { db, createView } = useStore()
+  const navigate = useNavigate()
+  const toast = useToast()
+  const [naming, setNaming] = useState(false)
+  return (
+    <ul className="ml-[1.1rem] flex flex-col gap-y-0.5 border-l border-gray-200 pl-3">
+      {db.views.map((v) => (
+        <li key={v.id}>
+          <NavLink
+            to={`/pohledy/${v.id}`}
+            className={({ isActive }) =>
+              cx(
+                'block truncate rounded-lg px-2 py-1.5 text-sm transition duration-75',
+                isActive ? 'bg-gray-100 font-medium text-primary-600' : 'text-gray-600 hover:bg-gray-100',
+              )
+            }
+            title={v.name}
+          >
+            {v.name}
+          </NavLink>
+        </li>
+      ))}
+      <li>
+        <button
+          onClick={() => setNaming(true)}
+          className="flex w-full items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-400 transition duration-75 hover:bg-gray-100 hover:text-gray-600"
+        >
+          <PlusIcon className="h-4 w-4" />
+          Nový pohled
+        </button>
+      </li>
+      <NameModal
+        open={naming}
+        title="Nový pohled"
+        submitLabel="Vytvořit"
+        onClose={() => setNaming(false)}
+        onSubmit={(name) => {
+          const v = createView({ name, filters: DEFAULT_FILTERS })
+          setNaming(false)
+          toast('Pohled vytvořen – nastavte filtr a uložte')
+          navigate(`/pohledy/${v.id}`)
+        }}
+      />
+    </ul>
+  )
+}
+
 export function Layout() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-950">
@@ -82,33 +135,35 @@ export function Layout() {
         <UserMenu />
       </header>
       <div className="flex">
-        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 px-3 py-8 lg:block">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 overflow-y-auto px-3 py-8 lg:block">
           <nav className="flex flex-col gap-y-1">
             {NAV.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cx(
-                    'flex items-center gap-x-3 rounded-lg px-2 py-2 text-sm font-medium outline-none transition duration-75',
-                    isActive ? 'bg-gray-100 text-primary-600' : 'text-gray-700 hover:bg-gray-100',
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon className={cx('h-6 w-6', isActive ? 'text-primary-600' : 'text-gray-400')} />
-                    {label}
-                  </>
-                )}
-              </NavLink>
+              <div key={to} className="flex flex-col gap-y-1">
+                <NavLink
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    cx(
+                      'flex items-center gap-x-3 rounded-lg px-2 py-2 text-sm font-medium outline-none transition duration-75',
+                      isActive ? 'bg-gray-100 text-primary-600' : 'text-gray-700 hover:bg-gray-100',
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon className={cx('h-6 w-6', isActive ? 'text-primary-600' : 'text-gray-400')} />
+                      {label}
+                    </>
+                  )}
+                </NavLink>
+                {to === '/' && <ViewsNav />}
+              </div>
             ))}
           </nav>
         </aside>
-        {/* Mobilní navigace */}
         <main className="min-w-0 flex-1 px-4 py-8 md:px-6 lg:px-8">
-          <nav className="mb-6 flex gap-2 lg:hidden">
+          {/* Mobilní navigace */}
+          <nav className="mb-6 flex flex-wrap gap-2 lg:hidden">
             {NAV.map(({ to, label, end }) => (
               <NavLink
                 key={to}

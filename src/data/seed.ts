@@ -2,6 +2,7 @@
 // Kontakty jsou smyšlené. Nepoužívat skutečné údaje pacientů.
 import type { Answers, DB, Monitoring, Patient, Questionnaire } from '../lib/types'
 import { QUESTIONS, scaleValueForPoints } from './questionnaire'
+import { seedPrograms, seedViews } from './programs'
 import type { Band } from '../lib/scoring'
 
 type Entry = { date: string; time?: string; score: number; band: Band; pinned?: Record<string, number> } | { date: string; na: true }
@@ -41,6 +42,7 @@ let qSeq = 0
 function monitoring(
   patientId: string,
   id: string,
+  programId: string,
   start: string,
   end: string,
   active: boolean,
@@ -57,7 +59,7 @@ function monitoring(
       answers: makeAnswers(e.score, e.band, e.pinned),
     }
   })
-  return { m: { id, patientId, start, end, active }, qs }
+  return { m: { id, patientId, programId, start, end, active }, qs }
 }
 
 const P = (id: string, prijmeni: string, jmeno: string, rodneCislo: string, email: string, telefon = ''): Patient => ({
@@ -86,26 +88,26 @@ const patients: Patient[] = [
 
 // Pořadí záznamů = pořadí odznaků v tabulce (nejnovější termín vlevo).
 const mons = [
-  monitoring('p1', 'm1', '2026-03-19', '2026-04-16', true, [
+  monitoring('p1', 'm1', 'pr1', '2026-03-19', '2026-04-16', true, [
     { date: '2026-04-16', na: true },
     { date: '2026-04-12', time: '08:41', score: 20, band: 'red', pinned: { health: 1, fatigue: 2, symptoms: 4, skin: 2 } },
     { date: '2026-04-06', na: true },
     { date: '2026-03-30', score: 9, band: 'red' },
     { date: '2026-03-23', score: 22, band: 'blue' },
   ]),
-  monitoring('p2', 'm2', '2026-09-01', '2026-10-27', true, [
+  monitoring('p2', 'm2', 'pr2', '2026-09-01', '2026-10-27', true, [
     { date: '2026-10-06', score: 4, band: 'green' },
     { date: '2026-09-29', score: 6, band: 'green' },
     { date: '2026-09-22', score: 5, band: 'green' },
     { date: '2026-09-15', score: 3, band: 'green' },
   ]),
-  monitoring('p3', 'm3', '2026-08-05', '2026-09-30', true, [
+  monitoring('p3', 'm3', 'pr3', '2026-08-05', '2026-09-30', true, [
     { date: '2026-09-02', score: 23, band: 'red' },
     { date: '2026-08-26', na: true },
     { date: '2026-08-19', na: true },
     { date: '2026-08-12', na: true },
   ]),
-  monitoring('p5', 'm5', '2026-03-25', '2026-05-10', true, [
+  monitoring('p5', 'm5', 'pr1', '2026-03-25', '2026-05-10', true, [
     { date: '2026-05-03', score: 7, band: 'blue' },
     { date: '2026-04-26', score: 8, band: 'blue' },
     { date: '2026-04-19', score: 13, band: 'red' },
@@ -113,12 +115,12 @@ const mons = [
     { date: '2026-04-05', score: 5, band: 'green' },
     { date: '2026-03-29', score: 4, band: 'blue' },
   ]),
-  monitoring('p6', 'm6', '2026-09-08', '2026-11-03', true, [
+  monitoring('p6', 'm6', 'pr4', '2026-09-08', '2026-11-03', true, [
     { date: '2026-10-05', score: 9, band: 'yellow' },
     { date: '2026-09-28', score: 7, band: 'green' },
     { date: '2026-09-21', score: 8, band: 'yellow' },
   ]),
-  monitoring('p7', 'm7', '2026-03-04', '2026-04-30', true, [
+  monitoring('p7', 'm7', 'pr1', '2026-03-04', '2026-04-30', true, [
     { date: '2026-04-26', score: 14, band: 'red' },
     { date: '2026-04-19', score: 2, band: 'green' },
     { date: '2026-04-12', score: 5, band: 'red' },
@@ -129,14 +131,14 @@ const mons = [
     { date: '2026-03-12', na: true },
     { date: '2026-03-08', score: 5, band: 'green' },
   ]),
-  monitoring('p8', 'm8', '2026-05-10', '2026-06-14', true, [
+  monitoring('p8', 'm8', 'pr3', '2026-05-10', '2026-06-14', true, [
     { date: '2026-06-07', na: true },
     { date: '2026-05-31', score: 7, band: 'green' },
     { date: '2026-05-24', score: 14, band: 'red' },
     { date: '2026-05-17', score: 13, band: 'blue' },
     { date: '2026-05-10', na: true },
   ]),
-  monitoring('p9', 'm9', '2026-10-01', '2026-11-12', true, [
+  monitoring('p9', 'm9', 'pr4', '2026-10-01', '2026-11-12', true, [
     { date: '2026-11-12', na: true },
     { date: '2026-11-05', na: true },
     { date: '2026-10-29', na: true },
@@ -144,7 +146,7 @@ const mons = [
     { date: '2026-10-15', na: true },
     { date: '2026-10-08', na: true },
   ]),
-  monitoring('p10', 'm10', '2026-09-10', '2026-10-22', true, [
+  monitoring('p10', 'm10', 'pr5', '2026-09-10', '2026-10-22', true, [
     { date: '2026-10-01', score: 2, band: 'green' },
     { date: '2026-09-24', score: 5, band: 'green' },
     { date: '2026-09-17', score: 6, band: 'green' },
@@ -155,4 +157,6 @@ export const seedDB = (): DB => ({
   patients: structuredClone(patients),
   monitorings: mons.map((x) => ({ ...x.m })),
   questionnaires: structuredClone(mons.flatMap((x) => x.qs)),
+  programs: seedPrograms(),
+  views: seedViews(),
 })

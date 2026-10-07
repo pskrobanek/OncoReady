@@ -6,7 +6,12 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
 ## Globální layout
 
 - **Horní lišta** (výška 64 px, bílá, spodní stín): vlevo logo OncoReady („Onco“ černě, „Ready“ primární modrou), vpravo kulatý avatar s iniciálou (černé pozadí, bílé písmeno).
-- **Boční menu** (od šířky ≥ 1024 px): Dashboard (ikona domu), Kartotéka (ikona složek), Statistiky (ikona sloupcového grafu).
+- **Boční menu** (od šířky ≥ 1024 px), v tomto pořadí:
+  - Dashboard (ikona domu);
+  - pod ním odsazené **pohledy** uživatele a „+ Nový pohled“ (viz *Pohledy*);
+  - **Monitorace** (ikona schránky se seznamem);
+  - Kartotéka (ikona složek);
+  - Statistiky (ikona sloupcového grafu).
   - Aktivní položka má světle šedé pozadí, text i ikona jsou v primární modré.
   - Neaktivní položka má šedou ikonu a tmavý text.
 - **Obsah**: šedé pozadí (`gray-50`), bílé karty se zaoblením 12 px a jemným rámečkem.
@@ -65,6 +70,99 @@ Jedna karta má dvě části: vlevo tabulka „Patients Table“, vpravo panel �
   - Výchozí stav: zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
 - Logika: pacient se zobrazí, pokud má **alespoň jeden** dotazník ve zaškrtnutém pásmu a ve zvoleném období. **⚠️ OVĚŘIT** logiku produkce.
+
+## Pohledy (podstránky Dashboardu) – NOVÉ
+
+Pohled je **pojmenovaná kombinace filtrů Dashboardu**, kterou si uživatel uloží. Pohledy jsou osobní, každý uživatel má své. **⚠️ OVĚŘIT**, jestli je bude potřeba sdílet v rámci pracoviště.
+
+- **Menu:** pohledy jsou v bočním menu pod položkou Dashboard. Jsou odsazené a mají svislou linku vlevo (styl podnavigace Filament).
+  - Aktivní pohled má šedé pozadí a modrý text.
+  - Poslední položka je šedé „+ Nový pohled“.
+- **Vytvoření pohledu**, dva způsoby:
+  1. „+ Nový pohled“ v menu → dialog *Nový pohled* (pole Název\*) → vytvoří pohled s výchozím filtrem a otevře ho.
+  2. Na Dashboardu tlačítko **Uložit jako pohled** (dole v panelu Filtrovat) → dialog s názvem → uloží aktuální filtr.
+- **Stránka pohledu** (`/pohledy/:id`):
+  - drobečková navigace Dashboard › Pohledy, nadpis = název pohledu;
+  - vpravo nahoře tlačítka **Přejmenovat** (šedé) a **Smazat** (červené, s potvrzením);
+  - obsah je stejný jako na Dashboardu: tabulka pacientů a panel filtrů.
+- **Změna filtru v pohledu** se neukládá hned:
+  - v hlavičce panelu se objeví odkaz „Zahodit změny“;
+  - dole v panelu je tlačítko **Uložit změny filtru**, které je aktivní jen při změně;
+  - bez změn tlačítko ukazuje „Filtr je uložen“.
+- **Výchozí Dashboard** se nedá přepsat. Při změně filtru se objeví odkaz „Obnovit výchozí“.
+
+### Panel Filtrovat (rozšířený)
+
+Pod původní skupiny Skóre a Datum vyplnění přibyly:
+
+- **Monitorace**: zaškrtávací pole pro každou monitoraci.
+- **Klasifikace**: zaškrtávací pole s barevným štítkem nonMD / MD / research / other.
+- **Tag**: přepínací štítky, kde vybraný štítek je modrý.
+
+Logika: uvnitř skupiny platí NEBO, mezi skupinami platí A ZÁROVEŇ. Prázdná skupina nefiltruje. Monitorace, klasifikace a tag se berou z aktuální monitorace pacienta.
+
+V tabulce pacientů je pod jménem šedě název monitorace pacienta. V hlavičce karty je počet pacientů („3 pacientů“). **Jde o novinku oproti produkci.**
+
+## Monitorace (programy sledování) – NOVÉ
+
+Monitorace je **šablona sledování**: definuje, komu (diagnózy), jak často a s jakými hranicemi pásem se dotazníky posílají. Pacientovi se monitorace přiřazuje v Kartotéce (tabulka Monitorings → pole *Monitorace*).
+
+### Přehled (`/monitorace`)
+
+- Drobečková navigace Monitorace › Přehled, nadpis „Monitorace“, vpravo **Vytvořit**.
+- Hledání (název, tag, klasifikace, kód nebo název diagnózy).
+- **Sloupce:**
+
+| Sloupec | Obsah |
+| --- | --- |
+| Název | tučně, zalamuje se |
+| Diagnózy | štítky s kódem MKN-10 (monospace); název diagnózy je v tooltipu |
+| Tag | šedý štítek |
+| Klasifikace | barevný štítek: nonMD šedá, MD modrá, research fialová, other oranžová |
+| Frekvence | Denně / Každé 3 dny / Týdně / Každé 2 týdny / Měsíčně / Každé 3 měsíce / Každých N dní |
+| Pásma (body) | tři štítky s tečkou: zelené `0–7`, žluté `8–14`, červené `15+` |
+| Pacienti | počet pacientů s aktivní monitorací |
+| akce | Upravit, Smazat (s potvrzením) |
+
+- Klik na řádek otevře úpravu.
+- Smazání monitorace **nemaže data pacientů**. Pacienti zůstanou bez monitorace a monitorace zmizí z filtrů pohledů.
+
+### Vytvořit / upravit (`/monitorace/vytvorit`, `/monitorace/:id/upravit`)
+
+Nadpis „Nová monitorace“ / „Upravit monitoraci“. Na úpravě je vpravo nahoře **Smazat**.
+
+**Karta 1 (dva sloupce):**
+- **Název\*** a **Tag**. Tag nabízí už použité tagy a má nápovědu „Krátký štítek pro filtrování…“.
+- **Diagnózy\*** přes celou šířku:
+  - vybrané diagnózy jsou modré štítky „kód + název“ s ✕;
+  - na konci je výběr „+ Přidat diagnózu (MKN-10)…“;
+  - musí být vybrána aspoň jedna.
+- **Klasifikace\***: čtyři přepínací tlačítka nonMD / MD / research / other. Pod nimi je vysvětlivka:
+  - nonMD = mimo zdravotnický prostředek;
+  - MD = zdravotnický prostředek;
+  - research = výzkum / studie;
+  - other = ostatní.
+  - **⚠️ OVĚŘIT** význam zkratek.
+- **Frekvence odesílání\***: výběr předvoleb, nebo „Vlastní interval…“ s polem „každých N dní“.
+
+**Karta 2 – Rozsah pásem:**
+- Tři dlaždice: Zelené od 0 do [X], Žluté od X+1 do [Y], Červené od Y+1 a více.
+- Zadávají se jen **dvě hranice**, takže pásma se nepřekrývají a nemají mezery.
+- Pod dlaždicemi je náhledový pruh 0–40 b.
+- Validace:
+  - žluté musí končit výš než zelené;
+  - žluté musí končit pod maximem dotazníku (40 b).
+- Poznámka: modré pásmo nezávisí na skóre.
+
+Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
+
+### Napojení na pacienta
+
+- Dialog *Vytvořit/Upravit Monitoring* v Kartotéce má nově pole **Monitorace** (výběr, nebo „— bez monitorace —“).
+- Dotazníky se naplánují podle frekvence zvolené monitorace. Bez monitorace se posílají každých 7 dní.
+- Tabulka Monitorings u pacienta má nový první sloupec **Monitorace**.
+
+**⚠️ OVĚŘIT – rozsahy pásem se zatím nepoužívají pro barvu odznaků.** Barva se stále počítá podle pravidla „nejvyšší body jedné odpovědi“ (viz *Pravidla pásma*). Je potřeba rozhodnout, jestli má pásmo určovat celkové skóre podle rozsahů monitorace, maximum jedné odpovědi, nebo obojí (horší z obou).
 
 ## Klinický report (modal)
 
@@ -140,15 +238,18 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
 
 ## Otevřené otázky pro produkci
 
-1. Úplný seznam otázek dotazníku, jejich bodování a zdroje (TheraData / PRO-CTCAE).
-2. Přesná pravidla pásem a priorita mezi modrým a červeným pásmem.
-3. Logika filtru na Dashboardu: filtruje se podle nejnovějšího dotazníku, nebo podle kteréhokoli?
-4. Frekvence plánovaných dotazníků v monitoraci.
-5. Obsah stránky Statistiky.
-6. Některá jména jsou v produkčních datech zadaná obráceně (Příjmení „Anna“, Jméno „Malá“). Replika to přebírá. Doporučení: v UI zdůraznit pořadí polí.
+1. Má barvu pásma určovat rozsah skóre z monitorace, nebo současné pravidlo „max. body jedné odpovědi“, nebo obojí?
+2. Jsou pohledy osobní, nebo sdílené pro pracoviště? Má si uživatel moci nastavit pohled jako svůj výchozí Dashboard?
+3. Úplný seznam otázek dotazníku, jejich bodování a zdroje (TheraData / PRO-CTCAE).
+4. Přesná pravidla pásem a priorita mezi modrým a červeným pásmem.
+5. Logika filtru na Dashboardu: filtruje se podle nejnovějšího dotazníku, nebo podle kteréhokoli?
+6. Frekvence plánovaných dotazníků v monitoraci.
+7. Obsah stránky Statistiky.
+8. Některá jména jsou v produkčních datech zadaná obráceně (Příjmení „Anna“, Jméno „Malá“). Replika to přebírá. Doporučení: v UI zdůraznit pořadí polí.
 
 ## Changelog
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-07 | Monitorace (seznam + formulář: název, diagnózy, tag, klasifikace, frekvence, rozsahy pásem), přiřazení monitorace pacientovi, uživatelské pohledy pod Dashboardem, rozšířený filtr (monitorace, klasifikace, tag). |
 | 2026-10-07 | První verze repliky podle screenshotů (Dashboard, Klinický report, Kartotéka, Monitorings, vyplnění dotazníku). |

@@ -66,21 +66,38 @@ Celkové skóre je součet bodů všech odpovědí. Pravidla jsou na jednom mís
 
 ## Dashboard
 
-Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patients Table“) s počtem pacientů vpravo v hlavičce, vpravo panel „Filtrovat“ (šířka 288 px). Na menší obrazovce je panel pod tabulkou.
+Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patients Table“) s počtem pacientů vpravo v hlavičce, vpravo panel nástrojů se záložkami Filtr a Řazení (šířka 288 px). Na menší obrazovce je panel pod tabulkou.
 
 **Tabulka**
 - Hledání vpravo nahoře hledá ve jméně a rodném čísle.
-- **Řazení** (NOVÉ) vlevo nad tabulkou: „Řadit podle“ + výběr a tlačítko se šipkou pro obrácení pořadí.
-  - **Naléhavosti** (výchozí): podle stavu posledního dotazníku po termínu, v pořadí červené → vyžádal kontrolu → žluté → N/A → zelené → jen budoucí termíny. Při shodě podle jména.
-  - **Jména** (abecedně), **Rodného čísla** (číselně), **Posledního vyplnění** (nejnověji vyplněný první).
-  - Řazení je nezávislé na filtru a neukládá se do pohledu.
+- **Řazení** je v pravém panelu na záložce *Řazení* (viz *Panel nástrojů*). Výchozí je řazení podle naléhavosti.
 - Sloupce: Celé jméno (`Příjmení Jméno →`, odkaz na úpravu pacienta), Rodné číslo, Dotazníky.
 - **Barevný proužek vlevo u řádku** (3 px) ukazuje stav *nejnovějšího dotazníku, jehož termín už nastal* (budoucí termíny se přeskočí): červený, modrý nebo žlutý. Když je to N/A nebo zelené, proužek se nezobrazí.
   - **⚠️ OVĚŘIT**, jestli se proužek zobrazuje i pro zelené pásmo.
 - V patičce je uprostřed výběr „na stránku“ (výchozí 500).
 - Zobrazuje se dotazník z aktivní monitorace pacienta. Pokud žádná aktivní není, zobrazí se poslední monitorace.
 
-**Filtr**
+**Panel nástrojů** (pravý sloupec, NOVÉ)
+- Nahoře jsou záložky s ikonou a názvem: **Filtr** (ikona trychtýře) a **Řazení** (ikona šipek ↑↓).
+  - Aktivní záložka je modrá a podtržená, neaktivní šedá. Přepíná se kliknutím, výchozí je Filtr.
+  - Když se nastavení záložky liší od výchozího, je za jejím názvem malá modrá tečka.
+- Panel je **škálovatelný**: další nástroje (např. Export, Sloupce) se přidají jako další záložka (`TOOLS` v `Dashboard.tsx`).
+- Tlačítko dole v panelu („Uložit jako pohled“ / „Uložit změny filtru“) je vidět na všech záložkách.
+
+**Záložka Řazení**
+- *Řadit podle* (přepínač):
+  - **Naléhavosti** (výchozí): podle stavu posledního dotazníku po termínu, v pořadí červené → vyžádal kontrolu → žluté → N/A → zelené → jen budoucí termíny. Při shodě podle jména.
+  - **Jména**, **Rodného čísla**, **Posledního vyplnění**.
+- *Pořadí* (přepínač) s popisky podle zvoleného řazení:
+  - Naléhavost: „Nejnaléhavější nahoře / dole“;
+  - Jméno: „A → Z / Z → A“;
+  - Rodné číslo: „Vzestupně / Sestupně“;
+  - Poslední vyplnění: „Nejnovější / Nejstarší nahoře“.
+- Odkaz „Obnovit výchozí řazení“ se zobrazí jen při změně.
+- Poznámka: „Řazení platí jen pro aktuální zobrazení a neukládá se do pohledu.“
+
+**Záložka Filtr**
+- Odkaz „Obnovit výchozí“ (v pohledu „Zahodit změny“) je vpravo nahoře, jen při změně.
 - *Skóre* (zaškrtávací pole s barevnou tečkou): Zelené pásmo, Žluté pásmo, Červené pásmo, Vyžádal kontrolu, Nevyplněno.
   - Výchozí stav: zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
@@ -95,7 +112,7 @@ Pohled je **pojmenovaná kombinace filtrů Dashboardu**, kterou si uživatel ulo
   - Poslední položka je šedé „+ Nový pohled“.
 - **Vytvoření pohledu**, dva způsoby:
   1. „+ Nový pohled“ v menu → dialog *Nový pohled* (pole Název\*) → vytvoří pohled s výchozím filtrem a otevře ho.
-  2. Na Dashboardu tlačítko **Uložit jako pohled** (dole v panelu Filtrovat) → dialog s názvem → uloží aktuální filtr.
+  2. Na Dashboardu tlačítko **Uložit jako pohled** (dole v pravém panelu) → dialog s názvem → uloží aktuální filtr.
 - **Stránka pohledu** (`/pohledy/:id`):
   - drobečková navigace Dashboard › Pohledy, nadpis = název pohledu;
   - vpravo nahoře tlačítka **Přejmenovat** (šedé) a **Smazat** (červené, s potvrzením);
@@ -106,7 +123,7 @@ Pohled je **pojmenovaná kombinace filtrů Dashboardu**, kterou si uživatel ulo
   - bez změn tlačítko ukazuje „Filtr je uložen“.
 - **Výchozí Dashboard** se nedá přepsat. Při změně filtru se objeví odkaz „Obnovit výchozí“.
 
-### Panel Filtrovat (rozšířený)
+### Záložka Filtr (rozšířená)
 
 Pod původní skupiny Skóre a Datum vyplnění přibyly:
 
@@ -372,6 +389,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Dashboard: řazení přesunuto z lišty nad tabulkou do pravého panelu – záložky „Filtr“ a „Řazení“ (s ikonami), škálovatelné pro další nástroje. |
 | 2026-10-14 | Dashboard: řazení (naléhavost, jméno, RČ, poslední vyplnění), legenda barev ⓘ, budoucí termíny odlišené od N/A. Klinický report: kontakt na pacienta, odpovědi od nejzávažnějších, porovnání s předchozím dotazníkem. Kartotéka: sloupec e-Skill, rychlá akce „+ Monitorace“. Pacient: nadpisy „Nový pacient / Upravit pacienta / Monitorace pacienta“, měkká kontrola RČ. e-Skill: varování při odchodu, datum úkolu 9 náhodně za 1–6 týdnů. Sjednocení češtiny („Pacienti“, „Monitorace pacienta“, „N/A“). |
 | 2026-10-07 | Odznaky dotazníků: vždy čtverec 32 × 32 px, menší zaoblení (4 px), „N/A“ velkými písmeny. |
 | 2026-10-07 | Kartotéka: sloupec „Aktivní plán“ (Aktivní / Naplánováno / Ukončeno / Bez plánu). |

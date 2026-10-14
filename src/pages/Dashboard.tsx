@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ClassificationBadge } from '../components/programs'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { latestDue, QuestionnaireBadges, statusOf } from '../components/QuestionnaireBadges'
-import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/20/solid'
+import { ArrowsUpDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
 import { CLASSIFICATIONS, DEFAULT_FILTERS } from '../data/programs'
@@ -15,11 +15,18 @@ import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
 const SCORE_FILTERS: DashboardFilters['scores'] = ['green', 'yellow', 'red', 'blue', 'na']
 
 type SortKey = 'urgency' | 'name' | 'rc' | 'lastFilled'
-const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'urgency', label: 'Naléhavosti' },
-  { key: 'name', label: 'Jména' },
-  { key: 'rc', label: 'Rodného čísla' },
-  { key: 'lastFilled', label: 'Posledního vyplnění' },
+const SORTS: { key: SortKey; label: string; asc: string; desc: string }[] = [
+  { key: 'urgency', label: 'Naléhavosti', asc: 'Nejnaléhavější nahoře', desc: 'Nejnaléhavější dole' },
+  { key: 'name', label: 'Jména', asc: 'A → Z', desc: 'Z → A' },
+  { key: 'rc', label: 'Rodného čísla', asc: 'Vzestupně', desc: 'Sestupně' },
+  { key: 'lastFilled', label: 'Posledního vyplnění', asc: 'Nejnovější nahoře', desc: 'Nejstarší nahoře' },
+]
+
+/** Nástroje v pravém panelu (přepínají se záložkami). Další nástroje lze přidat sem. */
+type ToolKey = 'filter' | 'sort'
+const TOOLS: { key: ToolKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: 'filter', label: 'Filtr', icon: FunnelIcon },
+  { key: 'sort', label: 'Řazení', icon: ArrowsUpDownIcon },
 ]
 /** Pořadí naléhavosti podle stavu nejnovějšího dotazníku, jehož termín už nastal. */
 const URGENCY: Record<Status, number> = { red: 0, blue: 1, yellow: 2, na: 3, green: 4, future: 5 }
@@ -235,6 +242,7 @@ function PatientsBoard({
   const [search, setSearch] = useState('')
   const [perPage, setPerPage] = useState(500)
   const [report, setReport] = useState<Questionnaire | null>(null)
+  const [tool, setTool] = useState<ToolKey>('filter')
   const [sort, setSort] = useState<SortKey>('urgency')
   const [desc, setDesc] = useState(false)
 
@@ -299,32 +307,7 @@ function PatientsBoard({
             <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
             <span className="text-sm text-gray-500 tabular-nums">{rows.length} pacientů</span>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 sm:px-6">
-            <div className="flex items-center gap-2 text-sm">
-              <label htmlFor="sort" className="text-gray-500">
-                Řadit podle
-              </label>
-              <select
-                id="sort"
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-                className="rounded-lg border-none bg-white py-1.5 pl-3 pr-8 text-sm text-gray-950 shadow-sm ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600"
-              >
-                {SORTS.map((o) => (
-                  <option key={o.key} value={o.key}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setDesc(!desc)}
-                title={desc ? 'Obrácené pořadí' : 'Výchozí pořadí'}
-                className="rounded-lg p-2 text-gray-500 shadow-sm ring-1 ring-gray-950/10 hover:bg-gray-50"
-              >
-                {desc ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />}
-              </button>
-            </div>
+          <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
             <SearchInput value={search} onChange={setSearch} className="w-full sm:max-w-xs" />
           </div>
           <div className="overflow-x-auto">
@@ -375,15 +358,66 @@ function PatientsBoard({
         </div>
 
         {/* Filtr */}
-        <aside className="flex w-full shrink-0 flex-col border-t border-gray-200 px-6 py-4 xl:w-72 xl:border-t-0">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-base font-semibold leading-6 text-gray-950">Filtrovat</h2>
-            {onReset && (
-              <button onClick={onReset} className="text-sm font-medium text-primary-600 hover:underline">
-                {resetLabel}
-              </button>
-            )}
+        <aside className="flex w-full shrink-0 flex-col border-t border-gray-200 xl:w-72 xl:border-t-0">
+          {/* Nástroje panelu – přepínací záložky. Další nástroj = nová položka v TOOLS. */}
+          <div className="flex border-b border-gray-200 px-3" role="tablist">
+            {TOOLS.map(({ key, label, icon: Icon }) => {
+              const active = tool === key
+              const changed = key === 'filter' ? !!onReset : sort !== 'urgency' || desc
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTool(key)}
+                  className={cx(
+                    '-mb-px flex items-center gap-1.5 border-b-2 px-3 py-3.5 text-sm font-semibold transition',
+                    active ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700',
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                  {changed && <span className="h-1.5 w-1.5 rounded-full bg-primary-600" title="Změněno oproti výchozímu" />}
+                </button>
+              )
+            })}
           </div>
+
+          <div className="flex flex-1 flex-col px-6 pb-4">
+          {tool === 'sort' && (
+            <>
+              <FilterGroup title="Řadit podle">
+                {SORTS.map((o) => (
+                  <Radio key={o.key} name="sort" checked={sort === o.key} onChange={() => setSort(o.key)} label={o.label} />
+                ))}
+              </FilterGroup>
+              <FilterGroup title="Pořadí">
+                <Radio name="dir" checked={!desc} onChange={() => setDesc(false)} label={SORTS.find((o) => o.key === sort)!.asc} />
+                <Radio name="dir" checked={desc} onChange={() => setDesc(true)} label={SORTS.find((o) => o.key === sort)!.desc} />
+              </FilterGroup>
+              {(sort !== 'urgency' || desc) && (
+                <button
+                  onClick={() => {
+                    setSort('urgency')
+                    setDesc(false)
+                  }}
+                  className="mt-6 self-start text-sm font-medium text-primary-600 hover:underline"
+                >
+                  Obnovit výchozí řazení
+                </button>
+              )}
+              <p className="mt-6 text-xs text-gray-400">Řazení platí jen pro aktuální zobrazení a neukládá se do pohledu.</p>
+            </>
+          )}
+
+          {tool === 'filter' && (
+          <>
+          {onReset && (
+            <button onClick={onReset} className="mt-4 self-end text-sm font-medium text-primary-600 hover:underline">
+              {resetLabel}
+            </button>
+          )}
 
           <FilterGroup title="Skóre">
             {SCORE_FILTERS.map((s) => (
@@ -452,7 +486,11 @@ function PatientsBoard({
             </div>
           </FilterGroup>
 
+          </>
+          )}
+
           {panelFooter && <div className="mt-8 border-t border-gray-200 pt-4">{panelFooter}</div>}
+          </div>
         </aside>
       </Card>
 

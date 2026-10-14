@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ClassificationBadge } from '../components/programs'
 import { BadgeLegend } from '../components/BadgeLegend'
-import { latestDue, QuestionnaireBadges, statusOf } from '../components/QuestionnaireBadges'
+import { BadgeRow, groupLabel, groupQuestionnaires, groupTone, latestDue, statusOf } from '../components/QuestionnaireBadges'
 import { ArrowsUpDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
@@ -296,6 +296,13 @@ function PatientsBoard({
       })
   }, [db, search, filters, sort, desc])
 
+  // Sloupce skupin: Plánované a Poslední měsíc vždy, pak roky, které se v zobrazených řádcích vyskytují.
+  const groupKeys = useMemo(() => {
+    const years = new Set<string>()
+    for (const r of rows) for (const g of groupQuestionnaires(r.qs)) if (g.key !== 'future' && g.key !== 'month') years.add(g.key)
+    return ['future', 'month', ...[...years].sort().reverse()]
+  }, [rows])
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title={title} breadcrumbs={breadcrumbs} actions={headerActions} />
@@ -314,14 +321,32 @@ function PatientsBoard({
             <table className="w-full table-auto divide-y divide-gray-200 text-start">
               <thead className="whitespace-nowrap bg-gray-50/50">
                 <tr>
-                  <th className="w-56 px-6 py-3.5 text-start text-sm font-semibold text-gray-950">Celé jméno</th>
-                  <th className="w-32 px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Rodné číslo</th>
-                  <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">
+                  <th rowSpan={2} className="px-6 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
+                    Celé jméno
+                  </th>
+                  <th rowSpan={2} className="px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
+                    Rodné číslo
+                  </th>
+                  <th colSpan={groupKeys.length} className="px-3 pb-1 pt-3 text-start text-sm font-semibold text-gray-950">
                     <span className="inline-flex items-center gap-1.5">
                       Dotazníky
                       <BadgeLegend />
                     </span>
                   </th>
+                </tr>
+                {/* Pevné sloupce skupin – kategorie jsou v zákrytu napříč pacienty */}
+                <tr>
+                  {groupKeys.map((k) => (
+                    <th
+                      key={k}
+                      className={cx(
+                        'border-l border-gray-200 px-3 pb-2 pt-1 text-start text-[10px] font-semibold uppercase tracking-wider',
+                        k === 'month' ? 'text-primary-600' : 'text-gray-400',
+                      )}
+                    >
+                      {groupLabel(k)}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 whitespace-nowrap">
@@ -336,15 +361,24 @@ function PatientsBoard({
                         {program && <div className="mt-0.5 text-xs text-gray-400">{program.name}</div>}
                       </td>
                       <td className="px-3 py-4 text-sm text-gray-950">{patient.rodneCislo}</td>
-                      <td className="px-3 py-3">
-                        <QuestionnaireBadges questionnaires={qs} onOpenReport={setReport} />
-                      </td>
+                      {groupKeys.map((k) => {
+                        const items = groupQuestionnaires(qs).find((g) => g.key === k)?.items ?? []
+                        return (
+                          <td key={k} className={cx('min-w-[3.75rem] border-l border-gray-200 px-3 py-3 align-middle', groupTone(k))}>
+                            {items.length ? (
+                              <BadgeRow items={items} onOpenReport={setReport} wrap />
+                            ) : (
+                              <span className="block min-w-[2.25rem] text-center text-sm text-gray-300">—</span>
+                            )}
+                          </td>
+                        )
+                      })}
                     </tr>
                   )
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={groupKeys.length + 2} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>

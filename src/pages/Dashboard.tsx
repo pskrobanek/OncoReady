@@ -336,6 +336,8 @@ function PatientsBoard({
                       <BadgeLegend />
                     </span>
                   </th>
+                  {/* Výplň – sloupce skupin jsou jen tak široké, jak potřebují */}
+                  <th rowSpan={2} className="border-l border-gray-200" />
                 </tr>
                 {/* Pevné sloupce skupin – kategorie jsou v zákrytu napříč pacienty */}
                 <tr>
@@ -343,7 +345,7 @@ function PatientsBoard({
                     <th
                       key={k}
                       className={cx(
-                        'border-l border-gray-200 px-3 pb-2 pt-1 text-start text-[10px] font-semibold uppercase tracking-wider',
+                        'w-px border-l border-gray-200 px-3 pb-2 pt-1 text-start text-[10px] font-semibold uppercase tracking-wider',
                         k === 'month' ? 'text-primary-600' : 'text-gray-400',
                       )}
                     >
@@ -369,7 +371,7 @@ function PatientsBoard({
                       {groupKeys.map((k) => {
                         const items = groupQuestionnaires(qs).find((g) => g.key === k)?.items ?? []
                         return (
-                          <td key={k} className={cx('min-w-[3.75rem] border-l border-gray-200 px-3 py-3 align-middle group-hover:brightness-[0.98]', groupTone(k))}>
+                          <td key={k} className={cx('w-px min-w-[3.75rem] border-l border-gray-200 px-3 py-3 align-middle group-hover:brightness-[0.98]', groupTone(k))}>
                             {k === 'future' && items.length > 1 ? (
                               <PlannedCell
                                 items={items}
@@ -392,12 +394,13 @@ function PatientsBoard({
                           </td>
                         )
                       })}
+                      <td className="border-l border-gray-200 group-hover:bg-gray-50" />
                     </tr>
                   )
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={groupKeys.length + 1} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={groupKeys.length + 2} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>

@@ -39,6 +39,31 @@ function makeAnswers(score: number, band: Band, pinned: Record<string, number> =
   return answers
 }
 
+
+/** Datum „dneška“ v demo datech – termíny po něm jsou plánované (nevyplněné). */
+const SEED_TODAY = '2026-10-14'
+
+const addD = (iso: string, days: number) => {
+  const d = new Date(iso + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * Pravidelná řada termínů od `from` do `to` po `every` dnech (výstup od nejnovějšího).
+ * `pattern` se cyklicky přiřazuje termínům od nejstaršího: [skóre, pásmo] nebo 'na'.
+ * Termíny po SEED_TODAY jsou vždy nevyplněné (plánované).
+ */
+function series(from: string, to: string, every: number, pattern: ([number, Band] | 'na')[]): Entry[] {
+  const out: Entry[] = []
+  let i = 0
+  for (let d = from; d <= to; d = addD(d, every), i++) {
+    const p = pattern[i % pattern.length]
+    out.push(d > SEED_TODAY || p === 'na' ? { date: d, na: true } : { date: d, score: p[0], band: p[1] })
+  }
+  return out.reverse()
+}
+
 let qSeq = 0
 function monitoring(
   patientId: string,
@@ -96,12 +121,13 @@ const mons = [
     { date: '2026-03-30', score: 9, band: 'red' },
     { date: '2026-03-23', score: 22, band: 'blue' },
   ]),
-  monitoring('p2', 'm2', 'pr2', '2026-09-01', '2026-10-27', true, [
-    { date: '2026-10-06', score: 4, band: 'green' },
-    { date: '2026-09-29', score: 6, band: 'green' },
-    { date: '2026-09-22', score: 5, band: 'green' },
-    { date: '2026-09-15', score: 3, band: 'green' },
-  ]),
+  // Dlouhá Eva – dlouhodobé sledování po 14 dnech od listopadu 2025 (ukázka roků 2025 / 2026)
+  monitoring('p2', 'm2', 'pr2', '2025-11-04', '2026-12-29', true,
+    series('2025-11-04', '2026-12-29', 14, [
+      [5, 'green'], [7, 'green'], [9, 'yellow'], [12, 'red'], [8, 'yellow'], 'na', [6, 'green'], [4, 'green'],
+      [3, 'green'], [10, 'blue'], [6, 'green'], [5, 'green'], 'na', [7, 'green'], [8, 'yellow'], [4, 'green'],
+    ]),
+  ),
   monitoring('p3', 'm3', 'pr3', '2026-08-05', '2026-09-30', true, [
     { date: '2026-09-02', score: 23, band: 'red' },
     { date: '2026-08-26', na: true },
@@ -116,11 +142,13 @@ const mons = [
     { date: '2026-04-05', score: 5, band: 'green' },
     { date: '2026-03-29', score: 4, band: 'blue' },
   ]),
-  monitoring('p6', 'm6', 'pr4', '2026-09-08', '2026-11-03', true, [
-    { date: '2026-10-05', score: 9, band: 'yellow' },
-    { date: '2026-09-28', score: 7, band: 'green' },
-    { date: '2026-09-21', score: 8, band: 'yellow' },
-  ]),
+  // Krokerová Petra – týdenní akutní toxicita, zhoršení v posledním měsíci
+  monitoring('p6', 'm6', 'pr4', '2026-07-01', '2026-11-11', true,
+    series('2026-07-01', '2026-11-11', 7, [
+      [3, 'green'], [4, 'green'], [6, 'green'], [8, 'yellow'], [7, 'green'], 'na', [9, 'yellow'],
+      [11, 'yellow'], [13, 'red'], [10, 'yellow'], [12, 'blue'], [15, 'red'], [9, 'yellow'], [8, 'yellow'], [14, 'red'],
+    ]),
+  ),
   monitoring('p7', 'm7', 'pr1', '2026-03-04', '2026-04-30', true, [
     { date: '2026-04-26', score: 14, band: 'red' },
     { date: '2026-04-19', score: 2, band: 'green' },
@@ -147,11 +175,14 @@ const mons = [
     { date: '2026-10-15', na: true },
     { date: '2026-10-08', na: true },
   ]),
-  monitoring('p10', 'm10', 'pr5', '2026-09-10', '2026-10-22', true, [
-    { date: '2026-10-01', score: 2, band: 'green' },
-    { date: '2026-09-24', score: 5, band: 'green' },
-    { date: '2026-09-17', score: 6, band: 'green' },
-  ]),
+  // Šťastná Lucie – pozdní toxicita, měsíčně od září 2025
+  monitoring('p10', 'm10', 'pr5', '2025-09-15', '2027-03-15', true,
+    series('2025-09-15', '2027-03-15', 30, [[2, 'green'], [4, 'green'], [3, 'green'], 'na', [6, 'green'], [5, 'green'], [9, 'yellow'], [2, 'green']]),
+  ),
+  // Kokošková Ema – nově zahájená monitorace, jedno upozornění v posledním měsíci
+  monitoring('p4', 'm4', 'pr1', '2026-08-20', '2026-12-03', true,
+    series('2026-08-20', '2026-12-03', 7, [[4, 'green'], [6, 'green'], 'na', [7, 'green'], [9, 'yellow'], [5, 'green'], [16, 'red'], [8, 'blue'], [6, 'green']]),
+  ),
 ]
 
 export const seedDB = (): DB => ({

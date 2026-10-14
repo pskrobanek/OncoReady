@@ -45,6 +45,7 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
   - Zařazení se řídí datem vyplnění, u nevyplněných datem termínu. Uvnitř skupiny je nejnovější vlevo.
   - **Na Dashboardu (a v pohledech) jsou skupiny pevné sloupce tabulky**, takže kategorie jsou u všech pacientů v zákrytu:
     - dvouřádková hlavička: nahoře „Dotazníky ⓘ“ přes všechny sloupce skupin, pod ní popisky sloupců 10 px velkými písmeny (Poslední měsíc modře, ostatní šedě);
+    - **šířka sloupce skupiny = nejdelší řádek v daném sloupci** (sloupec se nenatahuje); zbylé místo vpravo vyplní prázdný sloupec;
     - sloupce Plánované a Poslední měsíc jsou vždy; sloupce let jen ty, které se v zobrazených řádcích vyskytují (nejnovější rok vlevo);
     - sloupce oddělené svislou čarou; podklad: Plánované bílý, Poslední měsíc světle modrý, roky světle šedý;
     - prázdná buňka ukazuje šedou pomlčku „—“, aby byl sloupec patrný i bez dotazníků;
@@ -404,6 +405,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Dashboard: sloupce skupin jen tak široké, jak je potřeba. Demo data: delší historie dotazníků u Dlouhé, Krokerové, Šťastné (od 2025) a nová monitorace u Kokoškové. |
 | 2026-10-14 | Dashboard: rodné číslo pod jménem (sloupec „Pacient“), sloupec Plánované ukazuje jen nejbližší dotazník, zbytek po kliknutí na „+N“. |
 | 2026-10-14 | Dashboard: dotazníky vždy v jednom řádku, při nedostatku místa vodorovný posuvník; jméno a RČ ukotvené vlevo. |
 | 2026-10-14 | Dashboard: skupiny dotazníků jako pevné sloupce tabulky (Plánované / Poslední měsíc / roky) v zákrytu napříč pacienty, prázdné buňky s „—“. |

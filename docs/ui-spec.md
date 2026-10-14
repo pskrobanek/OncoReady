@@ -49,7 +49,8 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
     - sloupce oddělené svislou čarou; podklad: Plánované bílý, Poslední měsíc světle modrý, roky světle šedý;
     - prázdná buňka ukazuje šedou pomlčku „—“, aby byl sloupec patrný i bez dotazníků;
     - odznaky jsou vždy **v jednom řádku** (řádky tabulky se nenatahují do výšky);
-    - když se dotazníky nevejdou do šířky, část s dotazníky se **posouvá vodorovně** (posuvník pod tabulkou). Sloupce **Celé jméno** (224 px) a **Rodné číslo** (112 px) zůstávají při posunu na místě, odděluje je svislá linka a pod nimi dotazníky „podjíždějí“.
+    - když se dotazníky nevejdou do šířky, část s dotazníky se **posouvá vodorovně** (posuvník pod tabulkou). Sloupec **Pacient** (240 px) zůstává při posunu na místě, odděluje ho svislá linka a pod ním dotazníky „podjíždějí“;
+    - **sloupec Plánované je sbalený**: vidět je jen **nejbližší další dotazník** a vlevo od něj šedé tlačítko „+N“ (počet dalších plánovaných). Klik rozbalí všechny plánované termíny v řádku (nejbližší vpravo, u sloupce Poslední měsíc) a tlačítko se změní na „−“. Rozbalení platí pro jednoho pacienta a neukládá se. Má-li pacient jen jeden plánovaný termín, tlačítko se nezobrazí.
   - V kartě pacienta (Monitorace pacienta) jsou skupiny vedle sebe v jednom řádku jako malé rámečky s popiskem (Plánované = čárkovaný rámeček).
 - **Rozměr**: vždy **čtverec 32 × 32 px** se zaoblením 4 px (rozestup odznaků 36 px), bez ohledu na obsah.
 - **Vyplněný dotazník**: barevný čtverec s celkovým skóre (bílé tučné číslo, 14 px), pod ním datum vyplnění ve formátu `12.4.` (10 px, šedá).
@@ -84,7 +85,8 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
 **Tabulka**
 - Hledání vpravo nahoře hledá ve jméně a rodném čísle.
 - **Řazení** je v pravém panelu na záložce *Řazení* (viz *Panel nástrojů*). Výchozí je řazení podle naléhavosti.
-- Sloupce: Celé jméno (`Příjmení Jméno →`, odkaz na úpravu pacienta), Rodné číslo, Dotazníky.
+- Sloupce: **Pacient** a Dotazníky (skupiny).
+  - Pacient: na prvním řádku `Příjmení Jméno →` (odkaz na úpravu pacienta), pod ním šedě malým písmem „RČ 3 · název monitorace“. Rodné číslo už nemá vlastní sloupec.
 - **Barevný proužek vlevo u řádku** (3 px) ukazuje stav *nejnovějšího dotazníku, jehož termín už nastal* (budoucí termíny se přeskočí): červený, modrý nebo žlutý. Když je to N/A nebo zelené, proužek se nezobrazí.
   - **⚠️ OVĚŘIT**, jestli se proužek zobrazuje i pro zelené pásmo.
 - V patičce je uprostřed výběr „na stránku“ (výchozí 500).
@@ -402,6 +404,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Dashboard: rodné číslo pod jménem (sloupec „Pacient“), sloupec Plánované ukazuje jen nejbližší dotazník, zbytek po kliknutí na „+N“. |
 | 2026-10-14 | Dashboard: dotazníky vždy v jednom řádku, při nedostatku místa vodorovný posuvník; jméno a RČ ukotvené vlevo. |
 | 2026-10-14 | Dashboard: skupiny dotazníků jako pevné sloupce tabulky (Plánované / Poslední měsíc / roky) v zákrytu napříč pacienty, prázdné buňky s „—“. |
 | 2026-10-14 | Odznaky dotazníků rozdělené do skupin: Plánované → Poslední měsíc → starší po letech. |

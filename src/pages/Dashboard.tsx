@@ -22,8 +22,9 @@ const SORTS: { key: SortKey; label: string; asc: string; desc: string }[] = [
   { key: 'lastFilled', label: 'Posledního vyplnění', asc: 'Nejnovější nahoře', desc: 'Nejstarší nahoře' },
 ]
 
-/** Sloupec Rodné číslo zůstává při vodorovném posunu na místě (hned za jménem); stín odděluje posuvnou část. */
-const STICKY_RC = 'sticky left-[14rem] w-28 min-w-[7rem] px-3 shadow-[inset_-1px_0_0_#e5e7eb]'
+/** Sloupec pacienta (jméno + RČ) zůstává při vodorovném posunu na místě; svislá linka odděluje posuvnou část. */
+const STICKY_PATIENT =
+  'sticky left-0 w-60 min-w-[15rem] after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-gray-200'
 
 /** Nástroje v pravém panelu (přepínají se záložkami). Další nástroje lze přidat sem. */
 type ToolKey = 'filter' | 'sort'
@@ -246,6 +247,8 @@ function PatientsBoard({
   const [perPage, setPerPage] = useState(500)
   const [report, setReport] = useState<Questionnaire | null>(null)
   const [tool, setTool] = useState<ToolKey>('filter')
+  // Pacienti, u kterých je rozbalený sloupec Plánované
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [sort, setSort] = useState<SortKey>('urgency')
   const [desc, setDesc] = useState(false)
 
@@ -324,11 +327,8 @@ function PatientsBoard({
             <table className="w-full table-auto divide-y divide-gray-200 text-start">
               <thead className="whitespace-nowrap bg-gray-50/50">
                 <tr>
-                  <th rowSpan={2} className="sticky left-0 z-10 w-56 min-w-[14rem] bg-gray-50 px-6 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
-                    Celé jméno
-                  </th>
-                  <th rowSpan={2} className={cx(STICKY_RC, 'z-10 bg-gray-50 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
-                    Rodné číslo
+                  <th rowSpan={2} className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-6 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
+                    Pacient
                   </th>
                   <th colSpan={groupKeys.length} className="px-3 pb-1 pt-3 text-start text-sm font-semibold text-gray-950">
                     <span className="inline-flex items-center gap-1.5">
@@ -357,18 +357,34 @@ function PatientsBoard({
                   return (
                     <tr key={patient.id} className="group">
                       {/* Barevný proužek vlevo = stav nejnovějšího dotazníku, jehož termín už nastal */}
-                      <td className={cx('sticky left-0 z-[1] w-56 min-w-[14rem] bg-white px-6 py-4 text-sm text-gray-950 group-hover:bg-gray-50', BAND_META[latest].stripe)}>
-                        <Link to={`/kartoteka/${patient.id}/upravit`} className="hover:underline">
+                      <td className={cx(STICKY_PATIENT, 'z-[1] bg-white px-6 py-3 text-sm text-gray-950 group-hover:bg-gray-50', BAND_META[latest].stripe)}>
+                        <Link to={`/kartoteka/${patient.id}/upravit`} className="font-medium hover:underline">
                           {tableName(patient)} →
                         </Link>
-                        {program && <div className="mt-0.5 text-xs text-gray-400">{program.name}</div>}
+                        <div className="mt-0.5 truncate text-xs text-gray-500">
+                          <span className="tabular-nums">RČ {patient.rodneCislo}</span>
+                          {program && <span className="text-gray-400"> · {program.name}</span>}
+                        </div>
                       </td>
-                      <td className={cx(STICKY_RC, 'z-[1] bg-white py-4 text-sm text-gray-950 group-hover:bg-gray-50')}>{patient.rodneCislo}</td>
                       {groupKeys.map((k) => {
                         const items = groupQuestionnaires(qs).find((g) => g.key === k)?.items ?? []
                         return (
                           <td key={k} className={cx('min-w-[3.75rem] border-l border-gray-200 px-3 py-3 align-middle group-hover:brightness-[0.98]', groupTone(k))}>
-                            {items.length ? (
+                            {k === 'future' && items.length > 1 ? (
+                              <PlannedCell
+                                items={items}
+                                expanded={expanded.has(patient.id)}
+                                onToggle={() =>
+                                  setExpanded((s) => {
+                                    const n = new Set(s)
+                                    if (n.has(patient.id)) n.delete(patient.id)
+                                    else n.add(patient.id)
+                                    return n
+                                  })
+                                }
+                                onOpenReport={setReport}
+                              />
+                            ) : items.length ? (
                               <BadgeRow items={items} onOpenReport={setReport} />
                             ) : (
                               <span className="block min-w-[2.25rem] text-center text-sm text-gray-300">—</span>
@@ -381,7 +397,7 @@ function PatientsBoard({
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={groupKeys.length + 2} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={groupKeys.length + 1} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>
@@ -541,6 +557,38 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
     <div className="mt-6">
       <h3 className="mb-3 text-sm font-medium text-gray-950">{title}</h3>
       <div className="flex flex-col gap-3">{children}</div>
+    </div>
+  )
+}
+
+/**
+ * Sloupec Plánované: ve výchozím stavu jen nejbližší další dotazník a tlačítko „+N“,
+ * po rozkliknutí všechny plánované termíny (nejbližší vpravo, u sloupce Poslední měsíc).
+ */
+function PlannedCell({
+  items,
+  expanded,
+  onToggle,
+  onOpenReport,
+}: {
+  items: Questionnaire[]
+  expanded: boolean
+  onToggle: () => void
+  onOpenReport: (q: Questionnaire) => void
+}) {
+  const next = items[items.length - 1] // položky jsou seřazené od nejvzdálenějšího termínu
+  const rest = items.length - 1
+  return (
+    <div className="flex items-start gap-1.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        title={expanded ? 'Skrýt další plánované dotazníky' : `Zobrazit další plánované dotazníky (${rest})`}
+        className="flex h-8 min-w-8 items-center justify-center rounded border border-gray-200 bg-gray-50 px-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+      >
+        {expanded ? '−' : `+${rest}`}
+      </button>
+      <BadgeRow items={expanded ? items : [next]} onOpenReport={onOpenReport} />
     </div>
   )
 }

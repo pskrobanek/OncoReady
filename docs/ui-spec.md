@@ -22,6 +22,7 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
 
 | Token | Hodnota | Použití |
 | --- | --- | --- |
+| 2026-10-14 | Dashboard a pohledy: nový sloupec „Zdroj“ za sloupcem Pacient, zatím jen typ „📋 Dotazník“. |
 | primary-600 | `#2550f0` | tlačítka Vytvořit/Uložit, aktivní menu, odkazy akcí |
 | danger | `#dc2626` | Smazat, červené pásmo |
 | zelené pásmo | `#10b981` | odznak skóre |
@@ -86,8 +87,9 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
 **Tabulka**
 - Hledání vpravo nahoře hledá ve jméně a rodném čísle.
 - **Řazení** je v pravém panelu na záložce *Řazení* (viz *Panel nástrojů*). Výchozí je řazení podle naléhavosti.
-- Sloupce: **Pacient** a Dotazníky (skupiny).
+- Sloupce: **Pacient**, **Zdroj** a Dotazníky (skupiny).
   - Pacient: na prvním řádku `Příjmení Jméno →` (odkaz na úpravu pacienta), pod ním šedě malým písmem „RČ 3 · název monitorace“. Rodné číslo už nemá vlastní sloupec.
+  - Zdroj: odkud jsou data v řádku. Zatím jen jeden typ – „📋 Dotazník“ (šedý text). Sloupec není ukotvený (při vodorovném posunu odjede). Do budoucna se počítá s dalšími zdroji (laboratoř, wearables) – **⚠️ OVĚŘIT**, zatím neimplementováno.
 - **Barevný proužek vlevo u řádku** (3 px) ukazuje stav *nejnovějšího dotazníku, jehož termín už nastal* (budoucí termíny se přeskočí): červený, modrý nebo žlutý. Když je to N/A nebo zelené, proužek se nezobrazí.
   - **⚠️ OVĚŘIT**, jestli se proužek zobrazuje i pro zelené pásmo.
 - V patičce je uprostřed výběr „na stránku“ (výchozí 500).

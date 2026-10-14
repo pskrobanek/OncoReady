@@ -326,6 +326,10 @@ function PatientsBoard({
                   <th rowSpan={2} className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-6 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
                     Pacient
                   </th>
+                  {/* Zdroj dat řádku – zatím jen dotazník */}
+                  <th rowSpan={2} className="w-px px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
+                    Zdroj
+                  </th>
                   <th colSpan={groupKeys.length} className="px-3 pb-1 pt-3 text-start text-sm font-semibold text-gray-950">
                     <span className="inline-flex items-center gap-1.5">
                       Dotazníky
@@ -367,6 +371,7 @@ function PatientsBoard({
                           {program && <span className="text-gray-400"> · {program.name}</span>}
                         </div>
                       </td>
+                      <td className="w-px px-3 py-3 text-sm text-gray-600 group-hover:bg-gray-50">📋 Dotazník</td>
                       {groupKeys.map((k) => {
                         const items = groupQuestionnaires(qs).find((g) => g.key === k)?.items ?? []
                         return (
@@ -399,7 +404,7 @@ function PatientsBoard({
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={groupKeys.length + 2} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={groupKeys.length + 3} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>

@@ -38,6 +38,12 @@ Primární modrá je odhadnutá ze screenshotu. **⚠️ OVĚŘIT** přesný HEX
 Používá se na Dashboardu i v tabulce Monitorace pacienta.
 
 - Odznaky stojí v jedné řadě a **nejnovější termín je vlevo**.
+- **Skupiny** (NOVÉ): odznaky jsou v řadě rozdělené do graficky oddělených skupin (mezera 8 px, zaoblený podklad 6 px, nahoře popisek 9 px velkými písmeny):
+  1. **PLÁNOVANÉ**: budoucí termíny; bílý podklad s čárkovaným šedým rámečkem, šedý popisek;
+  2. **POSLEDNÍ MĚSÍC**: vyplněné i N/A za posledních 30 dní; světle modrý podklad, modrý popisek;
+  3. **starší po letech** (popisek „2026“, „2025“…): šedý podklad, šedý popisek.
+  - Prázdná skupina se nezobrazuje. Uvnitř skupiny je nejnovější vlevo.
+  - Zařazení se řídí datem vyplnění, u nevyplněných datem termínu.
 - **Rozměr**: vždy **čtverec 32 × 32 px** se zaoblením 4 px (rozestup odznaků 36 px), bez ohledu na obsah.
 - **Vyplněný dotazník**: barevný čtverec s celkovým skóre (bílé tučné číslo, 14 px), pod ním datum vyplnění ve formátu `12.4.` (10 px, šedá).
   - Kliknutím se otevře *Klinický report*.
@@ -389,6 +395,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Odznaky dotazníků rozdělené do skupin: Plánované → Poslední měsíc → starší po letech. |
 | 2026-10-14 | Dashboard: řazení přesunuto z lišty nad tabulkou do pravého panelu – záložky „Filtr“ a „Řazení“ (s ikonami), škálovatelné pro další nástroje. |
 | 2026-10-14 | Dashboard: řazení (naléhavost, jméno, RČ, poslední vyplnění), legenda barev ⓘ, budoucí termíny odlišené od N/A. Klinický report: kontakt na pacienta, odpovědi od nejzávažnějších, porovnání s předchozím dotazníkem. Kartotéka: sloupec e-Skill, rychlá akce „+ Monitorace“. Pacient: nadpisy „Nový pacient / Upravit pacienta / Monitorace pacienta“, měkká kontrola RČ. e-Skill: varování při odchodu, datum úkolu 9 náhodně za 1–6 týdnů. Sjednocení češtiny („Pacienti“, „Monitorace pacienta“, „N/A“). |
 | 2026-10-07 | Odznaky dotazníků: vždy čtverec 32 × 32 px, menší zaoblení (4 px), „N/A“ velkými písmeny. |

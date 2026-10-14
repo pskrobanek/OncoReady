@@ -11,14 +11,14 @@ export function Statistiky() {
   const { db } = useStore()
   const counts = db.questionnaires.reduce<Record<Status, number>>(
     (acc, q) => ({ ...acc, [statusOf(q)]: acc[statusOf(q)] + 1 }),
-    { green: 0, yellow: 0, red: 0, blue: 0, na: 0 },
+    { green: 0, yellow: 0, red: 0, blue: 0, na: 0, future: 0 },
   )
-  const filled = db.questionnaires.length - counts.na
+  const filled = db.questionnaires.length - counts.na - counts.future
   const stats = [
     { label: 'Pacientů v kartotéce', value: db.patients.length },
     { label: 'Aktivních monitorací', value: db.monitorings.filter((m) => m.active).length },
     { label: 'Vyplněných dotazníků', value: filled },
-    { label: 'Míra vyplnění', value: db.questionnaires.length ? `${Math.round((filled / db.questionnaires.length) * 100)} %` : '—' },
+    { label: 'Míra vyplnění', value: filled + counts.na ? `${Math.round((filled / (filled + counts.na)) * 100)} %` : '—' },
   ]
   const max = Math.max(1, ...Object.values(counts))
 

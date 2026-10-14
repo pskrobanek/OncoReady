@@ -1,7 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ClassificationBadge } from '../components/programs'
-import { QuestionnaireBadges, statusOf } from '../components/QuestionnaireBadges'
+import { BadgeLegend } from '../components/BadgeLegend'
+import { latestDue, QuestionnaireBadges, statusOf } from '../components/QuestionnaireBadges'
+import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/20/solid'
 import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
 import { CLASSIFICATIONS, DEFAULT_FILTERS } from '../data/programs'
@@ -10,7 +12,17 @@ import { BAND_META, type Status } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
 import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
 
-const SCORE_FILTERS: Status[] = ['green', 'yellow', 'red', 'blue', 'na']
+const SCORE_FILTERS: DashboardFilters['scores'] = ['green', 'yellow', 'red', 'blue', 'na']
+
+type SortKey = 'urgency' | 'name' | 'rc' | 'lastFilled'
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'urgency', label: 'Naléhavosti' },
+  { key: 'name', label: 'Jména' },
+  { key: 'rc', label: 'Rodného čísla' },
+  { key: 'lastFilled', label: 'Posledního vyplnění' },
+]
+/** Pořadí naléhavosti podle stavu nejnovějšího dotazníku, jehož termín už nastal. */
+const URGENCY: Record<Status, number> = { red: 0, blue: 1, yellow: 2, na: 3, green: 4, future: 5 }
 const DATE_FILTERS: { key: DateFilter; label: string; days: number | null }[] = [
   { key: 'all', label: 'Vše', days: null },
   { key: '7', label: 'Poslední týden', days: 7 },
@@ -223,6 +235,8 @@ function PatientsBoard({
   const [search, setSearch] = useState('')
   const [perPage, setPerPage] = useState(500)
   const [report, setReport] = useState<Questionnaire | null>(null)
+  const [sort, setSort] = useState<SortKey>('urgency')
+  const [desc, setDesc] = useState(false)
 
   const tags = useMemo(() => [...new Set(db.programs.map((p) => p.tag).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'cs')), [db.programs])
 
@@ -249,6 +263,7 @@ function PatientsBoard({
         if (scores.size === 0 && !since) return true
         return r.qs.some((q) => {
           const st = statusOf(q)
+          if (st === 'future') return false // budoucí termíny se do filtru nepočítají
           if (scores.size > 0 && !scores.has(st)) return false
           if (since) {
             const date = q.filledAt ? q.filledAt.slice(0, 10) : q.scheduledFor
@@ -257,7 +272,21 @@ function PatientsBoard({
           return true
         })
       })
-  }, [db, search, filters])
+      .map((r) => {
+        const due = latestDue(r.qs)
+        const lastFilled = r.qs.reduce((m, q) => (q.filledAt && q.filledAt > m ? q.filledAt : m), '')
+        return { ...r, latest: due ? statusOf(due) : ('future' as Status), lastFilled }
+      })
+      .sort((a, b) => {
+        const byName = tableName(a.patient).localeCompare(tableName(b.patient), 'cs')
+        let c = 0
+        if (sort === 'urgency') c = URGENCY[a.latest] - URGENCY[b.latest]
+        else if (sort === 'rc') c = a.patient.rodneCislo.localeCompare(b.patient.rodneCislo, 'cs', { numeric: true })
+        else if (sort === 'lastFilled') c = b.lastFilled.localeCompare(a.lastFilled) // nejnovější první
+        else c = byName
+        return (desc ? -c : c) || byName
+      })
+  }, [db, search, filters, sort, desc])
 
   return (
     <div className="flex flex-col gap-8">
@@ -267,10 +296,35 @@ function PatientsBoard({
         {/* Tabulka pacientů */}
         <div className="min-w-0 flex-1 xl:border-r xl:border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
-            <h2 className="text-base font-semibold leading-6 text-gray-950">Patients Table</h2>
+            <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
             <span className="text-sm text-gray-500 tabular-nums">{rows.length} pacientů</span>
           </div>
-          <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 sm:px-6">
+            <div className="flex items-center gap-2 text-sm">
+              <label htmlFor="sort" className="text-gray-500">
+                Řadit podle
+              </label>
+              <select
+                id="sort"
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortKey)}
+                className="rounded-lg border-none bg-white py-1.5 pl-3 pr-8 text-sm text-gray-950 shadow-sm ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600"
+              >
+                {SORTS.map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setDesc(!desc)}
+                title={desc ? 'Obrácené pořadí' : 'Výchozí pořadí'}
+                className="rounded-lg p-2 text-gray-500 shadow-sm ring-1 ring-gray-950/10 hover:bg-gray-50"
+              >
+                {desc ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />}
+              </button>
+            </div>
             <SearchInput value={search} onChange={setSearch} className="w-full sm:max-w-xs" />
           </div>
           <div className="overflow-x-auto">
@@ -279,15 +333,19 @@ function PatientsBoard({
                 <tr>
                   <th className="w-56 px-6 py-3.5 text-start text-sm font-semibold text-gray-950">Celé jméno</th>
                   <th className="w-32 px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Rodné číslo</th>
-                  <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Dotazníky</th>
+                  <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">
+                    <span className="inline-flex items-center gap-1.5">
+                      Dotazníky
+                      <BadgeLegend />
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 whitespace-nowrap">
-                {rows.slice(0, perPage).map(({ patient, qs, program }) => {
-                  const latest = statusOf(qs[0])
+                {rows.slice(0, perPage).map(({ patient, qs, program, latest }) => {
                   return (
                     <tr key={patient.id} className="hover:bg-gray-50">
-                      {/* Barevný proužek vlevo = stav nejnovějšího dotazníku */}
+                      {/* Barevný proužek vlevo = stav nejnovějšího dotazníku, jehož termín už nastal */}
                       <td className={cx('px-6 py-4 text-sm text-gray-950', BAND_META[latest].stripe)}>
                         <Link to={`/kartoteka/${patient.id}/upravit`} className="hover:underline">
                           {tableName(patient)} →

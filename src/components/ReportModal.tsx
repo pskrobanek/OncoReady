@@ -1,10 +1,11 @@
 import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
+import { ArrowDownIcon, ArrowUpIcon, EnvelopeIcon, PhoneIcon } from '@heroicons/react/20/solid'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 import { QUESTIONS } from '../data/questionnaire'
 import { answerColor, answerPoints, BAND_META, bandOf, bandReason, totalScore } from '../lib/scoring'
 import { dateTime, reportName, shortDate } from '../lib/format'
 import { questionnairesOf, useStore } from '../lib/store'
-import type { Questionnaire } from '../lib/types'
+import type { Answers, Questionnaire } from '../lib/types'
 import { CloseButton, cx, Modal, useToast } from './ui'
 
 function answerText(qid: string, value: unknown): string {
@@ -13,6 +14,17 @@ function answerText(qid: string, value: unknown): string {
   if (q.type === 'scale') return Number(value).toFixed(2)
   if (q.type === 'choice') return q.options[Number(value)]?.label ?? '—'
   return value ? 'Ano' : 'Ne'
+}
+
+/** 420603277036 → +420 603 277 036 */
+const formatPhone = (t: string) => (/^\d{12}$/.test(t) ? `+${t.slice(0, 3)} ${t.slice(3, 6)} ${t.slice(6, 9)} ${t.slice(9)}` : t)
+
+/** Závažnost odpovědi pro řazení a porovnání (žádost o kontrolu = nejvýš). */
+function severity(qid: string, answers: Answers): number | null {
+  const q = QUESTIONS.find((x) => x.id === qid)!
+  if (answers[qid] === undefined) return null
+  if (q.type === 'control') return answers[qid] ? 5 : 0
+  return answerPoints(qid, answers[qid])
 }
 
 const DOT_FILL: Record<string, string> = { green: '#10b981', yellow: '#fbbf24', red: '#dc2626', blue: '#2563eb' }
@@ -39,7 +51,15 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
   const top = Math.ceil(Math.max(...trend.map((t) => t.score), step) / step) * step
   const ticks = Array.from({ length: top / step + 1 }, (_, i) => i * step)
 
-  const rows = QUESTIONS.filter((q) => answers[q.id] !== undefined)
+  // Předchozí vyplněný dotazník téže monitorace – pro porovnání odpovědí.
+  const previous = questionnairesOf(db, mon.id)
+    .filter((q) => q.answers && q.filledAt && q.filledAt < questionnaire.filledAt!)
+    .sort((a, b) => b.filledAt!.localeCompare(a.filledAt!))[0]
+
+  // Nejzávažnější odpovědi nahoře (stabilní řazení – při shodě pořadí z dotazníku).
+  const rows = QUESTIONS.filter((q) => answers[q.id] !== undefined).sort(
+    (a, b) => (severity(b.id, answers) ?? -1) - (severity(a.id, answers) ?? -1),
+  )
 
   const copy = () => {
     const text = [
@@ -61,6 +81,25 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold text-gray-950">Klinický report — {reportName(patient)}</h2>
           <p className="mt-0.5 text-sm text-gray-500">Datum odeslání: {dateTime(questionnaire.filledAt)}</p>
+          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
+            {patient.telefon ? (
+              <span className="inline-flex select-all items-center gap-1.5 tabular-nums">
+                <PhoneIcon className="h-4 w-4 text-gray-400" />
+                {formatPhone(patient.telefon)}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-gray-400">
+                <PhoneIcon className="h-4 w-4" />
+                Telefon nevyplněn
+              </span>
+            )}
+            {patient.email && (
+              <span className="inline-flex select-all items-center gap-1.5">
+                <EnvelopeIcon className="h-4 w-4 text-gray-400" />
+                {patient.email}
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className={cx('rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset', BAND_META[band].pill)}>
@@ -104,10 +143,19 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
           </ResponsiveContainer>
         </div>
 
+        <div className="mb-3 flex items-baseline justify-between gap-4">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500">Odpovědi (od nejzávažnějších)</h3>
+          <span className="text-xs text-gray-400">
+            {previous ? `Porovnání s dotazníkem z ${shortDate(previous.filledAt!)}` : 'Předchozí dotazník není k dispozici'}
+          </span>
+        </div>
         <div className="flex flex-col gap-3">
           {rows.map((q) => {
             const pts = answerPoints(q.id, answers[q.id])
             const isControl = q.type === 'control'
+            const now = severity(q.id, answers)
+            const before = previous ? severity(q.id, previous.answers!) : null
+            const delta = now !== null && before !== null ? now - before : null
             return (
               <div key={q.id} className="flex items-center gap-4 rounded-lg bg-gray-50 px-4 py-3 ring-1 ring-gray-950/5">
                 <div className="min-w-0 flex-1">
@@ -121,6 +169,18 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
                   )}
                 >
                   {answerText(q.id, answers[q.id])}
+                  {delta !== null && previous && (
+                    <div
+                      className={cx(
+                        'mt-0.5 flex items-center justify-end gap-1 text-xs font-medium',
+                        delta > 0 ? 'text-red-600' : delta < 0 ? 'text-emerald-600' : 'text-gray-400',
+                      )}
+                    >
+                      {delta > 0 ? <ArrowUpIcon className="h-3.5 w-3.5" /> : delta < 0 ? <ArrowDownIcon className="h-3.5 w-3.5" /> : null}
+                      {delta > 0 ? 'horší' : delta < 0 ? 'lepší' : 'beze změny'}
+                      {delta !== 0 && <span className="font-normal text-gray-400">· dříve: {answerText(q.id, previous.answers![q.id])}</span>}
+                    </div>
+                  )}
                 </div>
               </div>
             )

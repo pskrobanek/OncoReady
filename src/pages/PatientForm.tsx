@@ -1,7 +1,9 @@
-import { DocumentPlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { DocumentPlusIcon, ExclamationTriangleIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { rodneCisloWarning } from '../lib/rodneCislo'
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { QuestionnaireBadges } from '../components/QuestionnaireBadges'
+import { BadgeLegend } from '../components/BadgeLegend'
 import { ReportModal } from '../components/ReportModal'
 import {
   ActiveIcon,
@@ -32,7 +34,7 @@ import type { ESkillResult, Monitoring, Patient, Questionnaire } from '../lib/ty
 
 const EMPTY: Omit<Patient, 'id'> = { prijmeni: '', jmeno: '', rodneCislo: '', datumNarozeni: '', telefon: '', email: '' }
 
-/** Stránka „Vytvořit Kartotéka“ i „Upravit Kartotéka“ (názvy převzaty 1:1 z produkce). */
+/** Stránka „Nový pacient“ i „Upravit pacienta“. */
 export function PatientForm({ mode }: { mode: 'create' | 'edit' }) {
   const { id } = useParams()
   const store = useStore()
@@ -42,6 +44,9 @@ export function PatientForm({ mode }: { mode: 'create' | 'edit' }) {
   const [form, setForm] = useState<Omit<Patient, 'id'>>(existing ?? EMPTY)
   const [errors, setErrors] = useState<Partial<Record<keyof Patient, string>>>({})
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Měkká validace RČ: upozornění po opuštění pole (u existujícího pacienta hned), uložení neblokuje.
+  const [rcTouched, setRcTouched] = useState(mode === 'edit')
+  const rcWarning = rcTouched ? rodneCisloWarning(form.rodneCislo) : null
 
   if (mode === 'edit' && !existing) return <Navigate to="/kartoteka" replace />
 
@@ -76,7 +81,7 @@ export function PatientForm({ mode }: { mode: 'create' | 'edit' }) {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title={existing ? 'Upravit Kartotéka' : 'Vytvořit Kartotéka'}
+        title={existing ? 'Upravit pacienta' : 'Nový pacient'}
         breadcrumbs={[{ label: 'Kartotéka', to: '/kartoteka' }, { label: existing ? 'Upravit' : 'Vytvořit' }]}
         actions={existing && <Button color="danger" onClick={() => setConfirmDelete(true)}>Smazat</Button>}
       />
@@ -96,7 +101,19 @@ export function PatientForm({ mode }: { mode: 'create' | 'edit' }) {
             <TextInput value={form.jmeno} onChange={set('jmeno')} invalid={!!errors.jmeno} />
           </Field>
           <Field label="Rodné číslo" required error={errors.rodneCislo}>
-            <TextInput value={form.rodneCislo} onChange={set('rodneCislo')} invalid={!!errors.rodneCislo} />
+            <TextInput
+              value={form.rodneCislo}
+              onChange={set('rodneCislo')}
+              onBlur={() => setRcTouched(true)}
+              invalid={!!errors.rodneCislo}
+              className={rcWarning && !errors.rodneCislo ? '!ring-amber-400' : undefined}
+            />
+            {rcWarning && !errors.rodneCislo && (
+              <p className="flex items-start gap-1.5 text-sm text-amber-700">
+                <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <span>{rcWarning} Uložit lze i tak.</span>
+              </p>
+            )}
           </Field>
           <Field label="Datum narození">
             <TextInput type="date" value={form.datumNarozeni} onChange={set('datumNarozeni')} />
@@ -129,7 +146,7 @@ export function PatientForm({ mode }: { mode: 'create' | 'edit' }) {
 
       <ConfirmModal
         open={confirmDelete}
-        title="Smazat Kartotéka"
+        title="Smazat pacienta"
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           store.deletePatient(existing!.id)
@@ -141,7 +158,7 @@ export function PatientForm({ mode }: { mode: 'create' | 'edit' }) {
   )
 }
 
-// ---------------- Monitorings (relation manager) ----------------
+// ---------------- Monitorace pacienta ----------------
 
 function MonitoringsTable({ patientId }: { patientId: string }) {
   const store = useStore()
@@ -158,7 +175,7 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-6 py-4">
-        <h2 className="text-base font-semibold leading-6 text-gray-950">Monitorings</h2>
+        <h2 className="text-base font-semibold leading-6 text-gray-950">Monitorace pacienta</h2>
         <div className="flex gap-3">
           {selected.size > 0 && (
             <Button color="danger" onClick={() => setDeleting([...selected])}>
@@ -179,7 +196,12 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Start</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Konec</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Aktivní</th>
-              <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Dotazníky</th>
+              <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">
+                <span className="inline-flex items-center gap-1.5">
+                  Dotazníky
+                  <BadgeLegend />
+                </span>
+              </th>
               <th className="px-6 py-3.5" />
             </tr>
           </thead>
@@ -267,7 +289,7 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
       )}
       <ConfirmModal
         open={!!deleting}
-        title={deleting && deleting.length > 1 ? 'Smazat vybrané' : 'Smazat Monitoring'}
+        title={deleting && deleting.length > 1 ? 'Smazat vybrané' : 'Smazat monitoraci'}
         onCancel={() => setDeleting(null)}
         onConfirm={() => {
           store.deleteMonitorings(deleting!)
@@ -281,12 +303,14 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
   )
 }
 
-function MonitoringModal({
+export function MonitoringModal({
   initial,
+  patientName,
   onClose,
   onSave,
 }: {
   initial: Monitoring | null
+  patientName?: string
   onClose: () => void
   onSave: (d: { programId: string | null; start: string; end: string; active: boolean }) => void
 }) {
@@ -312,7 +336,10 @@ function MonitoringModal({
   return (
     <Modal open onClose={onClose} width="max-w-5xl">
       <div className="flex items-center justify-between px-6 pt-6">
-        <h2 className="text-base font-semibold text-gray-950">{initial ? 'Upravit Monitoring' : 'Vytvořit Monitoring'}</h2>
+        <h2 className="text-base font-semibold text-gray-950">
+          {initial ? 'Upravit monitoraci' : 'Nová monitorace'}
+          {patientName && <span className="font-normal text-gray-500"> — {patientName}</span>}
+        </h2>
         <CloseButton onClick={onClose} />
       </div>
       <div className="grid gap-6 overflow-y-auto px-6 py-6 lg:grid-cols-[1fr_17rem]">

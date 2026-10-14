@@ -28,19 +28,29 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
 | žluté pásmo | `#fbbf24` | odznak skóre |
 | červené pásmo | `#dc2626` | odznak skóre, proužek řádku |
 | vyžádal kontrolu | `#2563eb` | odznak skóre, proužek řádku |
-| nevyplněno | `gray-100` pozadí, šedý text | odznak „n/a“ |
+| nevyplněno (po termínu) | `gray-100` pozadí, šedý text | odznak „N/A“ |
+| plánováno (budoucí termín) | bílé pozadí, čárkovaný šedý rámeček | odznak s ikonou hodin |
 
 Primární modrá je odhadnutá ze screenshotu. **⚠️ OVĚŘIT** přesný HEX v produkčním Filament panelu (`->colors(['primary' => …])`).
 
 ## Odznak dotazníku (komponenta)
 
-Používá se na Dashboardu i v tabulce Monitorings.
+Používá se na Dashboardu i v tabulce Monitorace pacienta.
 
 - Odznaky stojí v jedné řadě a **nejnovější termín je vlevo**.
 - **Rozměr**: vždy **čtverec 32 × 32 px** se zaoblením 4 px (rozestup odznaků 36 px), bez ohledu na obsah.
 - **Vyplněný dotazník**: barevný čtverec s celkovým skóre (bílé tučné číslo, 14 px), pod ním datum vyplnění ve formátu `12.4.` (10 px, šedá).
   - Kliknutím se otevře *Klinický report*.
-- **Nevyplněný dotazník**: šedý čtverec s textem **„N/A“** (velkými písmeny, tučně, 11 px), pod ním „-“.
+- **Nevyplněný dotazník po termínu**: šedý čtverec s textem **„N/A“** (velkými písmeny, tučně, 11 px), pod ním „-“.
+- **Budoucí termín** (NOVÉ): bílý čtverec s **čárkovaným šedým rámečkem** a ikonou hodin, pod ním šedou kurzívou datum termínu. Tooltip „Plánováno na 22.10. – lze vyplnit předem“. Do filtru „Nevyplněno“ ani do proužku řádku se nepočítá.
+- Klik na N/A i na budoucí termín otevře *Vyplnění dotazníku*.
+
+### Legenda barev (NOVÉ)
+
+Vedle nadpisu sloupce „Dotazníky“ (na Dashboardu, v pohledech i v Monitoraci pacienta) je šedá ikona **ⓘ**. Po najetí myší nebo kliknutí se zobrazí bublina „Legenda“:
+- 6 vzorových odznaků s popisem: zelené, žluté, červené, vyžádal kontrolu, N/A, plánováno;
+- vzor červeného proužku: „Proužek u řádku = stav posledního dotazníku po termínu“;
+- poznámka „Číslo = celkové skóre, pod odznakem datum vyplnění“.
   - Kliknutím se otevře *Vyplnění dotazníku*.
 
 ### Pravidla pásma (⚠️ OVĚŘIT – odvozeno ze screenshotů)
@@ -56,13 +66,16 @@ Celkové skóre je součet bodů všech odpovědí. Pravidla jsou na jednom mís
 
 ## Dashboard
 
-Jedna karta má dvě části: vlevo tabulka „Patients Table“, vpravo panel „Filtrovat“ (šířka 288 px). Na menší obrazovce je panel pod tabulkou.
+Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patients Table“) s počtem pacientů vpravo v hlavičce, vpravo panel „Filtrovat“ (šířka 288 px). Na menší obrazovce je panel pod tabulkou.
 
 **Tabulka**
 - Hledání vpravo nahoře hledá ve jméně a rodném čísle.
+- **Řazení** (NOVÉ) vlevo nad tabulkou: „Řadit podle“ + výběr a tlačítko se šipkou pro obrácení pořadí.
+  - **Naléhavosti** (výchozí): podle stavu posledního dotazníku po termínu, v pořadí červené → vyžádal kontrolu → žluté → N/A → zelené → jen budoucí termíny. Při shodě podle jména.
+  - **Jména** (abecedně), **Rodného čísla** (číselně), **Posledního vyplnění** (nejnověji vyplněný první).
+  - Řazení je nezávislé na filtru a neukládá se do pohledu.
 - Sloupce: Celé jméno (`Příjmení Jméno →`, odkaz na úpravu pacienta), Rodné číslo, Dotazníky.
-- Řádky jsou seřazené abecedně podle jména.
-- **Barevný proužek vlevo u řádku** (3 px) ukazuje stav *nejnovějšího* dotazníku: červený, modrý nebo žlutý. Když je nejnovější dotazník n/a, proužek se nezobrazí.
+- **Barevný proužek vlevo u řádku** (3 px) ukazuje stav *nejnovějšího dotazníku, jehož termín už nastal* (budoucí termíny se přeskočí): červený, modrý nebo žlutý. Když je to N/A nebo zelené, proužek se nezobrazí.
   - **⚠️ OVĚŘIT**, jestli se proužek zobrazuje i pro zelené pásmo.
 - V patičce je uprostřed výběr „na stránku“ (výchozí 500).
 - Zobrazuje se dotazník z aktivní monitorace pacienta. Pokud žádná aktivní není, zobrazí se poslední monitorace.
@@ -71,7 +84,7 @@ Jedna karta má dvě části: vlevo tabulka „Patients Table“, vpravo panel �
 - *Skóre* (zaškrtávací pole s barevnou tečkou): Zelené pásmo, Žluté pásmo, Červené pásmo, Vyžádal kontrolu, Nevyplněno.
   - Výchozí stav: zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
-- Logika: pacient se zobrazí, pokud má **alespoň jeden** dotazník ve zaškrtnutém pásmu a ve zvoleném období. **⚠️ OVĚŘIT** logiku produkce.
+- Logika: pacient se zobrazí, pokud má **alespoň jeden** dotazník ve zaškrtnutém pásmu a ve zvoleném období. Budoucí termíny se nepočítají. **⚠️ OVĚŘIT** logiku produkce.
 
 ## Pohledy (podstránky Dashboardu) – NOVÉ
 
@@ -107,7 +120,7 @@ V tabulce pacientů je pod jménem šedě název monitorace pacienta. V hlavičc
 
 ## Monitorace (programy sledování) – NOVÉ
 
-Monitorace je **šablona sledování**: definuje, komu (diagnózy), jak často a s jakými hranicemi pásem se dotazníky posílají. Pacientovi se monitorace přiřazuje v Kartotéce (tabulka Monitorings → pole *Monitorace*).
+Monitorace je **šablona sledování**: definuje, komu (diagnózy), jak často a s jakými hranicemi pásem se dotazníky posílají. Pacientovi se monitorace přiřazuje v Kartotéce (karta Monitorace pacienta → pole *Monitorace*, nebo rychlou akcí „+ Monitorace“ v seznamu).
 
 ### Přehled (`/monitorace`)
 
@@ -160,9 +173,9 @@ Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 
 ### Napojení na pacienta
 
-- Dialog *Vytvořit/Upravit Monitoring* v Kartotéce má nově pole **Monitorace** (výběr, nebo „— bez monitorace —“).
+- Dialog *Nová monitorace / Upravit monitoraci* v Kartotéce má pole **Monitorace** (výběr, nebo „— bez monitorace —“).
 - Dotazníky se naplánují podle frekvence zvolené monitorace. Bez monitorace se posílají každých 7 dní.
-- Tabulka Monitorings u pacienta má nový první sloupec **Monitorace**.
+- Tabulka Monitorace pacienta má první sloupec **Monitorace**.
 
 **⚠️ OVĚŘIT – rozsahy pásem se zatím nepoužívají pro barvu odznaků.** Barva se stále počítá podle pravidla „nejvyšší body jedné odpovědi“ (viz *Pravidla pásma*). Je potřeba rozhodnout, jestli má pásmo určovat celkové skóre podle rozsahů monitorace, maximum jedné odpovědi, nebo obojí (horší z obou).
 
@@ -172,6 +185,7 @@ Otevírá se kliknutím na vyplněný odznak. Šířka je přibližně 768 px.
 
 - **Hlavička**:
   - vlevo „Klinický report — Jméno Příjmení“ a pod tím „Datum odeslání: 12. 4. 2026 08:41“;
+  - pod datem **kontakt na pacienta** (NOVÉ): ikona telefonu + číslo ve tvaru „+420 603 277 036“ a ikona obálky + e-mail. Text jde označit a zkopírovat, nejde o tlačítka. Chybí-li telefon, je tam šedé „Telefon nevyplněn“;
   - vpravo štítek pásma („Červené pásmo: 20 b“) a pod ním důvod;
   - ikona kopírování (zkopíruje report jako text do schránky) a zavírací ✕.
 - **TREND KLINICKÉHO STAVU (VÝVOJ SKÓRE)**:
@@ -180,11 +194,17 @@ Otevírá se kliknutím na vyplněný odznak. Šířka je přibližně 768 px.
   - osa X ukazuje data ve stejném pořadí jako odznaky (nejnovější vlevo), osa Y má krok 4.
 - **Odpovědi**: šedé karty s malým štítkem zdroje (monospace „TheraData“ / „PRO-CTCAE“), textem otázky a odpovědí vpravo.
   - Barva odpovědi podle bodů: 0 zelená, 1 žlutá, 2–3 oranžová, 4 červená.
+  - **Řazení** (NOVÉ): od nejzávažnějších. Nadpis „ODPOVĚDI (OD NEJZÁVAŽNĚJŠÍCH)“; nahoře žádost o kontrolu („Ano“), pak 4 body, 3 body… Při shodě pořadí z dotazníku.
+  - **Porovnání s předchozím dotazníkem** (NOVÉ): vpravo v nadpisu „Porovnání s dotazníkem z 30.3.“ (nebo „Předchozí dotazník není k dispozici“). Pod každou odpovědí malým písmem:
+    - červeně „↑ horší · dříve: Mírná“;
+    - zeleně „↓ lepší · dříve: …“;
+    - šedě „beze změny“.
+  - Předchozí = poslední dříve vyplněný dotazník téže monitorace.
 - Zavírá se klávesou Esc, klikem mimo modal nebo na ✕.
 
 ## Vyplnění dotazníku (ambulance)
 
-Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez menu**, protože zařízení se podává pacientovi.
+Otevírá se kliknutím na odznak „N/A“ nebo na budoucí termín. Je to **celoobrazovkový režim bez menu**, protože zařízení se podává pacientovi.
 
 - **Hlavička**:
   - logo a odkaz „Zrušit“;
@@ -201,7 +221,9 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
 ## Kartotéka – přehled
 
 - Drobečková navigace: Kartotéka › Přehled. Nadpis „Kartotéka“, vpravo tlačítko **Vytvořit**.
-- V kartě je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`), Rodné číslo a **Aktivní plán** (NOVÉ). Celý řádek je klikací.
+- V kartě je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`), Rodné číslo, **Aktivní plán**, **e-Skill** (NOVÉ) a rychlá akce. Celý řádek je klikací.
+- **e-Skill**: poslední výsledek testu (skóre barvou úrovně + štítek Nízká / Střední / Vysoká), jinak „—“.
+- **Rychlá akce „+ Monitorace“** (NOVÉ, modrý odkaz vpravo v řádku): otevře dialog *Nová monitorace — Příjmení Jméno* (stejný jako v kartě pacienta: kalendář, délka 1–6 týdnů, výběr monitorace). Po vytvoření se zobrazí notifikace „Monitorace vytvořena – Příjmení Jméno“ a sloupec Aktivní plán se aktualizuje. Kliknutí na odkaz neotevírá kartu pacienta.
 - **Aktivní plán** ukazuje stav monitorace pacienta k dnešku:
   - 🟢 **Aktivní** + název monitorace + „do 11.11.2026“: monitorace je označená jako aktivní a dnešek je mezi startem a koncem;
   - 🔵 **Naplánováno** + název + „od …“: aktivní monitorace se startem v budoucnu;
@@ -212,8 +234,7 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
 
 ## Kartotéka – vytvořit / upravit pacienta
 
-- Nadpisy jsou převzaté z produkce **„Vytvořit Kartotéka“ / „Upravit Kartotéka“**.
-  - 💡 Doporučení pro IT: přejmenovat na „Nový pacient“ / „Upravit pacienta“.
+- Nadpisy: **„Nový pacient“ / „Upravit pacienta“** (dříve „Vytvořit Kartotéka“ / „Upravit Kartotéka“). Drobečková navigace zůstává Kartotéka › Vytvořit / Upravit. Potvrzení smazání: „Smazat pacienta“.
 - Formulář má dva sloupce:
   - Příjmení\* | Jméno\*
   - Rodné číslo\* | Datum narození
@@ -222,22 +243,26 @@ Otevírá se kliknutím na odznak „n/a“. Je to **celoobrazovkový režim bez
 - Validace:
   - povinná pole: Příjmení, Jméno, Rodné číslo, E-mailová adresa;
   - e-mail musí mít platný formát;
-  - telefon musí mít 12 číslic.
+  - telefon musí mít 12 číslic;
+  - **rodné číslo – měkká kontrola** (NOVÉ): po opuštění pole (u existujícího pacienta hned) se pod polem zobrazí oranžové upozornění s ikonou ⚠ a rámeček pole zoranžoví. **Uložení neblokuje** („Uložit lze i tak.“). Kontroluje se:
+    - tvar 123456/7890 (9 nebo 10 číslic, lomítko volitelné);
+    - platné datum narození v prvních 6 číslicích (měsíc +50 u žen, +20/+70 od roku 2004);
+    - u 10místného RČ kontrolní číslice (dělitelnost 11; zbytek 10 → 0).
 - Tlačítka:
   - na úpravě **Uložit** (primární) a **Zrušit**, vpravo nahoře červené **Smazat** s potvrzovacím dialogem;
   - na vytvoření navíc „Vytvořit a vytvořit další“.
 - Po uložení se zobrazí notifikace vpravo nahoře („Uloženo“).
 
-### Monitorings (pod formulářem, jen při úpravě)
+### Monitorace pacienta (pod formulářem, jen při úpravě)
 
-- Hlavička karty: „Monitorings“ a tlačítko **Vytvořit**.
+- Hlavička karty: **„Monitorace pacienta“** (dříve „Monitorings“) a tlačítko **Vytvořit**. Potvrzení smazání: „Smazat monitoraci“.
 - Sloupce: zaškrtávací pole, Start, Konec (`19.3.2026`), Aktivní (zelená ikona ✓ / červená ✕), Dotazníky (odznaky).
 - Akce řádku (odkazy s ikonou):
   - **Vytvořit dotazník** přidá nevyplněný dotazník s dnešním termínem;
   - **Upravit** otevře modal;
   - **Smazat** (červeně) se ptá na potvrzení.
 - Hromadné smazání: po zaškrtnutí řádků se objeví tlačítko „Smazat vybrané“.
-- Dialog *Vytvořit/Upravit Monitoring* (široký, max. 1024 px) nemá datumová pole s rozbalovacím kalendářem. Má:
+- Dialog *Nová monitorace / Upravit monitoraci* (široký, max. 1024 px) nemá datumová pole s rozbalovacím kalendářem. Má:
   - **Vlevo vždy viditelný kalendář se dvěma měsíci vedle sebe** (začátek týdne v pondělí, české názvy):
     - šipkami se posouvá o měsíc, odkaz „Dnes“ skočí na aktuální měsíc;
     - dnešní den je podtržený;
@@ -299,7 +324,7 @@ Modul je převzatý z repozitáře `pskrobanek/digital_literacy` (Django aplikac
    - „Kontakt“ v menu;
    - zavřít popup;
    - napsat slovo;
-   - vybrat datum 15. 2. 2026.
+   - vybrat datum: **náhodný den za 1–6 týdnů od dneška** (NOVÉ, dříve pevně 15. 2. 2026), zobrazený česky „4. 11. 2026“ / anglicky „November 4, 2026“.
    
    Nahoře je pokyn, číslo úkolu a odpočet (posledních 30 s červeně), dole ukazatel průběhu. Správný klik se zvýrazní zeleně, chybný červeně a měří se vzdálenost chybného kliknutí od cíle. Po 2 minutách se test ukončí a nedokončené úkoly se počítají jako chybné.
 5. **Výsledek**: velké skóre 0–100 barvou úrovně, štítek úrovně, „Děkujeme, test je dokončen.“ a 6 dlaždic (motorika, správné úkoly, rychlost, vzdálenost chybných kliknutí, čas psaní, přesnost psaní).
@@ -308,9 +333,11 @@ Modul je převzatý z repozitáře `pskrobanek/digital_literacy` (Django aplikac
 
 Hlavní okno se po uložení aktualizuje samo, bez obnovení stránky.
 
+**Varování při odchodu** (NOVÉ): během dotazníku a testu (od kliknutí na Začít až po výsledek) prohlížeč při zavření nebo obnovení okna zobrazí standardní dotaz „Opravdu chcete odejít? Provedené změny nemusí být uloženy.“ Na úvodní obrazovce a na výsledku se neptá.
+
 ### Karta pacienta
 
-Pod tabulkou Monitorings je nová karta **e-Skill**:
+Pod tabulkou Monitorace pacienta je karta **e-Skill**:
 - tlačítko **▶ Zahájit test**;
 - tabulka výsledků se sloupci Datum, Digitální gramotnost, Motorika, Správné úkoly, Čas testu (s označením „(limit)“) a akcí Smazat.
 
@@ -328,7 +355,6 @@ Klik na řádek otevře **detail výsledku**:
 - **Úroveň**: ≤ 33 Nízká, ≤ 66 Střední, jinak Vysoká.
 
 **⚠️ OVĚŘIT:**
-- Datum v úkolu 9 je pevně 15. 2. 2026 (jako v originále).
 - Pacient na konci testu vidí své skóre. V originále byl výsledek „uzamčen“ rodným číslem.
 
 ## Otevřené otázky pro produkci
@@ -346,6 +372,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Dashboard: řazení (naléhavost, jméno, RČ, poslední vyplnění), legenda barev ⓘ, budoucí termíny odlišené od N/A. Klinický report: kontakt na pacienta, odpovědi od nejzávažnějších, porovnání s předchozím dotazníkem. Kartotéka: sloupec e-Skill, rychlá akce „+ Monitorace“. Pacient: nadpisy „Nový pacient / Upravit pacienta / Monitorace pacienta“, měkká kontrola RČ. e-Skill: varování při odchodu, datum úkolu 9 náhodně za 1–6 týdnů. Sjednocení češtiny („Pacienti“, „Monitorace pacienta“, „N/A“). |
 | 2026-10-07 | Odznaky dotazníků: vždy čtverec 32 × 32 px, menší zaoblení (4 px), „N/A“ velkými písmeny. |
 | 2026-10-07 | Kartotéka: sloupec „Aktivní plán“ (Aktivní / Naplánováno / Ukončeno / Bez plánu). |
 | 2026-10-07 | Monitoring pacienta: místo datumových polí vždy viditelný dvouměsíční kalendář (klik Start → Konec) a tlačítka délky 1–6 týdnů. |

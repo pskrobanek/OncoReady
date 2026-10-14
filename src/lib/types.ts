@@ -61,7 +61,7 @@ export interface Questionnaire {
   id: string
   monitoringId: string
   scheduledFor: string // YYYY-MM-DD – termín, kdy má pacient dotazník vyplnit
-  filledAt: string | null // ISO datum a čas odeslání; null = nevyplněno (n/a)
+  filledAt: string | null // ISO datum a čas odeslání; null = nevyplněno (N/A)
   answers: Answers | null
 }
 

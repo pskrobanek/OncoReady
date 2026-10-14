@@ -10,7 +10,7 @@ import type { Answers } from '../lib/types'
 
 /**
  * Vyplnění dotazníku pacientem (např. na tabletu v ambulanci).
- * Otevírá se kliknutím na odznak „n/a“. Celoobrazovkový režim bez menu – zařízení se podává pacientovi.
+ * Otevírá se kliknutím na odznak „N/A“. Celoobrazovkový režim bez menu – zařízení se podává pacientovi.
  */
 export function FillQuestionnaire() {
   const { qid } = useParams()

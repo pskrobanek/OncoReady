@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { TierBadge } from '../components/eskill'
 import { Logo } from '../components/Layout'
 import { Button, cx, SearchInput, useToast } from '../components/ui'
-import { literacyScore, motorScore, SURVEY, TARGET_DATE, TEST_TIME_LIMIT_MS, TEXT, TIER_META, tierFor, type Lang, type SurveyAnswers, type TestMetrics } from '../data/eskill'
+import { formatTargetDate, literacyScore, motorScore, randomTargetDate, SURVEY, TEST_TIME_LIMIT_MS, TEXT, TIER_META, tierFor, type Lang, type SurveyAnswers, type TestMetrics } from '../data/eskill'
 import { tableName } from '../lib/format'
 import { sortPatients, useStore } from '../lib/store'
 import type { ESkillResult } from '../lib/types'
@@ -40,6 +40,17 @@ export function ESkillTest() {
   const [survey, setSurvey] = useState<SurveyAnswers>({ q1: [], q2: '', q3: '', q4: '' })
   const [outcome, setOutcome] = useState<{ metrics: TestMetrics; timedOut: boolean } | null>(null)
   const t = TEXT[lang]
+
+  // Varování při zavření / obnovení okna během rozpracovaného testu (odpovědi by se ztratily).
+  useEffect(() => {
+    if (phase === 'intro' || phase === 'results') return
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [phase])
 
   const changeLang = (l: Lang) => {
     setLang(l)
@@ -211,6 +222,7 @@ function InteractiveTest({ lang, onFinish }: { lang: Lang; onFinish: (m: TestMet
   const [date, setDate] = useState('')
   const [inputError, setInputError] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+  const [targetDate] = useState(randomTargetDate)
 
   // Měřené hodnoty (ref – nemají vyvolat překreslení)
   const st = useRef({
@@ -332,7 +344,7 @@ function InteractiveTest({ lang, onFinish }: { lang: Lang; onFinish: (m: TestMet
     advance()
   }
 
-  const submitDate = () => (date === TARGET_DATE ? advance() : fail())
+  const submitDate = () => (date === targetDate ? advance() : fail())
 
   const mmss = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
 
@@ -456,7 +468,7 @@ function InteractiveTest({ lang, onFinish }: { lang: Lang; onFinish: (m: TestMet
         {idx === 8 && (
           <div className="flex w-full max-w-sm flex-col items-center gap-4">
             <p className="text-gray-600">{t.task9Label}</p>
-            <div className="text-3xl font-bold text-gray-950">{t.task9Date}</div>
+            <div className="text-3xl font-bold text-gray-950">{formatTargetDate(targetDate, lang)}</div>
             <input
               type="date"
               lang={lang === 'cs' ? 'cs-CZ' : 'en-US'}

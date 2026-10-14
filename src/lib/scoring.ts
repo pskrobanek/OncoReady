@@ -3,14 +3,16 @@ import type { Answers } from './types'
 
 // Pásma výsledku dotazníku. Pravidla jsou odvozena ze screenshotů – OVĚŘIT s produkcí.
 export type Band = 'green' | 'yellow' | 'red' | 'blue'
-export type Status = Band | 'na'
+/** na = termín už proběhl a dotazník chybí; future = termín teprve bude. */
+export type Status = Band | 'na' | 'future'
 
 export const BAND_META: Record<Status, { label: string; dot: string; badge: string; stripe: string; pill: string }> = {
   green: { label: 'Zelené pásmo', dot: 'bg-emerald-500', badge: 'bg-emerald-500 text-white', stripe: 'shadow-[inset_3px_0_0_#10b981]', pill: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' },
   yellow: { label: 'Žluté pásmo', dot: 'bg-amber-400', badge: 'bg-amber-400 text-white', stripe: 'shadow-[inset_3px_0_0_#fbbf24]', pill: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
   red: { label: 'Červené pásmo', dot: 'bg-red-600', badge: 'bg-red-600 text-white', stripe: 'shadow-[inset_3px_0_0_#dc2626]', pill: 'bg-red-50 text-red-600 ring-red-600/20' },
   blue: { label: 'Vyžádal kontrolu', dot: 'bg-blue-600', badge: 'bg-blue-600 text-white', stripe: 'shadow-[inset_3px_0_0_#2563eb]', pill: 'bg-blue-50 text-blue-700 ring-blue-600/20' },
-  na: { label: 'Nevyplněno', dot: 'bg-gray-200', badge: 'bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200', stripe: '', pill: 'bg-gray-50 text-gray-600 ring-gray-500/20' },
+  na: { label: 'Nevyplněno', dot: 'bg-gray-200', badge: 'bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-300', stripe: '', pill: 'bg-gray-50 text-gray-600 ring-gray-500/20' },
+  future: { label: 'Plánováno', dot: 'border border-dashed border-gray-400 bg-white', badge: 'border border-dashed border-gray-300 bg-white text-gray-400', stripe: '', pill: 'bg-white text-gray-500 ring-gray-300' },
 }
 
 /** Body za jednu odpověď (null = otázka bez bodů). */

@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Card, PageHeader, PerPage, resultsLabel, SearchInput } from '../components/ui'
+import { PlusIcon } from '@heroicons/react/20/solid'
+import { ScorePill } from '../components/eskill'
+import { Button, Card, PageHeader, PerPage, resultsLabel, SearchInput, useToast } from '../components/ui'
+import { MonitoringModal } from './PatientForm'
 import { fullDate, tableName } from '../lib/format'
-import { planStatus, sortPatients, useStore } from '../lib/store'
+import { eskillOf, planStatus, sortPatients, useStore } from '../lib/store'
 import type { DB } from '../lib/types'
 
 export function Kartoteka() {
-  const { db } = useStore()
+  const { db, createMonitoring } = useStore()
   const navigate = useNavigate()
+  const toast = useToast()
+  const [addingFor, setAddingFor] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [perPage, setPerPage] = useState(10)
   const [page, setPage] = useState(1)
@@ -42,6 +47,8 @@ export function Kartoteka() {
                 <th className="px-6 py-3.5 text-start text-sm font-semibold text-gray-950">Celé jméno</th>
                 <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Rodné číslo</th>
                 <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Aktivní plán</th>
+                <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">e-Skill</th>
+                <th className="px-6 py-3.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -60,11 +67,28 @@ export function Kartoteka() {
                   <td className="px-3 py-3">
                     <PlanCell db={db} patientId={p.id} />
                   </td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    {eskillOf(db, p.id)[0] ? (
+                      <ScorePill score={eskillOf(db, p.id)[0].literacyScore} />
+                    ) : (
+                      <span className="text-sm text-gray-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => setAddingFor(p.id)}
+                      className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-primary-600 hover:underline"
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      Monitorace
+                    </button>
+                  </td>
                 </tr>
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
                     Nenalezeny žádné záznamy
                   </td>
                 </tr>
@@ -90,6 +114,24 @@ export function Kartoteka() {
           </div>
         </div>
       </Card>
+
+      {/* Rychlá akce: přidat monitoraci přímo ze seznamu */}
+      {addingFor && (
+        <MonitoringModal
+          initial={null}
+          patientName={(() => {
+            const p = db.patients.find((x) => x.id === addingFor)
+            return p ? tableName(p) : undefined
+          })()}
+          onClose={() => setAddingFor(null)}
+          onSave={(data) => {
+            createMonitoring({ ...data, patientId: addingFor })
+            const p = db.patients.find((x) => x.id === addingFor)
+            toast(`Monitorace vytvořena${p ? ` – ${tableName(p)}` : ''}`)
+            setAddingFor(null)
+          }}
+        />
+      )}
     </div>
   )
 }

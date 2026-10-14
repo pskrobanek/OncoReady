@@ -77,7 +77,24 @@ export const surveyLabel = (q: keyof SurveyAnswers, value: string, lang: Lang = 
 // Interaktivní test (9 úkolů) – test.html / test.js
 // ---------------------------------------------------------------------------
 export const TEST_TIME_LIMIT_MS = 120_000
-export const TARGET_DATE = '2026-02-15'
+/**
+ * Cílové datum úkolu 9 – náhodný den za 1–6 týdnů od dneška (v originále pevně 15. 2. 2026,
+ * při opakovaném testu se ho pacient mohl naučit).
+ */
+export function randomTargetDate(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 7 + Math.floor(Math.random() * 36)) // +7 až +42 dní
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** Zobrazení cílového data: „15. 2. 2026“ / „February 15, 2026“. */
+export function formatTargetDate(iso: string, lang: Lang): string {
+  const d = new Date(iso + 'T00:00:00')
+  return lang === 'cs'
+    ? `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`
+    : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+}
 
 export const TEXT = {
   cs: {
@@ -119,7 +136,6 @@ export const TEXT = {
     task8Label: 'Napište toto slovo:',
     task8Word: 'počítač',
     task9Label: 'Vyberte toto datum:',
-    task9Date: '15. 2. 2026',
     task9Hint: 'Formát data na zařízení se může lišit. Vyberte stejné kalendářní datum.',
     taskSubmit: 'Potvrdit',
     resultsTitle: 'Celkové skóre',
@@ -170,7 +186,6 @@ export const TEXT = {
     task8Label: 'Type this word:',
     task8Word: 'computer',
     task9Label: 'Select this date:',
-    task9Date: 'February 15, 2026',
     task9Hint: 'Your device date format may vary. Select the same calendar date.',
     taskSubmit: 'Submit',
     resultsTitle: 'Final Score',

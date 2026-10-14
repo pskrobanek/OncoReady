@@ -344,12 +344,15 @@ function PatientsBoard({
                   {groupKeys.map((k) => (
                     <th
                       key={k}
+                      title={k === 'last' ? 'Poslední vyplněný dotazník' : undefined}
                       className={cx(
-                        'w-px border-l border-gray-200 px-3 pb-2 pt-1 text-start text-[10px] font-semibold uppercase tracking-wider',
+                        'w-px border-l border-gray-200 pb-2 pt-1 text-start align-bottom text-[10px] font-semibold uppercase',
+                        k === 'last' ? 'px-2 text-center tracking-normal' : 'px-3 tracking-wider',
                         k === 'last' ? 'text-primary-600' : 'text-gray-400',
                       )}
                     >
-                      {groupLabel(k)}
+                      {/* Krátký popisek, aby sloupec s jediným odznakem nebyl zbytečně široký */}
+                      {k === 'last' ? 'Poslední' : groupLabel(k)}
                     </th>
                   ))}
                 </tr>
@@ -371,7 +374,7 @@ function PatientsBoard({
                       {groupKeys.map((k) => {
                         const items = groupQuestionnaires(qs).find((g) => g.key === k)?.items ?? []
                         return (
-                          <td key={k} className={cx('w-px min-w-[3.75rem] border-l border-gray-200 px-3 py-3 align-middle group-hover:brightness-[0.98]', groupTone(k))}>
+                          <td key={k} className={cx('w-px border-l border-gray-200 py-3 align-middle group-hover:brightness-[0.98]', k === 'last' ? 'px-2 [&>*]:mx-auto [&>div]:w-fit' : 'min-w-[3.75rem] px-3', groupTone(k))}>
                             {k === 'future' && items.length > 1 ? (
                               <PlannedCell
                                 items={items}

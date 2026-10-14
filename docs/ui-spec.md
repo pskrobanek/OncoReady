@@ -40,7 +40,7 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
 - Odznaky stojí v jedné řadě a **nejnovější termín je vlevo**.
 - **Skupiny** (NOVÉ): odznaky jsou rozdělené podle času do skupin:
   1. **PLÁNOVANÉ**: budoucí termíny;
-  2. **POSLEDNÍ VYPLNĚNÝ**: vždy **jen jeden** dotazník, ten s nejnovějším datem vyplnění. Nevyplněné (N/A) sem nepatří ani když jsou novější, ty jsou ve sloupci roku;
+  2. **POSLEDNÍ VYPLNĚNÝ** (v hlavičce tabulky zkráceně „POSLEDNÍ“, plný název v tooltipu; sloupec je úzký, cca 67 px, odznak vycentrovaný): vždy **jen jeden** dotazník, ten s nejnovějším datem vyplnění. Nevyplněné (N/A) sem nepatří ani když jsou novější, ty jsou ve sloupci roku;
   3. **starší po letech** („2026“, „2025“…).
   - Zařazení se řídí datem vyplnění, u nevyplněných datem termínu. Uvnitř skupiny je nejnovější vlevo.
   - **Na Dashboardu (a v pohledech) jsou skupiny pevné sloupce tabulky**, takže kategorie jsou u všech pacientů v zákrytu:
@@ -405,6 +405,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Oprava: sloupec „Poslední vyplněný“ byl zbytečně široký kvůli dlouhému popisku – popisek zkrácen na „Poslední“, menší okraje. |
 | 2026-10-14 | Sloupec „Poslední měsíc“ nahrazen sloupcem „Poslední vyplněný“ – vždy jen jeden, nejnověji vyplněný dotazník. |
 | 2026-10-14 | Dashboard: sloupce skupin jen tak široké, jak je potřeba. Demo data: delší historie dotazníků u Dlouhé, Krokerové, Šťastné (od 2025) a nová monitorace u Kokoškové. |
 | 2026-10-14 | Dashboard: rodné číslo pod jménem (sloupec „Pacient“), sloupec Plánované ukazuje jen nejbližší dotazník, zbytek po kliknutí na „+N“. |

@@ -22,6 +22,9 @@ const SORTS: { key: SortKey; label: string; asc: string; desc: string }[] = [
   { key: 'lastFilled', label: 'Posledního vyplnění', asc: 'Nejnovější nahoře', desc: 'Nejstarší nahoře' },
 ]
 
+/** Sloupec Rodné číslo zůstává při vodorovném posunu na místě (hned za jménem); stín odděluje posuvnou část. */
+const STICKY_RC = 'sticky left-[14rem] w-28 min-w-[7rem] px-3 shadow-[inset_-1px_0_0_#e5e7eb]'
+
 /** Nástroje v pravém panelu (přepínají se záložkami). Další nástroje lze přidat sem. */
 type ToolKey = 'filter' | 'sort'
 const TOOLS: { key: ToolKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -321,10 +324,10 @@ function PatientsBoard({
             <table className="w-full table-auto divide-y divide-gray-200 text-start">
               <thead className="whitespace-nowrap bg-gray-50/50">
                 <tr>
-                  <th rowSpan={2} className="px-6 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
+                  <th rowSpan={2} className="sticky left-0 z-10 w-56 min-w-[14rem] bg-gray-50 px-6 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
                     Celé jméno
                   </th>
-                  <th rowSpan={2} className="px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
+                  <th rowSpan={2} className={cx(STICKY_RC, 'z-10 bg-gray-50 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
                     Rodné číslo
                   </th>
                   <th colSpan={groupKeys.length} className="px-3 pb-1 pt-3 text-start text-sm font-semibold text-gray-950">
@@ -352,21 +355,21 @@ function PatientsBoard({
               <tbody className="divide-y divide-gray-200 whitespace-nowrap">
                 {rows.slice(0, perPage).map(({ patient, qs, program, latest }) => {
                   return (
-                    <tr key={patient.id} className="hover:bg-gray-50">
+                    <tr key={patient.id} className="group">
                       {/* Barevný proužek vlevo = stav nejnovějšího dotazníku, jehož termín už nastal */}
-                      <td className={cx('px-6 py-4 text-sm text-gray-950', BAND_META[latest].stripe)}>
+                      <td className={cx('sticky left-0 z-[1] w-56 min-w-[14rem] bg-white px-6 py-4 text-sm text-gray-950 group-hover:bg-gray-50', BAND_META[latest].stripe)}>
                         <Link to={`/kartoteka/${patient.id}/upravit`} className="hover:underline">
                           {tableName(patient)} →
                         </Link>
                         {program && <div className="mt-0.5 text-xs text-gray-400">{program.name}</div>}
                       </td>
-                      <td className="px-3 py-4 text-sm text-gray-950">{patient.rodneCislo}</td>
+                      <td className={cx(STICKY_RC, 'z-[1] bg-white py-4 text-sm text-gray-950 group-hover:bg-gray-50')}>{patient.rodneCislo}</td>
                       {groupKeys.map((k) => {
                         const items = groupQuestionnaires(qs).find((g) => g.key === k)?.items ?? []
                         return (
-                          <td key={k} className={cx('min-w-[3.75rem] border-l border-gray-200 px-3 py-3 align-middle', groupTone(k))}>
+                          <td key={k} className={cx('min-w-[3.75rem] border-l border-gray-200 px-3 py-3 align-middle group-hover:brightness-[0.98]', groupTone(k))}>
                             {items.length ? (
-                              <BadgeRow items={items} onOpenReport={setReport} wrap />
+                              <BadgeRow items={items} onOpenReport={setReport} />
                             ) : (
                               <span className="block min-w-[2.25rem] text-center text-sm text-gray-300">—</span>
                             )}

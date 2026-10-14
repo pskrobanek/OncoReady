@@ -141,13 +141,13 @@ Pohled je **pojmenovaná kombinace filtrů Dashboardu**, kterou si uživatel ulo
 
 ### Záložka Filtr (rozšířená)
 
-Pod původní skupiny Skóre a Datum vyplnění přibyly:
+Pod původní skupiny Skóre a Datum vyplnění přibyla:
 
 - **Monitorace**: zaškrtávací pole pro každou monitoraci.
-- **Klasifikace**: zaškrtávací pole s barevným štítkem nonMD / MD / research / other.
-- **Tag**: přepínací štítky, kde vybraný štítek je modrý.
 
-Logika: uvnitř skupiny platí NEBO, mezi skupinami platí A ZÁROVEŇ. Prázdná skupina nefiltruje. Monitorace, klasifikace a tag se berou z aktuální monitorace pacienta.
+Filtry Klasifikace a Tag byly z panelu **odebrány** (2026-10-14). Klasifikace a tag zůstávají u monitorace jako údaje, jen se podle nich nefiltruje.
+
+Logika: uvnitř skupiny platí NEBO, mezi skupinami platí A ZÁROVEŇ. Prázdná skupina nefiltruje. Monitorace se bere z aktuální monitorace pacienta.
 
 V tabulce pacientů je pod jménem šedě název monitorace pacienta. V hlavičce karty je počet pacientů („3 pacientů“). **Jde o novinku oproti produkci.**
 
@@ -180,7 +180,7 @@ Monitorace je **šablona sledování**: definuje, komu (diagnózy), jak často a
 Nadpis „Nová monitorace“ / „Upravit monitoraci“. Na úpravě je vpravo nahoře **Smazat**.
 
 **Karta 1 (dva sloupce):**
-- **Název\*** a **Tag**. Tag nabízí už použité tagy a má nápovědu „Krátký štítek pro filtrování…“.
+- **Název\*** a **Tag**. Tag nabízí už použité tagy a má nápovědu „Krátký štítek pro filtrování…“ (⚠️ OVĚŘIT: filtr podle tagu byl z Dashboardu odebrán – upravit text nápovědy, nebo tag úplně zrušit?).
 - **Diagnózy\*** přes celou šířku:
   - vybrané diagnózy jsou modré štítky „kód + název“ s ✕;
   - na konci je výběr „+ Přidat diagnózu (MKN-10)…“;
@@ -405,6 +405,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Filtr: odebrány skupiny Klasifikace a Tag. Ukázkový pohled „Studie – nevyplněné“ filtruje podle monitorace. |
 | 2026-10-14 | Oprava: sloupec „Poslední vyplněný“ byl zbytečně široký kvůli dlouhému popisku – popisek zkrácen na „Poslední“, menší okraje. |
 | 2026-10-14 | Sloupec „Poslední měsíc“ nahrazen sloupcem „Poslední vyplněný“ – vždy jen jeden, nejnověji vyplněný dotazník. |
 | 2026-10-14 | Dashboard: sloupce skupin jen tak široké, jak je potřeba. Demo data: delší historie dotazníků u Dlouhé, Krokerové, Šťastné (od 2025) a nová monitorace u Kokoškové. |

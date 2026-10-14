@@ -95,8 +95,6 @@ export const DEFAULT_FILTERS: DashboardFilters = {
   scores: ['red', 'blue', 'na'],
   date: 'all',
   programIds: [],
-  classifications: [],
-  tags: [],
 }
 
 export const seedViews = (): DashboardView[] => [
@@ -108,6 +106,6 @@ export const seedViews = (): DashboardView[] => [
   {
     id: 'v2',
     name: 'Studie – nevyplněné',
-    filters: { ...DEFAULT_FILTERS, scores: ['na'], classifications: ['research'] },
+    filters: { ...DEFAULT_FILTERS, scores: ['na'], programIds: ['pr4'] },
   },
 ]

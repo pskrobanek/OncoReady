@@ -37,8 +37,6 @@ export interface DashboardFilters {
   scores: ('green' | 'yellow' | 'red' | 'blue' | 'na')[]
   date: DateFilter
   programIds: string[]
-  classifications: Classification[]
-  tags: string[]
 }
 
 /** Uživatelský pohled = pojmenovaná kombinace filtrů (podstránka Dashboardu). */

@@ -4,7 +4,7 @@ import type { Answers, DashboardView, DB, ESkillResult, Monitoring, MonitoringPr
 import { addDays, todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
-const KEY = 'oncoready-mvp-db-v3' // při změně struktury dat zvýšit verzi
+const KEY = 'oncoready-mvp-db-v4' // při změně struktury dat zvýšit verzi
 
 function load(): DB {
   try {

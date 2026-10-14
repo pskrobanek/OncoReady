@@ -1,12 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ClassificationBadge } from '../components/programs'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { BadgeRow, groupLabel, groupQuestionnaires, groupTone, latestDue, statusOf } from '../components/QuestionnaireBadges'
 import { ArrowsUpDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
-import { CLASSIFICATIONS, DEFAULT_FILTERS } from '../data/programs'
+import { DEFAULT_FILTERS } from '../data/programs'
 import { addDays, tableName, todayIso } from '../lib/format'
 import { BAND_META, type Status } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
@@ -43,7 +42,7 @@ const DATE_FILTERS: { key: DateFilter; label: string; days: number | null }[] = 
 
 const sameFilters = (a: DashboardFilters, b: DashboardFilters) => {
   const norm = (f: DashboardFilters) =>
-    JSON.stringify({ ...f, scores: [...f.scores].sort(), programIds: [...f.programIds].sort(), classifications: [...f.classifications].sort(), tags: [...f.tags].sort() })
+    JSON.stringify({ ...f, scores: [...f.scores].sort(), programIds: [...f.programIds].sort() })
   return norm(a) === norm(b)
 }
 
@@ -252,7 +251,6 @@ function PatientsBoard({
   const [sort, setSort] = useState<SortKey>('urgency')
   const [desc, setDesc] = useState(false)
 
-  const tags = useMemo(() => [...new Set(db.programs.map((p) => p.tag).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'cs')), [db.programs])
 
   const rows = useMemo(() => {
     const days = DATE_FILTERS.find((d) => d.key === filters.date)!.days
@@ -268,10 +266,8 @@ function PatientsBoard({
       })
       .filter((r) => r.mon && r.qs.length > 0)
       .filter((r) => !term || tableName(r.patient).toLowerCase().includes(term) || r.patient.rodneCislo.includes(term))
-      // Monitorace, klasifikace, tag: v rámci skupiny NEBO, mezi skupinami A ZÁROVEŇ.
+      // Monitorace: pacient se zobrazí, pokud má některou ze zaškrtnutých monitorací.
       .filter((r) => filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
-      .filter((r) => filters.classifications.length === 0 || (!!r.program && filters.classifications.includes(r.program.classification)))
-      .filter((r) => filters.tags.length === 0 || (!!r.program && filters.tags.includes(r.program.tag)))
       .filter((r) => {
         // Pacient se zobrazí, pokud má alespoň jeden dotazník ve zvoleném pásmu (a v časovém okně).
         if (scores.size === 0 && !since) return true
@@ -509,40 +505,6 @@ function PatientsBoard({
                 label={p.name}
               />
             ))}
-          </FilterGroup>
-
-          <FilterGroup title="Klasifikace">
-            <div className="flex flex-wrap gap-x-5 gap-y-3">
-              {CLASSIFICATIONS.map((c) => (
-                <Checkbox
-                  key={c.value}
-                  checked={filters.classifications.includes(c.value)}
-                  onChange={(v) => onChange({ ...filters, classifications: toggleIn(filters.classifications, c.value, v) })}
-                  label={<ClassificationBadge value={c.value} />}
-                />
-              ))}
-            </div>
-          </FilterGroup>
-
-          <FilterGroup title="Tag">
-            <div className="flex flex-wrap gap-2">
-              {tags.map((t) => {
-                const on = filters.tags.includes(t)
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => onChange({ ...filters, tags: toggleIn(filters.tags, t, !on) })}
-                    className={cx(
-                      'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset transition',
-                      on ? 'bg-primary-600 text-white ring-primary-600' : 'bg-white text-gray-700 ring-gray-950/10 hover:bg-gray-50',
-                    )}
-                  >
-                    {t}
-                  </button>
-                )
-              })}
-            </div>
           </FilterGroup>
 
           </>

@@ -302,11 +302,11 @@ function PatientsBoard({
       })
   }, [db, search, filters, sort, desc])
 
-  // Sloupce skupin: Plánované a Poslední měsíc vždy, pak roky, které se v zobrazených řádcích vyskytují.
+  // Sloupce skupin: Plánované a Poslední vyplněný vždy, pak roky, které se v zobrazených řádcích vyskytují.
   const groupKeys = useMemo(() => {
     const years = new Set<string>()
-    for (const r of rows) for (const g of groupQuestionnaires(r.qs)) if (g.key !== 'future' && g.key !== 'month') years.add(g.key)
-    return ['future', 'month', ...[...years].sort().reverse()]
+    for (const r of rows) for (const g of groupQuestionnaires(r.qs)) if (g.key !== 'future' && g.key !== 'last') years.add(g.key)
+    return ['future', 'last', ...[...years].sort().reverse()]
   }, [rows])
 
   return (
@@ -346,7 +346,7 @@ function PatientsBoard({
                       key={k}
                       className={cx(
                         'w-px border-l border-gray-200 px-3 pb-2 pt-1 text-start text-[10px] font-semibold uppercase tracking-wider',
-                        k === 'month' ? 'text-primary-600' : 'text-gray-400',
+                        k === 'last' ? 'text-primary-600' : 'text-gray-400',
                       )}
                     >
                       {groupLabel(k)}
@@ -566,7 +566,7 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
 
 /**
  * Sloupec Plánované: ve výchozím stavu jen nejbližší další dotazník a tlačítko „+N“,
- * po rozkliknutí všechny plánované termíny (nejbližší vpravo, u sloupce Poslední měsíc).
+ * po rozkliknutí všechny plánované termíny (nejbližší vpravo, u sloupce Poslední vyplněný).
  */
 function PlannedCell({
   items,

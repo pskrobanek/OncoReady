@@ -1,7 +1,7 @@
 import { ClockIcon } from '@heroicons/react/24/outline'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { BAND_META, bandOf, totalScore, type Status } from '../lib/scoring'
-import { addDays, shortDate, todayIso } from '../lib/format'
+import { shortDate, todayIso } from '../lib/format'
 import type { Questionnaire } from '../lib/types'
 import { cx } from './ui'
 
@@ -16,13 +16,13 @@ const groupDate = (q: Questionnaire) => (q.filledAt ? q.filledAt.slice(0, 10) : 
 type Group = { key: string; label: string; items: Questionnaire[] }
 
 /**
- * Rozdělí dotazníky do skupin (zleva): Plánované → Poslední měsíc → starší po letech.
+ * Rozdělí dotazníky do skupin (zleva): Plánované → Poslední vyplněný (vždy jen jeden) → ostatní po letech.
  * Uvnitř skupiny nejnovější vlevo.
  */
 export function groupQuestionnaires(qs: Questionnaire[]): Group[] {
-  const today = todayIso()
-  const monthAgo = addDays(today, -30)
   const sorted = [...qs].sort((a, b) => groupDate(b).localeCompare(groupDate(a)))
+  // Poslední vyplněný = vyplněný dotazník s nejnovějším datem vyplnění
+  const last = qs.filter((q) => q.filledAt).sort((a, b) => b.filledAt!.localeCompare(a.filledAt!))[0]
   const groups: Group[] = []
   const push = (key: string, label: string, q: Questionnaire) => {
     let g = groups.find((x) => x.key === key)
@@ -31,17 +31,17 @@ export function groupQuestionnaires(qs: Questionnaire[]): Group[] {
   }
   for (const q of sorted) {
     if (statusOf(q) === 'future') push('future', 'Plánované', q)
-    else if (groupDate(q) >= monthAgo) push('month', 'Poslední měsíc', q)
+    else if (q === last) push('last', 'Poslední vyplněný', q)
     else push(groupDate(q).slice(0, 4), groupDate(q).slice(0, 4), q)
   }
   return groups
 }
 
-/** Popisek skupiny podle klíče (future / month / rok). */
-export const groupLabel = (key: string) => (key === 'future' ? 'Plánované' : key === 'month' ? 'Poslední měsíc' : key)
+/** Popisek skupiny podle klíče (future / last / rok). */
+export const groupLabel = (key: string) => (key === 'future' ? 'Plánované' : key === 'last' ? 'Poslední vyplněný' : key)
 
 /** Podklad buňky/skupiny podle klíče. */
-export const groupTone = (key: string) => (key === 'future' ? 'bg-white' : key === 'month' ? 'bg-primary-50/60' : 'bg-gray-50/70')
+export const groupTone = (key: string) => (key === 'future' ? 'bg-white' : key === 'last' ? 'bg-primary-50/60' : 'bg-gray-50/70')
 
 /**
  * Odznaky dotazníků bez seskupení (nejnovější vlevo).
@@ -108,7 +108,7 @@ export function QuestionnaireBadges({
             g.key === 'future' ? 'border border-dashed border-gray-200 bg-white' : groupTone(g.key),
           )}
         >
-          <span className={cx('px-0.5 text-[9px] font-semibold uppercase tracking-wider', g.key === 'month' ? 'text-primary-600' : 'text-gray-400')}>
+          <span className={cx('px-0.5 text-[9px] font-semibold uppercase tracking-wider', g.key === 'last' ? 'text-primary-600' : 'text-gray-400')}>
             {g.label}
           </span>
           <BadgeRow items={g.items} onOpenReport={onOpenReport} />

@@ -40,18 +40,18 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
 - Odznaky stojí v jedné řadě a **nejnovější termín je vlevo**.
 - **Skupiny** (NOVÉ): odznaky jsou rozdělené podle času do skupin:
   1. **PLÁNOVANÉ**: budoucí termíny;
-  2. **POSLEDNÍ MĚSÍC**: vyplněné i N/A za posledních 30 dní;
+  2. **POSLEDNÍ VYPLNĚNÝ**: vždy **jen jeden** dotazník, ten s nejnovějším datem vyplnění. Nevyplněné (N/A) sem nepatří ani když jsou novější, ty jsou ve sloupci roku;
   3. **starší po letech** („2026“, „2025“…).
   - Zařazení se řídí datem vyplnění, u nevyplněných datem termínu. Uvnitř skupiny je nejnovější vlevo.
   - **Na Dashboardu (a v pohledech) jsou skupiny pevné sloupce tabulky**, takže kategorie jsou u všech pacientů v zákrytu:
-    - dvouřádková hlavička: nahoře „Dotazníky ⓘ“ přes všechny sloupce skupin, pod ní popisky sloupců 10 px velkými písmeny (Poslední měsíc modře, ostatní šedě);
+    - dvouřádková hlavička: nahoře „Dotazníky ⓘ“ přes všechny sloupce skupin, pod ní popisky sloupců 10 px velkými písmeny (Poslední vyplněný modře, ostatní šedě);
     - **šířka sloupce skupiny = nejdelší řádek v daném sloupci** (sloupec se nenatahuje); zbylé místo vpravo vyplní prázdný sloupec;
-    - sloupce Plánované a Poslední měsíc jsou vždy; sloupce let jen ty, které se v zobrazených řádcích vyskytují (nejnovější rok vlevo);
-    - sloupce oddělené svislou čarou; podklad: Plánované bílý, Poslední měsíc světle modrý, roky světle šedý;
+    - sloupce Plánované a Poslední vyplněný jsou vždy; sloupce let jen ty, které se v zobrazených řádcích vyskytují (nejnovější rok vlevo);
+    - sloupce oddělené svislou čarou; podklad: Plánované bílý, Poslední vyplněný světle modrý, roky světle šedý;
     - prázdná buňka ukazuje šedou pomlčku „—“, aby byl sloupec patrný i bez dotazníků;
     - odznaky jsou vždy **v jednom řádku** (řádky tabulky se nenatahují do výšky);
     - když se dotazníky nevejdou do šířky, část s dotazníky se **posouvá vodorovně** (posuvník pod tabulkou). Sloupec **Pacient** (240 px) zůstává při posunu na místě, odděluje ho svislá linka a pod ním dotazníky „podjíždějí“;
-    - **sloupec Plánované je sbalený**: vidět je jen **nejbližší další dotazník** a vlevo od něj šedé tlačítko „+N“ (počet dalších plánovaných). Klik rozbalí všechny plánované termíny v řádku (nejbližší vpravo, u sloupce Poslední měsíc) a tlačítko se změní na „−“. Rozbalení platí pro jednoho pacienta a neukládá se. Má-li pacient jen jeden plánovaný termín, tlačítko se nezobrazí.
+    - **sloupec Plánované je sbalený**: vidět je jen **nejbližší další dotazník** a vlevo od něj šedé tlačítko „+N“ (počet dalších plánovaných). Klik rozbalí všechny plánované termíny v řádku (nejbližší vpravo, u sloupce Poslední vyplněný) a tlačítko se změní na „−“. Rozbalení platí pro jednoho pacienta a neukládá se. Má-li pacient jen jeden plánovaný termín, tlačítko se nezobrazí.
   - V kartě pacienta (Monitorace pacienta) jsou skupiny vedle sebe v jednom řádku jako malé rámečky s popiskem (Plánované = čárkovaný rámeček).
 - **Rozměr**: vždy **čtverec 32 × 32 px** se zaoblením 4 px (rozestup odznaků 36 px), bez ohledu na obsah.
 - **Vyplněný dotazník**: barevný čtverec s celkovým skóre (bílé tučné číslo, 14 px), pod ním datum vyplnění ve formátu `12.4.` (10 px, šedá).
@@ -405,6 +405,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-14 | Sloupec „Poslední měsíc“ nahrazen sloupcem „Poslední vyplněný“ – vždy jen jeden, nejnověji vyplněný dotazník. |
 | 2026-10-14 | Dashboard: sloupce skupin jen tak široké, jak je potřeba. Demo data: delší historie dotazníků u Dlouhé, Krokerové, Šťastné (od 2025) a nová monitorace u Kokoškové. |
 | 2026-10-14 | Dashboard: rodné číslo pod jménem (sloupec „Pacient“), sloupec Plánované ukazuje jen nejbližší dotazník, zbytek po kliknutí na „+N“. |
 | 2026-10-14 | Dashboard: dotazníky vždy v jednom řádku, při nedostatku místa vodorovný posuvník; jméno a RČ ukotvené vlevo. |

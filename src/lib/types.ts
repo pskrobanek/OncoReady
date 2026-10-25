@@ -82,6 +82,28 @@ export interface ESkillResult {
   timedOut: boolean
 }
 
+/** Laboratorní parametry sledované před léčbou (klíče hodnot ve výsledku). */
+export type LabParam = 'neu' | 'plt' | 'hb' | 'krea' | 'bili'
+
+/** Výsledek laboratoře (jeden odběr). */
+export interface LabResult {
+  id: string
+  patientId: string
+  date: string // YYYY-MM-DD – datum odběru
+  values: Partial<Record<LabParam, number>>
+}
+
+/** Denní souhrn z nositelného zařízení (wearables). */
+export interface WearableDay {
+  id: string
+  patientId: string
+  date: string // YYYY-MM-DD
+  temp: number // nejvyšší teplota za den (°C)
+  spo2: number // nejnižší saturace kyslíkem (%)
+  hr: number // klidová tepová frekvence (/min)
+  steps: number // počet kroků za den
+}
+
 export interface DB {
   patients: Patient[]
   monitorings: Monitoring[]
@@ -89,4 +111,6 @@ export interface DB {
   programs: MonitoringProgram[]
   views: DashboardView[]
   eskillResults: ESkillResult[]
+  labs: LabResult[]
+  wearables: WearableDay[]
 }

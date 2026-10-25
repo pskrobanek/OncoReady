@@ -1,12 +1,15 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
-import { BadgeRow, groupLabel, groupQuestionnaires, groupTone, latestDue, statusOf } from '../components/QuestionnaireBadges'
-import { ArrowsUpDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { BadgeRow, latestDue, statusOf } from '../components/QuestionnaireBadges'
+import { ArrowsUpDownIcon, Bars2Icon, Bars4Icon, FunnelIcon } from '@heroicons/react/24/outline'
+import { CombinedTile, EmptyWeek, FindingList, LabTile, MissingTile, OVERALL_META, Semafor, WearTile } from '../components/Readiness'
+import { ReadinessModal } from '../components/ReadinessModal'
 import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
 import { DEFAULT_FILTERS } from '../data/programs'
-import { addDays, tableName, todayIso } from '../lib/format'
+import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
+import { evalLab, questionnaireDate, readinessOf, sourceMeta, timelineOf, weeksBack, type Level, type Overall, type PatientTimeline, type Readiness, type SourceKey } from '../lib/readiness'
 import { BAND_META, type Status } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
 import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
@@ -23,7 +26,27 @@ const SORTS: { key: SortKey; label: string; asc: string; desc: string }[] = [
 
 /** Sloupec pacienta (jméno + RČ) zůstává při vodorovném posunu na místě; svislá linka odděluje posuvnou část. */
 const STICKY_PATIENT =
-  'sticky left-0 w-60 min-w-[15rem] after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-gray-200'
+  'sticky left-0 w-52 min-w-[13rem] max-w-[13rem] after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-gray-200'
+
+/** Sloupec Zdroj zůstává při vodorovném posunu vedle sloupce pacienta (left = šířka sloupce pacienta); na mobilu se posouvá. */
+const STICKY_SOURCE = 'w-px sm:sticky sm:left-52 sm:after:absolute sm:after:inset-y-0 sm:after:right-0 sm:after:w-px sm:after:bg-gray-200'
+
+/** Zobrazení tabulky: kondenzované = jeden řádek s výsledkem ze všech zdrojů; podrobné = řádek za každý zdroj. */
+type Density = 'condensed' | 'detailed'
+const DENSITIES: { key: Density; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: 'condensed', label: 'Kondenzované', icon: Bars2Icon },
+  { key: 'detailed', label: 'Podrobné', icon: Bars4Icon },
+]
+const DENSITY_KEY = 'oncoready-dashboard-zobrazeni'
+const loadDensity = (): Density => {
+  try {
+    return localStorage.getItem(DENSITY_KEY) === 'detailed' ? 'detailed' : 'condensed'
+  } catch {
+    return 'condensed'
+  }
+}
+/** Řádek pacienta: „all“ = kondenzovaný souhrn, jinak jeden zdroj. */
+type Line = 'all' | SourceKey
 
 /** Nástroje v pravém panelu (přepínají se záložkami). Další nástroje lze přidat sem. */
 type ToolKey = 'filter' | 'sort'
@@ -250,8 +273,20 @@ function PatientsBoard({
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [sort, setSort] = useState<SortKey>('urgency')
   const [desc, setDesc] = useState(false)
+  const [density, setDensity] = useState<Density>(loadDensity)
+  const changeDensity = (d: Density) => {
+    setDensity(d)
+    try {
+      localStorage.setItem(DENSITY_KEY, d)
+    } catch {
+      /* ignorovat */
+    }
+  }
+  // Pacient, jehož detail souhrnu je otevřený
+  const [detail, setDetail] = useState<string | null>(null)
 
 
+  const today = todayIso()
   const rows = useMemo(() => {
     const days = DATE_FILTERS.find((d) => d.key === filters.date)!.days
     const since = days ? addDays(todayIso(), -days) : null
@@ -285,7 +320,13 @@ function PatientsBoard({
       .map((r) => {
         const due = latestDue(r.qs)
         const lastFilled = r.qs.reduce((m, q) => (q.filledAt && q.filledAt > m ? q.filledAt : m), '')
-        return { ...r, latest: due ? statusOf(due) : ('future' as Status), lastFilled }
+        return {
+          ...r,
+          latest: due ? statusOf(due) : ('future' as Status),
+          lastFilled,
+          ready: readinessOf(db, r.patient.id, today),
+          tl: timelineOf(db, r.patient.id, r.qs, today),
+        }
       })
       .sort((a, b) => {
         const byName = tableName(a.patient).localeCompare(tableName(b.patient), 'cs')
@@ -296,14 +337,24 @@ function PatientsBoard({
         else c = byName
         return (desc ? -c : c) || byName
       })
-  }, [db, search, filters, sort, desc])
+  }, [db, search, filters, sort, desc, today])
 
-  // Sloupce skupin: Plánované a Poslední vyplněný vždy, pak roky, které se v zobrazených řádcích vyskytují.
-  const groupKeys = useMemo(() => {
-    const years = new Set<string>()
-    for (const r of rows) for (const g of groupQuestionnaires(r.qs)) if (g.key !== 'future' && g.key !== 'last') years.add(g.key)
-    return ['future', 'last', ...[...years].sort().reverse()]
-  }, [rows])
+  // Časová osa: týdny od aktuálního zpět po nejstarší data zobrazených pacientů, seskupené po letech.
+  const weeks = useMemo(() => {
+    const earliest = rows.map((r) => r.tl.earliest).filter((d): d is string => !!d).sort()[0]
+    return earliest ? weeksBack(earliest, today) : []
+  }, [rows, today])
+  const years = useMemo(() => {
+    const out: { year: string; count: number }[] = []
+    for (const w of weeks) {
+      const last = out[out.length - 1]
+      if (last?.year === w.slice(0, 4)) last.count++
+      else out.push({ year: w.slice(0, 4), count: 1 })
+    }
+    return out
+  }, [weeks])
+  const yearStart = (i: number) => i === 0 || weeks[i].slice(0, 4) !== weeks[i - 1].slice(0, 4)
+  const detailed = density === 'detailed'
 
   return (
     <div className="flex flex-col gap-8">
@@ -316,100 +367,169 @@ function PatientsBoard({
             <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
             <span className="text-sm text-gray-500 tabular-nums">{rows.length} pacientů</span>
           </div>
-          <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 sm:px-6">
+            {/* Přepínač zobrazení: kondenzované = jeden řádek s výsledkem, podrobné = řádek za každý zdroj */}
+            <div className="inline-flex rounded-lg shadow-sm ring-1 ring-gray-950/10" role="group" aria-label="Zobrazení">
+              {DENSITIES.map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={density === key}
+                  onClick={() => changeDensity(key)}
+                  className={cx(
+                    'flex items-center gap-1.5 border-s border-gray-200 px-3 py-2 text-sm font-semibold transition first:rounded-s-lg first:border-s-0 last:rounded-e-lg',
+                    density === key ? 'bg-gray-50 text-primary-600' : 'bg-white text-gray-700 hover:bg-gray-50',
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </button>
+              ))}
+            </div>
             <SearchInput value={search} onChange={setSearch} className="w-full sm:max-w-xs" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full table-auto divide-y divide-gray-200 text-start">
               <thead className="whitespace-nowrap bg-gray-50/50">
                 <tr>
-                  <th rowSpan={2} className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-6 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
-                    Pacient
-                  </th>
-                  {/* Zdroj dat řádku – zatím jen dotazník */}
-                  <th rowSpan={2} className="w-px px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950">
-                    Zdroj
-                  </th>
-                  <th colSpan={groupKeys.length} className="px-3 pb-1 pt-3 text-start text-sm font-semibold text-gray-950">
+                  <th rowSpan={2} className={cx('px-4 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950', detailed ? 'w-52 min-w-[13rem]' : 'w-px')}>
                     <span className="inline-flex items-center gap-1.5">
-                      Dotazníky
-                      <BadgeLegend />
+                      Souhrn
+                      <BadgeLegend dashboard />
                     </span>
                   </th>
-                  {/* Výplň – sloupce skupin jsou jen tak široké, jak potřebují */}
+                  <th rowSpan={2} className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-4 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
+                    Pacient
+                  </th>
+                  <th rowSpan={2} className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
+                    Zdroj
+                  </th>
+                  <th rowSpan={2} className="w-px px-3 pb-2 text-start align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                    Plánované
+                  </th>
+                  <th
+                    rowSpan={2}
+                    title="Poslední data každého zdroje; neaktuální data jsou čárkovaně"
+                    className="w-px border-l border-gray-200 bg-primary-50/60 px-2 pb-2 text-center align-bottom text-[10px] font-semibold uppercase tracking-normal text-primary-600"
+                  >
+                    Aktuální
+                  </th>
+                  {years.map((y) => (
+                    <th key={y.year} colSpan={y.count} className="border-l border-gray-200 px-3 pb-1 pt-3 text-start text-sm font-semibold text-gray-950">
+                      {y.year} <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">· po týdnech</span>
+                    </th>
+                  ))}
+                  {/* Výplň – sloupce jsou jen tak široké, jak potřebují */}
                   <th rowSpan={2} className="border-l border-gray-200" />
                 </tr>
-                {/* Pevné sloupce skupin – kategorie jsou v zákrytu napříč pacienty */}
                 <tr>
-                  {groupKeys.map((k) => (
+                  {weeks.map((w, i) => (
                     <th
-                      key={k}
-                      title={k === 'last' ? 'Poslední vyplněný dotazník' : undefined}
-                      className={cx(
-                        'w-px border-l border-gray-200 pb-2 pt-1 text-start align-bottom text-[10px] font-semibold uppercase',
-                        k === 'last' ? 'px-2 text-center tracking-normal' : 'px-3 tracking-wider',
-                        k === 'last' ? 'text-primary-600' : 'text-gray-400',
-                      )}
+                      key={w}
+                      title={`Týden od ${shortDate(w)}`}
+                      className={cx('w-px px-1.5 pb-2 pt-1 text-center align-bottom text-[10px] font-normal text-gray-400', yearStart(i) && 'border-l border-gray-200')}
                     >
-                      {/* Krátký popisek, aby sloupec s jediným odznakem nebyl zbytečně široký */}
-                      {k === 'last' ? 'Poslední' : groupLabel(k)}
+                      {shortDate(w)}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 whitespace-nowrap">
-                {rows.slice(0, perPage).map(({ patient, qs, program, latest }) => {
-                  return (
-                    <tr key={patient.id} className="group">
-                      {/* Barevný proužek vlevo = stav nejnovějšího dotazníku, jehož termín už nastal */}
-                      <td className={cx(STICKY_PATIENT, 'z-[1] bg-white px-6 py-3 text-sm text-gray-950 group-hover:bg-gray-50', BAND_META[latest].stripe)}>
-                        <Link to={`/kartoteka/${patient.id}/upravit`} className="font-medium hover:underline">
-                          {tableName(patient)} →
-                        </Link>
-                        <div className="mt-0.5 truncate text-xs text-gray-500">
-                          <span className="tabular-nums">RČ {patient.rodneCislo}</span>
-                          {program && <span className="text-gray-400"> · {program.name}</span>}
-                        </div>
-                      </td>
-                      <td className="w-px px-3 py-3 text-sm text-gray-600 group-hover:bg-gray-50">📋 Dotazník</td>
-                      {groupKeys.map((k) => {
-                        const items = groupQuestionnaires(qs).find((g) => g.key === k)?.items ?? []
-                        return (
-                          <td key={k} className={cx('w-px border-l border-gray-200 py-3 align-middle group-hover:brightness-[0.98]', k === 'last' ? 'px-2 [&>*]:mx-auto [&>div]:w-fit' : 'min-w-[3.75rem] px-3', groupTone(k))}>
-                            {k === 'future' && items.length > 1 ? (
-                              <PlannedCell
-                                items={items}
-                                expanded={expanded.has(patient.id)}
-                                onToggle={() =>
-                                  setExpanded((s) => {
-                                    const n = new Set(s)
-                                    if (n.has(patient.id)) n.delete(patient.id)
-                                    else n.add(patient.id)
-                                    return n
-                                  })
-                                }
-                                onOpenReport={setReport}
-                              />
-                            ) : items.length ? (
-                              <BadgeRow items={items} onOpenReport={setReport} />
-                            ) : (
-                              <span className="block min-w-[2.25rem] text-center text-sm text-gray-300">—</span>
-                            )}
+              {rows.slice(0, perPage).map(({ patient, qs, program, ready, tl }) => {
+                const lines: Line[] = detailed ? ['questionnaire', 'lab', 'wearables'] : ['all']
+                const planned = qs.filter((q) => statusOf(q) === 'future')
+                const plannedCell = planned.length > 1 ? (
+                  <PlannedCell
+                    items={planned}
+                    expanded={expanded.has(patient.id)}
+                    onToggle={() =>
+                      setExpanded((s) => {
+                        const n = new Set(s)
+                        if (n.has(patient.id)) n.delete(patient.id)
+                        else n.add(patient.id)
+                        return n
+                      })
+                    }
+                    onOpenReport={setReport}
+                  />
+                ) : planned.length ? (
+                  <BadgeRow items={planned} onOpenReport={setReport} />
+                ) : (
+                  <span className="block min-w-[2.25rem] text-center text-sm text-gray-300">—</span>
+                )
+                return (
+                  <tbody key={patient.id} className="group whitespace-nowrap">
+                    {lines.map((line, i) => (
+                      <tr key={line}>
+                        {i === 0 && (
+                          <>
+                            {/* Souhrn: semafor (v podrobném zobrazení i hraniční hodnoty); klik otevře detail. Proužek = barva souhrnu. */}
+                            <td
+                              rowSpan={lines.length}
+                              className={cx('px-4 py-3 group-hover:bg-gray-50', detailed ? 'align-top' : 'align-middle', OVERALL_META[ready.overall].stripe)}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setDetail(patient.id)}
+                                title="Zobrazit detail: aktuální dotazník, laboratoř a wearables"
+                                className="flex flex-col items-start gap-1.5 rounded text-start hover:opacity-80"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <Semafor level={ready.overall} />
+                                  <span className={cx('text-sm font-semibold', OVERALL_META[ready.overall].text)}>{OVERALL_META[ready.overall].label}</span>
+                                </span>
+                                {detailed && <FindingList findings={ready.findings} />}
+                              </button>
+                            </td>
+                            <td
+                              rowSpan={lines.length}
+                              className={cx(STICKY_PATIENT, 'z-[1] bg-white px-4 py-3 text-sm text-gray-950 group-hover:bg-gray-50', detailed ? 'align-top' : 'align-middle')}
+                            >
+                              <Link to={`/kartoteka/${patient.id}/upravit`} className="font-medium hover:underline">
+                                {tableName(patient)} →
+                              </Link>
+                              <div className="mt-0.5 truncate text-xs text-gray-500">
+                                <span className="tabular-nums">RČ {patient.rodneCislo}</span>
+                                {program && <span className="text-gray-400"> · {program.name}</span>}
+                              </div>
+                            </td>
+                          </>
+                        )}
+                        <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-2 text-sm text-gray-600 group-hover:bg-gray-50', i > 0 && 'border-t border-gray-100')}>
+                          {line === 'all' ? (
+                            <span title="Dotazník, laboratoř a wearables dohromady">📋🧪⌚ Vše</span>
+                          ) : (
+                            `${sourceMeta(line).icon} ${sourceMeta(line).label}`
+                          )}
+                        </td>
+                        <td className={cx('w-px px-3 py-2 align-middle group-hover:bg-gray-50', i > 0 && 'border-t border-gray-100')}>
+                          {line === 'all' || line === 'questionnaire' ? plannedCell : null}
+                        </td>
+                        <td className={cx('w-px border-l border-gray-200 bg-primary-50/60 px-2 py-2 align-middle [&>*]:mx-auto [&>div]:w-fit', i > 0 && 'border-t border-t-gray-100')}>
+                          <CurrentCell line={line} ready={ready} onOpenReport={setReport} />
+                        </td>
+                        {weeks.map((w, wi) => (
+                          <td
+                            key={w}
+                            className={cx('w-px px-1.5 py-2 align-middle group-hover:bg-gray-50', yearStart(wi) && 'border-l border-gray-200', i > 0 && 'border-t border-t-gray-100')}
+                          >
+                            <WeekCell line={line} week={w} tl={tl} onOpenReport={setReport} />
                           </td>
-                        )
-                      })}
-                      <td className="border-l border-gray-200 group-hover:bg-gray-50" />
-                    </tr>
-                  )
-                })}
-                {rows.length === 0 && (
+                        ))}
+                        <td className={cx('border-l border-gray-200 group-hover:bg-gray-50', i > 0 && 'border-t border-t-gray-100')} />
+                      </tr>
+                    ))}
+                  </tbody>
+                )
+              })}
+              {rows.length === 0 && (
+                <tbody>
                   <tr>
-                    <td colSpan={groupKeys.length + 3} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={weeks.length + 6} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>
-                )}
-              </tbody>
+                </tbody>
+              )}
             </table>
           </div>
           <div className="flex justify-center border-t border-gray-200 px-6 py-3">
@@ -521,6 +641,7 @@ function PatientsBoard({
       </Card>
 
       <ReportModal questionnaire={report} onClose={() => setReport(null)} />
+      <ReadinessModal patientId={detail} onClose={() => setDetail(null)} onOpenReport={setReport} />
     </div>
   )
 }
@@ -564,4 +685,70 @@ function PlannedCell({
       <BadgeRow items={expanded ? items : [next]} onOpenReport={onOpenReport} />
     </div>
   )
+}
+
+/** Buňka Aktuální: poslední data zdroje; neaktuální nebo chybějící = čárkovaný rámeček. Kondenzovaně = výsledek souhrnu. */
+function CurrentCell({ line, ready, onOpenReport }: { line: Line; ready: Readiness; onOpenReport: (q: Questionnaire) => void }) {
+  if (line === 'all') {
+    return (
+      <CombinedTile
+        level={ready.overall}
+        title={[`Souhrn: ${OVERALL_META[ready.overall].label}`, ...ready.findings.map((f) => `${sourceMeta(f.source).icon} ${f.text}`)].join('\n')}
+      />
+    )
+  }
+  const s = ready.sources.find((x) => x.source === line)!
+  if (s.state !== 'ok') {
+    return (
+      <MissingTile
+        stale={s.state === 'stale'}
+        below={s.date ? agoText(s.date) : 'bez dat'}
+        title={s.date ? `${sourceMeta(line).label}: poslední data ${shortDate(s.date)} – neaktuální` : `${sourceMeta(line).label}: bez dat`}
+      />
+    )
+  }
+  if (line === 'questionnaire') return <BadgeRow items={[s.questionnaire!]} onOpenReport={onOpenReport} />
+  if (line === 'lab') return <LabTile lab={s.lab!} />
+  return <WearTile week={{ level: s.level as Level, day: s.day!, findings: s.findings }} below={agoText(s.date!)} />
+}
+
+/** Buňka týdne časové osy. Kondenzovaně = nejhorší stav týdne ze všech zdrojů. */
+function WeekCell({ line, week, tl, onOpenReport }: { line: Line; week: string; tl: PatientTimeline; onOpenReport: (q: Questionnaire) => void }) {
+  if (line === 'all') {
+    const level = tl.combined.get(week)
+    return level ? <CombinedTile level={level} title={weekTitle(week, level, tl)} /> : <EmptyWeek />
+  }
+  if (line === 'questionnaire') {
+    const items = tl.questionnaires.get(week)
+    return items ? <BadgeRow items={items} onOpenReport={onOpenReport} /> : <EmptyWeek />
+  }
+  if (line === 'lab') {
+    const labs = tl.labs.get(week)
+    return labs ? (
+      <div className="flex gap-x-1.5">
+        {labs.map((l) => (
+          <LabTile key={l.id} lab={l} />
+        ))}
+      </div>
+    ) : (
+      <EmptyWeek />
+    )
+  }
+  const wear = tl.wearables.get(week)
+  return wear ? <WearTile week={wear} /> : <EmptyWeek />
+}
+
+/** Popisek kondenzovaného odznaku týdne: co do výsledku přispělo. */
+function weekTitle(week: string, level: Overall, tl: PatientTimeline) {
+  const out = [`Týden od ${shortDate(week)}: ${OVERALL_META[level].label}`]
+  for (const q of tl.questionnaires.get(week) ?? []) {
+    out.push(`📋 Dotazník ${shortDate(questionnaireDate(q))}: ${statusOf(q) === 'na' ? 'nevyplněn' : `${BAND_META[statusOf(q)].label}`}`)
+  }
+  for (const l of tl.labs.get(week) ?? []) {
+    const f = evalLab(l).findings
+    out.push(`🧪 Laboratoř ${shortDate(l.date)}: ${f.length ? f.map((x) => x.text).join(', ') : 'v mezích'}`)
+  }
+  const w = tl.wearables.get(week)
+  if (w) out.push(`⌚ Wearables: ${w.findings.length ? w.findings.map((f) => f.text).join(', ') : 'bez odchylek'}`)
+  return out.join('\n')
 }

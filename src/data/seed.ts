@@ -5,6 +5,8 @@ import { QUESTIONS, scaleValueForPoints } from './questionnaire'
 import { seedPrograms, seedViews } from './programs'
 import { seedEskill } from './eskillSeed'
 import type { Band } from '../lib/scoring'
+import { addDays, daysBetween, todayIso } from '../lib/format'
+import { seedLabs, seedWearables } from './readinessSeed'
 
 type Entry = { date: string; time?: string; score: number; band: Band; pinned?: Record<string, number> } | { date: string; na: true }
 
@@ -185,11 +187,35 @@ const mons = [
   ),
 ]
 
-export const seedDB = (): DB => ({
-  patients: structuredClone(patients),
-  monitorings: mons.map((x) => ({ ...x.m })),
-  questionnaires: structuredClone(mons.flatMap((x) => x.qs)),
-  programs: seedPrograms(),
-  views: seedViews(),
-  eskillResults: seedEskill(),
-})
+/** Posune všechna data o `days` dní (datum i datum s časem). */
+function shiftDates(db: DB, days: number): DB {
+  if (days === 0) return db
+  const sh = (iso: string) => addDays(iso.slice(0, 10), days) + iso.slice(10)
+  return {
+    ...db,
+    monitorings: db.monitorings.map((m) => ({ ...m, start: sh(m.start), end: sh(m.end) })),
+    questionnaires: db.questionnaires.map((q) => ({ ...q, scheduledFor: sh(q.scheduledFor), filledAt: q.filledAt && sh(q.filledAt) })),
+    eskillResults: db.eskillResults.map((r) => ({ ...r, takenAt: sh(r.takenAt) })),
+    labs: db.labs.map((l) => ({ ...l, date: sh(l.date) })),
+    wearables: db.wearables.map((w) => ({ ...w, date: sh(w.date) })),
+  }
+}
+
+/**
+ * Demo data jsou vztažená k SEED_TODAY a při vytvoření se posunou tak, aby SEED_TODAY = skutečný dnešek.
+ * Laboratoř, wearables i dotazníky jsou tak v demu vždy aktuální.
+ */
+export const seedDB = (): DB =>
+  shiftDates(
+    {
+      patients: structuredClone(patients),
+      monitorings: mons.map((x) => ({ ...x.m })),
+      questionnaires: structuredClone(mons.flatMap((x) => x.qs)),
+      programs: seedPrograms(),
+      views: seedViews(),
+      eskillResults: seedEskill(),
+      labs: seedLabs(SEED_TODAY),
+      wearables: seedWearables(SEED_TODAY),
+    },
+    daysBetween(SEED_TODAY, todayIso()),
+  )

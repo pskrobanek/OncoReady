@@ -58,7 +58,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     diagnoses: ['C61'],
     tag: 'Urologie',
     classification: 'nonMD',
-    frequencyDays: 7,
+    frequencyDays: 14,
     bands: { green: { min: 0, max: 9 }, yellow: { min: 10, max: 16 }, red: { min: 17, max: null } },
   },
   {

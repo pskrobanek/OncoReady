@@ -4,7 +4,7 @@ import type { Answers, DashboardView, DB, ESkillResult, Monitoring, MonitoringPr
 import { addDays, todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
-const KEY = 'oncoready-mvp-db-v4' // při změně struktury dat zvýšit verzi
+const KEY = 'oncoready-mvp-db-v5' // při změně struktury dat zvýšit verzi
 
 function load(): DB {
   try {
@@ -19,7 +19,13 @@ function load(): DB {
 /** Doplní kolekce přidané v novějších verzích, aby uložená data zůstala zachována. */
 function migrate(db: Partial<DB>): DB {
   const seed = seedDB()
-  return { ...seed, ...db, eskillResults: db.eskillResults ?? seed.eskillResults } as DB
+  return {
+    ...seed,
+    ...db,
+    eskillResults: db.eskillResults ?? seed.eskillResults,
+    labs: db.labs ?? seed.labs,
+    wearables: db.wearables ?? seed.wearables,
+  } as DB
 }
 
 const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -70,6 +76,8 @@ function useDBState() {
             monitorings: s.monitorings.filter((m) => m.patientId !== id),
             questionnaires: s.questionnaires.filter((q) => !monIds.has(q.monitoringId)),
             eskillResults: s.eskillResults.filter((r) => r.patientId !== id),
+            labs: s.labs.filter((l) => l.patientId !== id),
+            wearables: s.wearables.filter((w) => w.patientId !== id),
           }
         }),
 

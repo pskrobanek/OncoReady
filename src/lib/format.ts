@@ -38,3 +38,19 @@ export const addDays = (iso: string, days: number) => {
 export const tableName = (p: { prijmeni: string; jmeno: string }) => `${p.prijmeni} ${p.jmeno}`
 /** Jméno v klinickém reportu: „Jméno Příjmení“. */
 export const reportName = (p: { prijmeni: string; jmeno: string }) => `${p.jmeno} ${p.prijmeni}`
+
+/** Počet dní mezi dvěma daty YYYY-MM-DD (b − a). */
+export const daysBetween = (a: string, b: string) => Math.round((Date.parse(b.slice(0, 10)) - Date.parse(a.slice(0, 10))) / 86400000)
+
+/** „dnes“, „včera“, „před 5 dny“. */
+export const agoText = (iso: string, today = todayIso()) => {
+  const n = daysBetween(iso, today)
+  return n <= 0 ? 'dnes' : n === 1 ? 'včera' : `před ${n} dny`
+}
+
+/** Číslo se znaménkem a typografickým minus: „−45“, „+12“. */
+export const signed = (v: number) => (v < 0 ? `−${num(-v)}` : `+${num(v)}`)
+
+/** Číslo v českém formátu (desetinná čárka). */
+export const num = (v: number, decimals = 0) =>
+  v.toLocaleString('cs-CZ', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })

@@ -8,7 +8,7 @@ import { questionnairesOf, useStore } from '../lib/store'
 import type { Answers, Questionnaire } from '../lib/types'
 import { CloseButton, cx, Modal, useToast } from './ui'
 
-function answerText(qid: string, value: unknown): string {
+export function answerText(qid: string, value: unknown): string {
   const q = QUESTIONS.find((x) => x.id === qid)!
   if (value === undefined || value === null) return '—'
   if (q.type === 'scale') return Number(value).toFixed(2)
@@ -20,7 +20,7 @@ function answerText(qid: string, value: unknown): string {
 const formatPhone = (t: string) => (/^\d{12}$/.test(t) ? `+${t.slice(0, 3)} ${t.slice(3, 6)} ${t.slice(6, 9)} ${t.slice(9)}` : t)
 
 /** Závažnost odpovědi pro řazení a porovnání (žádost o kontrolu = nejvýš). */
-function severity(qid: string, answers: Answers): number | null {
+export function severity(qid: string, answers: Answers): number | null {
   const q = QUESTIONS.find((x) => x.id === qid)!
   if (answers[qid] === undefined) return null
   if (q.type === 'control') return answers[qid] ? 5 : 0

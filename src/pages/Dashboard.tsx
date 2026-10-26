@@ -399,13 +399,19 @@ function PatientsBoard({
                   <th rowSpan={2} className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-4 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
                     Pacient
                   </th>
-                  <th rowSpan={2} className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
-                    Zdroj
-                  </th>
+                  {/* Zdroj jen v podrobném zobrazení – kondenzovaný řádek je souhrn všech zdrojů */}
+                  {detailed && (
+                    <th rowSpan={2} className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
+                      Zdroj
+                    </th>
+                  )}
                   <th
                     rowSpan={2}
                     title="Poslední data každého zdroje; neaktuální data jsou čárkovaně"
-                    className="w-px border-l border-gray-200 bg-primary-50/60 px-2 pb-2 text-center sm:border-l-0 align-bottom text-[10px] font-semibold uppercase tracking-normal text-primary-600"
+                    className={cx(
+                      'w-px bg-primary-50/60 px-2 pb-2 text-center align-bottom text-[10px] font-semibold uppercase tracking-normal text-primary-600',
+                      detailed && 'border-l border-gray-200 sm:border-l-0',
+                    )}
                   >
                     Aktuální
                   </th>
@@ -466,14 +472,18 @@ function PatientsBoard({
                             </td>
                           </>
                         )}
-                        <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-2 text-sm text-gray-600 group-hover:bg-gray-50', i > 0 && 'border-t border-gray-100')}>
-                          {line === 'all' ? (
-                            <span title="Dotazník, laboratoř a wearables dohromady">📋🧪⌚ Vše</span>
-                          ) : (
-                            `${sourceMeta(line).icon} ${sourceMeta(line).label}`
+                        {line !== 'all' && (
+                          <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-2 text-sm text-gray-600 group-hover:bg-gray-50', i > 0 && 'border-t border-gray-100')}>
+                            {`${sourceMeta(line).icon} ${sourceMeta(line).label}`}
+                          </td>
+                        )}
+                        <td
+                          className={cx(
+                            'w-px bg-primary-50/60 px-2 py-2 align-middle [&>*]:mx-auto [&>div]:w-fit',
+                            detailed && 'border-l border-gray-200 sm:border-l-0',
+                            i > 0 && 'border-t border-t-gray-100',
                           )}
-                        </td>
-                        <td className={cx('w-px border-l border-gray-200 bg-primary-50/60 px-2 py-2 align-middle sm:border-l-0 [&>*]:mx-auto [&>div]:w-fit', i > 0 && 'border-t border-t-gray-100')}>
+                        >
                           <CurrentCell line={line} ready={ready} onOpenReport={setReport} />
                         </td>
                         {weeks.map((w, wi) => (
@@ -493,7 +503,7 @@ function PatientsBoard({
               {rows.length === 0 && (
                 <tbody>
                   <tr>
-                    <td colSpan={weeks.length + 5} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={weeks.length + (detailed ? 5 : 4)} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>

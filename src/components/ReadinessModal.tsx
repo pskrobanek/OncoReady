@@ -16,7 +16,7 @@ import {
 import { answerColor, answerPoints, BAND_META, bandOf, bandReason, totalScore } from '../lib/scoring'
 import { currentMonitoring, useStore } from '../lib/store'
 import type { Questionnaire } from '../lib/types'
-import { FindingList, ReadinessBadge } from './Readiness'
+import { FindingList, ReadinessBadge, SourceIcon } from './Readiness'
 import { answerText, severity } from './ReportModal'
 import { CloseButton, cx, Modal } from './ui'
 
@@ -40,7 +40,9 @@ export function ReadinessModal({
   const today = todayIso()
   const program = db.programs.find((p) => p.id === currentMonitoring(db, patient.id)?.programId)
   const r = readinessOf(db, patient.id, today)
-  const src = (k: SourceState['source']) => r.sources.find((s) => s.source === k)!
+  // Zdroj, který pacient nemá (žádná laboratoř / zařízení), se ukáže jako „Nesleduje se“ a do souhrnu se nepočítá.
+  const src = (k: SourceState['source']): SourceState => r.sources.find((s) => s.source === k) ?? { source: k, state: 'missing', level: 'gray', date: null, findings: [] }
+  const absent = (k: SourceState['source']) => !r.sources.some((s) => s.source === k)
   const days = db.wearables.filter((d) => d.patientId === patient.id).sort((a, b) => a.date.localeCompare(b.date))
 
   return (
@@ -64,12 +66,13 @@ export function ReadinessModal({
             {r.findings.length ? (
               <FindingList findings={r.findings} className="mt-2.5 text-sm leading-5" />
             ) : (
-              <p className="mt-2.5 text-sm text-gray-600">Všechny tři zdroje jsou aktuální a v mezích.</p>
+              <p className="mt-2.5 text-sm text-gray-600">Všechny zdroje pacienta jsou aktuální a v mezích.</p>
             )}
           </div>
           <p className="w-full text-xs text-gray-500 sm:w-72">
-            <span className="font-medium text-gray-700">Pravidlo:</span> zelená = všechny 3 zdroje aktuální a v mezích · červená = kterýkoli zdroj
-            červený · šedá = některý zdroj chybí nebo je neaktuální · žlutá = kterýkoli zdroj žlutý (dotazník i modrý).
+            <span className="font-medium text-gray-700">Pravidlo:</span> zelená = všechny zdroje pacienta aktuální a v mezích · červená = kterýkoli
+            zdroj červený · šedá = některý zdroj je neaktuální nebo chybí vyplněný dotazník · žlutá = kterýkoli zdroj žlutý (dotazník i modrý).
+            Laboratoř a wearables se počítají, jen pokud je pacient má.
             <br />
             Aktuální = dotazník v intervalu monitorace (min. {FRESH_DAYS.questionnaireMin} dní) · laboratoř ≤ {FRESH_DAYS.lab} dní · wearables ≤{' '}
             {FRESH_DAYS.wearables} den.
@@ -93,12 +96,12 @@ export function ReadinessModal({
 
         <div className="grid gap-5 md:grid-cols-2">
           {/* Laboratoř */}
-          <Section s={src('lab')}>
+          <Section s={src('lab')} absent={absent('lab')}>
             {src('lab').lab ? <MetricTable rows={evalLab(src('lab').lab!).rows} /> : <Empty>Žádný výsledek laboratoře.</Empty>}
           </Section>
 
           {/* Wearables */}
-          <Section s={src('wearables')}>
+          <Section s={src('wearables')} absent={absent('wearables')}>
             {src('wearables').day ? (
               (() => {
                 const ev = evalWearDay(src('wearables').day!, days)
@@ -135,10 +138,11 @@ export function ReadinessModal({
   )
 }
 
-function Section({ s, children }: { s: SourceState; children: ReactNode }) {
+function Section({ s, absent = false, children }: { s: SourceState; absent?: boolean; children: ReactNode }) {
   const m = sourceMeta(s.source)
-  const pill =
-    s.state === 'missing'
+  const pill = absent
+    ? { text: 'Nesleduje se', cls: 'bg-gray-50 text-gray-500 ring-gray-500/20' }
+    : s.state === 'missing'
       ? { text: 'Bez dat', cls: 'bg-gray-50 text-gray-600 ring-gray-500/20' }
       : s.state === 'stale'
         ? { text: 'Neaktuální', cls: 'bg-red-50 text-red-600 ring-red-600/20' }
@@ -150,8 +154,9 @@ function Section({ s, children }: { s: SourceState; children: ReactNode }) {
   return (
     <section className="rounded-xl ring-1 ring-gray-950/10">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-100 px-4 py-3">
-        <h3 className="text-sm font-semibold text-gray-950">
-          {m.icon} {m.label}
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-gray-950">
+          <SourceIcon source={s.source} className="h-4 w-4 text-gray-400" />
+          {m.label}
         </h3>
         <span className={cx('rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset', pill.cls)}>{pill.text}</span>
         {s.date && (

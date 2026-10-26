@@ -1,7 +1,7 @@
-// Pravidla připravenosti k léčbě: laboratoř, wearables a souhrnný stav ze všech tří zdrojů.
+// Pravidla připravenosti k léčbě: laboratoř, wearables a souhrnný stav ze zdrojů, které pacient má.
 // Meze a okna aktuálnosti jsou předpoklad pro prototyp – ⚠️ OVĚŘIT s klinikem.
 import { statusOf } from '../components/QuestionnaireBadges'
-import { addDays, agoText, daysBetween, num, signed, todayIso } from './format'
+import { addDays, agoText, daysBetween, num, shortDate, signed, todayIso } from './format'
 import { bandOf, totalScore, type Band } from './scoring'
 import type { DB, LabParam, LabResult, Questionnaire, WearableDay } from './types'
 
@@ -10,10 +10,10 @@ export type Level = 'green' | 'yellow' | 'red'
 export type Overall = Level | 'gray'
 export type SourceKey = 'questionnaire' | 'lab' | 'wearables'
 
-export const SOURCES: { key: SourceKey; label: string; icon: string }[] = [
-  { key: 'questionnaire', label: 'Dotazník', icon: '📋' },
-  { key: 'lab', label: 'Laboratoř', icon: '🧪' },
-  { key: 'wearables', label: 'Wearables', icon: '⌚' },
+export const SOURCES: { key: SourceKey; label: string }[] = [
+  { key: 'questionnaire', label: 'Dotazník' },
+  { key: 'lab', label: 'Laboratoř' },
+  { key: 'wearables', label: 'Wearables' },
 ]
 export const sourceMeta = (k: SourceKey) => SOURCES.find((s) => s.key === k)!
 
@@ -153,13 +153,14 @@ export type Readiness = { overall: Overall; sources: SourceState[]; findings: Fi
 const staleFinding = (source: SourceKey, date: string | null, today: string): Finding => ({
   source,
   level: 'gray',
-  text: date ? `Neaktuální – ${agoText(date, today)}` : 'Bez dat',
+  text: date ? `Neaktuální – ${agoText(date, today)}` : source === 'questionnaire' ? 'Žádný vyplněný dotazník' : 'Bez dat',
 })
 
 /**
- * Souhrn připravenosti pacienta k dnešku (pravidlo souhrnu):
- * červená = kterýkoli aktuální zdroj červený; šedá = některý zdroj chybí nebo je neaktuální;
- * žlutá = kterýkoli zdroj žlutý (nebo dotazník modrý); zelená = všechny tři zdroje aktuální a zelené.
+ * Souhrn připravenosti pacienta k dnešku (pravidlo souhrnu). Počítají se jen zdroje, které pacient má:
+ * dotazník (má monitoraci), laboratoř (má aspoň jeden výsledek), wearables (má aspoň jeden den dat).
+ * červená = kterýkoli aktuální zdroj červený; šedá = některý zdroj je neaktuální nebo chybí vyplněný dotazník;
+ * žlutá = kterýkoli zdroj žlutý (nebo dotazník modrý); zelená = všechny zdroje pacienta aktuální a zelené.
  */
 export function readinessOf(db: DB, patientId: string, today = todayIso()): Readiness {
   const monIds = new Set(db.monitorings.filter((m) => m.patientId === patientId).map((m) => m.id))
@@ -173,7 +174,9 @@ export function readinessOf(db: DB, patientId: string, today = todayIso()): Read
 
   // Dotazník
   const q = filled[0]
-  if (!q) sources.push({ source: 'questionnaire', state: 'missing', level: 'gray', date: null, findings: [staleFinding('questionnaire', null, today)] })
+  if (!monIds.size) {
+    /* pacient bez monitorace – dotazník není jeho zdrojem */
+  } else if (!q) sources.push({ source: 'questionnaire', state: 'missing', level: 'gray', date: null, findings: [staleFinding('questionnaire', null, today)] })
   else {
     const mon = db.monitorings.find((m) => m.id === q.monitoringId)
     const every = db.programs.find((p) => p.id === mon?.programId)?.frequencyDays ?? 7
@@ -189,8 +192,7 @@ export function readinessOf(db: DB, patientId: string, today = todayIso()): Read
 
   // Laboratoř
   const lab = labs[0]
-  if (!lab) sources.push({ source: 'lab', state: 'missing', level: 'gray', date: null, findings: [staleFinding('lab', null, today)] })
-  else {
+  if (lab) {
     const ev = evalLab(lab)
     const fresh = daysBetween(lab.date, today) <= FRESH_DAYS.lab
     sources.push(
@@ -202,8 +204,7 @@ export function readinessOf(db: DB, patientId: string, today = todayIso()): Read
 
   // Wearables
   const day = days[days.length - 1]
-  if (!day) sources.push({ source: 'wearables', state: 'missing', level: 'gray', date: null, findings: [staleFinding('wearables', null, today)] })
-  else {
+  if (day) {
     const ev = evalWearDay(day, days)
     const fresh = daysBetween(day.date, today) <= FRESH_DAYS.wearables
     sources.push(
@@ -213,75 +214,99 @@ export function readinessOf(db: DB, patientId: string, today = todayIso()): Read
     )
   }
 
-  const overall = worstOf(sources.map((s) => s.level))!
+  const overall = worstOf(sources.map((s) => s.level)) ?? 'gray'
   // Pořadí nálezů: nejdřív hodnoty mimo meze (červené, žluté), pak chybějící / neaktuální data.
   const findings = sources.flatMap((s) => s.findings).sort((a, b) => FINDING_ORDER[a.level] - FINDING_ORDER[b.level])
   return { overall, sources, findings }
 }
 
 // ---------------------------------------------------------------------------
-// Časová osa po týdnech
+// Časová osa: po týdnech, měsících, letech, nebo jen vyplněné (bez prázdných období)
 // ---------------------------------------------------------------------------
+export type TimelineMode = 'week' | 'month' | 'year' | 'filled'
+
 /** Pondělí týdne, do kterého datum patří. */
 export const weekOf = (iso: string) => {
   const day = new Date(iso.slice(0, 10) + 'T00:00:00').getDay() // 0 = neděle
   return addDays(iso.slice(0, 10), -((day + 6) % 7))
 }
 
-/** Týdny (pondělí) od týdne `to` zpět po týden `from`, nejnovější první. */
-export function weeksBack(from: string, to: string): string[] {
+const MONTHS = ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro']
+
+/** Klíč období (sloupce osy), do kterého datum patří: pondělí týdne, „2026-10“, „2026“; „Jen vyplněné“ = jediný sloupec. */
+export const periodOf = (mode: TimelineMode, iso: string) =>
+  mode === 'week' ? weekOf(iso) : mode === 'month' ? iso.slice(0, 7) : mode === 'year' ? iso.slice(0, 4) : 'all'
+
+/** Období od aktuálního zpět po období data `from`, nejnovější první. */
+export function periodsBack(mode: TimelineMode, from: string, to: string): string[] {
+  if (mode === 'filled') return ['all']
   const out: string[] = []
-  for (let w = weekOf(to); w >= weekOf(from); w = addDays(w, -7)) out.push(w)
+  const last = periodOf(mode, from)
+  if (mode === 'week') for (let w = weekOf(to); w >= last; w = addDays(w, -7)) out.push(w)
+  else if (mode === 'year') for (let y = Number(to.slice(0, 4)); String(y) >= last; y--) out.push(String(y))
+  else {
+    let [y, m] = to.slice(0, 7).split('-').map(Number)
+    for (let k = to.slice(0, 7); k >= last; k = `${y}-${String(m).padStart(2, '0')}`) {
+      out.push(k)
+      if (--m === 0) [y, m] = [y - 1, 12]
+    }
+  }
   return out
 }
 
-/** Datum, podle kterého se dotazník zařadí do týdne: vyplnění, jinak termín. */
+/** Popisek sloupce: „19.10.“, „říj“, „2026“. */
+export const periodLabel = (mode: TimelineMode, key: string) =>
+  mode === 'week' ? shortDate(key) : mode === 'month' ? MONTHS[Number(key.slice(5, 7)) - 1] : mode === 'year' ? key : ''
+
+/** Datum, podle kterého se dotazník zařadí na osu: vyplnění, jinak termín. */
 export const questionnaireDate = (q: Questionnaire) => (q.filledAt ? q.filledAt.slice(0, 10) : q.scheduledFor)
 
+/** Wearables na ose: jeden odznak za týden = nejhorší den (při shodě novější). */
 export type WearWeek = { level: Level; day: WearableDay; findings: Finding[] }
 export type PatientTimeline = {
   questionnaires: Map<string, Questionnaire[]>
   labs: Map<string, LabResult[]>
-  wearables: Map<string, WearWeek>
-  /** Výsledný stav týdne ze všech zdrojů (pro kondenzovaný řádek). */
-  combined: Map<string, Overall>
+  wearables: Map<string, WearWeek[]>
   /** Nejstarší datum v datech pacienta (pro rozsah osy). */
   earliest: string | null
 }
 
 const push = <T,>(m: Map<string, T[]>, k: string, v: T) => (m.get(k) ?? m.set(k, []).get(k)!).push(v)
 
-/** Rozdělí data pacienta do týdnů. `qs` = dotazníky zobrazené monitorace (budoucí se vynechají – jsou ve sloupci Plánované). */
-export function timelineOf(db: DB, patientId: string, qs: Questionnaire[], today = todayIso()): PatientTimeline {
+/**
+ * Rozdělí data pacienta do sloupců osy; uvnitř sloupce je nejnovější vlevo.
+ * `qs` = dotazníky zobrazené monitorace. Budoucí termíny se vynechají, v režimu „Jen vyplněné“ i nevyplněné (N/A).
+ */
+export function timelineOf(db: DB, patientId: string, qs: Questionnaire[], mode: TimelineMode, today = todayIso()): PatientTimeline {
   const questionnaires = new Map<string, Questionnaire[]>()
   const labs = new Map<string, LabResult[]>()
-  const wearables = new Map<string, WearWeek>()
-  const combined = new Map<string, Overall>()
+  const wearables = new Map<string, WearWeek[]>()
   const dates: string[] = []
-  const add = (w: string, l: Overall) => combined.set(w, worstOf([l, ...(combined.has(w) ? [combined.get(w)!] : [])])!)
 
-  for (const q of qs) {
-    const st = statusOf(q)
-    if (st === 'future') continue
-    const d = questionnaireDate(q)
-    push(questionnaires, weekOf(d), q)
-    dates.push(d)
-    add(weekOf(d), st === 'na' ? 'gray' : bandLevel(st as Band))
+  const shown = qs
+    .filter((q) => {
+      const st = statusOf(q)
+      return st !== 'future' && !(mode === 'filled' && st === 'na')
+    })
+    .sort((a, b) => questionnaireDate(b).localeCompare(questionnaireDate(a)))
+  for (const q of shown) {
+    push(questionnaires, periodOf(mode, questionnaireDate(q)), q)
+    dates.push(questionnaireDate(q))
   }
   for (const l of db.labs.filter((x) => x.patientId === patientId && x.date <= today).sort((a, b) => b.date.localeCompare(a.date))) {
-    push(labs, weekOf(l.date), l)
+    push(labs, periodOf(mode, l.date), l)
     dates.push(l.date)
-    add(weekOf(l.date), evalLab(l).level)
   }
   const days = db.wearables.filter((x) => x.patientId === patientId && x.date <= today).sort((a, b) => a.date.localeCompare(b.date))
+  const weeks = new Map<string, WearWeek>()
   for (const d of days) {
     const ev = evalWearDay(d, days)
     const w = weekOf(d.date)
-    const cur = wearables.get(w)
-    // Týden = nejhorší den; při shodě novější den.
-    if (!cur || LEVEL_RANK[ev.level] >= LEVEL_RANK[cur.level]) wearables.set(w, { level: ev.level, day: d, findings: ev.findings })
+    const cur = weeks.get(w)
+    if (!cur || LEVEL_RANK[ev.level] >= LEVEL_RANK[cur.level]) weeks.set(w, { level: ev.level, day: d, findings: ev.findings })
     dates.push(d.date)
-    add(w, ev.level)
   }
-  return { questionnaires, labs, wearables, combined, earliest: dates.length ? dates.reduce((a, b) => (b < a ? b : a)) : null }
+  for (const ww of [...weeks.values()].sort((a, b) => b.day.date.localeCompare(a.day.date))) push(wearables, periodOf(mode, ww.day.date), ww)
+
+  return { questionnaires, labs, wearables, earliest: dates.length ? dates.reduce((a, b) => (b < a ? b : a)) : null }
 }

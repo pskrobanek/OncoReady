@@ -181,7 +181,7 @@ export function Radio({ checked, onChange, label, name }: { checked: boolean; on
         name={name}
         checked={checked}
         onChange={onChange}
-        className="h-4 w-4 cursor-pointer appearance-none rounded-full bg-white shadow-sm ring-1 ring-gray-950/10 checked:bg-primary-600 checked:ring-0 checked:[background-image:url('data:image/svg+xml,%3csvg%20viewBox=%270%200%2016%2016%27%20fill=%27white%27%20xmlns=%27http://www.w3.org/2000/svg%27%3e%3ccircle%20cx=%278%27%20cy=%278%27%20r=%273%27/%3e%3c/svg%3e')]"
+        className="h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-full bg-white shadow-sm ring-1 ring-gray-950/10 checked:bg-primary-600 checked:ring-0 checked:[background-image:url('data:image/svg+xml,%3csvg%20viewBox=%270%200%2016%2016%27%20fill=%27white%27%20xmlns=%27http://www.w3.org/2000/svg%27%3e%3ccircle%20cx=%278%27%20cy=%278%27%20r=%273%27/%3e%3c/svg%3e')]"
       />
       {label}
     </label>

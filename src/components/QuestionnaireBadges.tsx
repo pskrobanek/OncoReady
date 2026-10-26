@@ -49,7 +49,19 @@ export const groupTone = (key: string) => (key === 'future' ? 'bg-white' : key =
  * Nevyplněný po termínu → „N/A“ a pomlčka; budoucí termín → čárkovaný rámeček s hodinami a datem termínu.
  * Klik na nevyplněný otevře vyplnění dotazníku (např. v ambulanci).
  */
-export function BadgeRow({ items, onOpenReport, wrap = false }: { items: Questionnaire[]; onOpenReport: (q: Questionnaire) => void; wrap?: boolean }) {
+export function BadgeRow({
+  items,
+  onOpenReport,
+  wrap = false,
+  size = 'md',
+}: {
+  items: Questionnaire[]
+  onOpenReport: (q: Questionnaire) => void
+  wrap?: boolean
+  /** sm = 28 × 28 px (Dashboard, nižší řádky), md = 32 × 32 px */
+  size?: 'sm' | 'md'
+}) {
+  const sm = size === 'sm'
   const navigate = useNavigate()
   const location = useLocation()
   return (
@@ -69,12 +81,13 @@ export function BadgeRow({ items, onOpenReport, wrap = false }: { items: Questio
                   : `Nevyplněno (termín ${shortDate(q.scheduledFor)}) – vyplnit dotazník`
             }
             onClick={() => (filled ? onOpenReport(q) : navigate(`/vyplnit/${q.id}`, { state: { from: location.pathname } }))}
-            className="group flex w-9 flex-col items-center gap-0.5"
+            className={cx('group flex flex-col items-center gap-0.5', sm ? 'w-8' : 'w-9')}
           >
             <span
               className={cx(
-                'flex h-8 w-8 items-center justify-center rounded font-semibold leading-none transition group-hover:opacity-80',
-                filled ? 'text-sm' : 'text-[11px]',
+                'flex items-center justify-center rounded font-semibold leading-none transition group-hover:opacity-80',
+                sm ? 'h-7 w-7' : 'h-8 w-8',
+                filled ? (sm ? 'text-[13px]' : 'text-sm') : sm ? 'text-[10px]' : 'text-[11px]',
                 BAND_META[status].badge,
               )}
             >

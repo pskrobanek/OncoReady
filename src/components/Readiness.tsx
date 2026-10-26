@@ -1,8 +1,8 @@
-// Prvky připravenosti k léčbě: barevný štítek souhrnu a odznaky laboratoře, wearables a souhrnu týdne.
+// Prvky připravenosti k léčbě: barevný štítek souhrnu, ikony zdrojů a odznaky laboratoře a wearables.
 import { CheckIcon, XMarkIcon } from '@heroicons/react/20/solid'
 import type { ReactNode } from 'react'
 import { shortDate, todayIso } from '../lib/format'
-import { evalLab, sourceMeta, type Finding, type Overall, type WearWeek } from '../lib/readiness'
+import { evalLab, sourceMeta, type Finding, type Overall, type SourceKey, type WearWeek } from '../lib/readiness'
 import type { LabResult } from '../lib/types'
 import { cx } from './ui'
 
@@ -40,6 +40,30 @@ export function ReadinessBadge({ level, size = 'sm' }: { level: Overall; size?: 
   )
 }
 
+/**
+ * Minimalistické ikony zdrojů (obrys 1,5 px jako Heroicons): dotazník = podložka s řádky,
+ * laboratoř = zkumavka, wearables = hodinky.
+ */
+export function SourceIcon({ source, className = 'h-4 w-4' }: { source: SourceKey; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={cx('shrink-0', className)} aria-hidden>
+      {source === 'questionnaire' && (
+        <>
+          <rect x="5.25" y="4.5" width="13.5" height="16.5" rx="2" />
+          <path d="M9 4.5v-.75A.75.75 0 0 1 9.75 3h4.5a.75.75 0 0 1 .75.75v.75M8.75 10h6.5M8.75 13.5h6.5M8.75 17h4" />
+        </>
+      )}
+      {source === 'lab' && <path d="M7.5 3.75h9M9 3.75v13.5a3 3 0 0 0 6 0V3.75M9 12h6" />}
+      {source === 'wearables' && (
+        <>
+          <rect x="6.75" y="7" width="10.5" height="10" rx="2.5" />
+          <path d="M9 7l.6-3.25h4.8L15 7M9 17l.6 3.25h4.8L15 17M12 9.75V12l1.5 1" />
+        </>
+      )}
+    </svg>
+  )
+}
+
 /** Seznam nálezů (hraniční hodnoty a chybějící data) s ikonou zdroje. */
 export function FindingList({ findings, className }: { findings: Finding[]; className?: string }) {
   if (!findings.length) return null
@@ -47,8 +71,8 @@ export function FindingList({ findings, className }: { findings: Finding[]; clas
     <ul className={cx('flex flex-col gap-0.5 whitespace-normal text-xs leading-4', className)}>
       {findings.map((f, i) => (
         <li key={i} className={cx('flex gap-1', FINDING_TEXT[f.level])}>
-          <span className="shrink-0" title={sourceMeta(f.source).label}>
-            {sourceMeta(f.source).icon}
+          <span className="mt-px" title={sourceMeta(f.source).label}>
+            <SourceIcon source={f.source} className="h-3.5 w-3.5" />
           </span>
           <span>{f.text}</span>
         </li>
@@ -59,20 +83,20 @@ export function FindingList({ findings, className }: { findings: Finding[]; clas
 
 const caption = (date: string) => (date === todayIso() ? 'dnes' : shortDate(date))
 
-/** Čtvercový odznak s popiskem pod ním – stejné rozměry jako odznak dotazníku. */
+/** Čtvercový odznak 28 × 28 px s popiskem pod ním – stejné rozměry jako malý odznak dotazníku na Dashboardu. */
 function Tile({ tone, title, children, below, belowClass }: { tone: string; title: string; children: ReactNode; below?: string; belowClass?: string }) {
   return (
-    <span title={title} className="flex w-9 flex-col items-center gap-0.5">
-      <span className={cx('flex h-8 w-8 items-center justify-center rounded font-semibold leading-none', tone)}>{children}</span>
+    <span title={title} className="flex w-8 flex-col items-center gap-0.5">
+      <span className={cx('flex h-7 w-7 items-center justify-center rounded font-semibold leading-none', tone)}>{children}</span>
       {below !== undefined && <span className={cx('text-[10px] leading-3', belowClass ?? 'text-gray-400')}>{below}</span>}
     </span>
   )
 }
 
 const ICON: Record<Overall, ReactNode> = {
-  green: <CheckIcon className="h-5 w-5" />,
-  yellow: <span className="text-base">!</span>,
-  red: <XMarkIcon className="h-5 w-5" />,
+  green: <CheckIcon className="h-4 w-4" />,
+  yellow: <span className="text-sm">!</span>,
+  red: <XMarkIcon className="h-4 w-4" />,
   gray: <span className="text-sm">?</span>,
 }
 
@@ -87,8 +111,8 @@ export function LabTile({ lab, below }: { lab: LabResult; below?: string }) {
     <Tile tone={OVERALL_META[ev.level].box} title={tooltip(`Laboratoř ${shortDate(lab.date)}`, ev.findings.length ? ev.findings : [{ source: 'lab', level: 'green', text: 'Všechny parametry v mezích' }])} below={below ?? caption(lab.date)}>
       {ev.level === 'red' && ev.worst ? (
         <span className="flex flex-col items-center gap-px">
-          <span className="text-[8px] font-medium tracking-wide opacity-90">{ev.worst.metric.short}</span>
-          <span className="text-[11px] tabular-nums">{ev.worst.value}</span>
+          <span className="text-[7px] font-medium tracking-wide opacity-90">{ev.worst.metric.short}</span>
+          <span className="text-[10px] tabular-nums">{ev.worst.value}</span>
         </span>
       ) : (
         ICON[ev.level]
@@ -110,15 +134,6 @@ export function WearTile({ week, below }: { week: WearWeek; below?: string }) {
   )
 }
 
-/** Výsledný stav týdne ze všech zdrojů (kondenzovaný řádek). */
-export function CombinedTile({ level, title }: { level: Overall; title: string }) {
-  return (
-    <Tile tone={OVERALL_META[level].box} title={title}>
-      {ICON[level]}
-    </Tile>
-  )
-}
-
 /** Zdroj bez aktuálních dat: čárkovaný rámeček s pomlčkou, pod ním stáří posledních dat. */
 export function MissingTile({ stale, below, title }: { stale: boolean; below: string; title: string }) {
   return (
@@ -133,5 +148,5 @@ export function MissingTile({ stale, below, title }: { stale: boolean; below: st
   )
 }
 
-/** Prázdný týden v časové ose. */
-export const EmptyWeek = () => <span className="block min-w-[2.25rem] text-center text-gray-300">·</span>
+/** Prázdné období v časové ose. */
+export const EmptyCell = () => <span className="block min-w-8 text-center text-gray-300">·</span>

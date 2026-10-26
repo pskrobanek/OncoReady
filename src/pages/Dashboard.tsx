@@ -2,14 +2,14 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { BadgeRow, latestDue, statusOf } from '../components/QuestionnaireBadges'
-import { ArrowsUpDownIcon, Bars2Icon, Bars4Icon, FunnelIcon } from '@heroicons/react/24/outline'
-import { CombinedTile, EmptyWeek, FindingList, LabTile, MissingTile, OVERALL_META, ReadinessBadge, WearTile } from '../components/Readiness'
+import { ArrowsUpDownIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { EmptyCell, LabTile, MissingTile, OVERALL_META, ReadinessBadge, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
 import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
 import { DEFAULT_FILTERS } from '../data/programs'
 import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
-import { evalLab, questionnaireDate, readinessOf, sourceMeta, timelineOf, weeksBack, type Level, type Overall, type PatientTimeline, type Readiness, type SourceKey } from '../lib/readiness'
+import { periodLabel, periodsBack, readinessOf, sourceMeta, timelineOf, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
 import { BAND_META, type Status } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
 import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
@@ -31,28 +31,29 @@ const STICKY_PATIENT =
 /** Sloupec Zdroj zůstává při vodorovném posunu vedle sloupce pacienta (left = šířka sloupce pacienta); na mobilu se posouvá. */
 const STICKY_SOURCE = 'w-px sm:sticky sm:left-52 sm:after:absolute sm:after:inset-y-0 sm:after:right-0 sm:after:w-px sm:after:bg-gray-200'
 
-/** Zobrazení tabulky: kondenzované = jeden řádek s výsledkem ze všech zdrojů; podrobné = řádek za každý zdroj. */
-type Density = 'condensed' | 'detailed'
-const DENSITIES: { key: Density; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: 'condensed', label: 'Kondenzované', icon: Bars2Icon },
-  { key: 'detailed', label: 'Podrobné', icon: Bars4Icon },
+/** Časová osa: sloupec = týden / měsíc / rok, nebo jen vyplněné bez prázdných období (záložka Zobrazení). */
+const TIMELINE_MODES: { key: TimelineMode; label: string; hint: string; header: string }[] = [
+  { key: 'week', label: 'Po týdnech', hint: 'Sloupec = týden (pondělí–neděle)', header: 'po týdnech' },
+  { key: 'month', label: 'Po měsících', hint: 'Sloupec = měsíc', header: 'po měsících' },
+  { key: 'year', label: 'Po letech', hint: 'Sloupec = rok', header: '' },
+  { key: 'filled', label: 'Jen vyplněné', hint: 'Bez prázdných období a bez nevyplněných dotazníků', header: 'nejnovější vlevo' },
 ]
-const DENSITY_KEY = 'oncoready-dashboard-zobrazeni'
-const loadDensity = (): Density => {
+const MODE_KEY = 'oncoready-dashboard-osa'
+const loadMode = (): TimelineMode => {
   try {
-    return localStorage.getItem(DENSITY_KEY) === 'detailed' ? 'detailed' : 'condensed'
+    const v = localStorage.getItem(MODE_KEY)
+    return TIMELINE_MODES.some((m) => m.key === v) ? (v as TimelineMode) : 'week'
   } catch {
-    return 'condensed'
+    return 'week'
   }
 }
-/** Řádek pacienta: „all“ = kondenzovaný souhrn, jinak jeden zdroj. */
-type Line = 'all' | SourceKey
 
 /** Nástroje v pravém panelu (přepínají se záložkami). Další nástroje lze přidat sem. */
-type ToolKey = 'filter' | 'sort'
+type ToolKey = 'filter' | 'sort' | 'view'
 const TOOLS: { key: ToolKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'filter', label: 'Filtr', icon: FunnelIcon },
   { key: 'sort', label: 'Řazení', icon: ArrowsUpDownIcon },
+  { key: 'view', label: 'Zobrazení', icon: ViewColumnsIcon },
 ]
 /** Pořadí naléhavosti podle stavu nejnovějšího dotazníku, jehož termín už nastal. */
 const URGENCY: Record<Status, number> = { red: 0, blue: 1, yellow: 2, na: 3, green: 4, future: 5 }
@@ -271,11 +272,11 @@ function PatientsBoard({
   const [tool, setTool] = useState<ToolKey>('filter')
   const [sort, setSort] = useState<SortKey>('urgency')
   const [desc, setDesc] = useState(false)
-  const [density, setDensity] = useState<Density>(loadDensity)
-  const changeDensity = (d: Density) => {
-    setDensity(d)
+  const [mode, setMode] = useState<TimelineMode>(loadMode)
+  const changeMode = (m: TimelineMode) => {
+    setMode(m)
     try {
-      localStorage.setItem(DENSITY_KEY, d)
+      localStorage.setItem(MODE_KEY, m)
     } catch {
       /* ignorovat */
     }
@@ -323,7 +324,7 @@ function PatientsBoard({
           latest: due ? statusOf(due) : ('future' as Status),
           lastFilled,
           ready: readinessOf(db, r.patient.id, today),
-          tl: timelineOf(db, r.patient.id, r.qs, today),
+          tl: timelineOf(db, r.patient.id, r.qs, mode, today),
         }
       })
       .sort((a, b) => {
@@ -335,24 +336,29 @@ function PatientsBoard({
         else c = byName
         return (desc ? -c : c) || byName
       })
-  }, [db, search, filters, sort, desc, today])
+  }, [db, search, filters, sort, desc, mode, today])
 
-  // Časová osa: týdny od aktuálního zpět po nejstarší data zobrazených pacientů, seskupené po letech.
-  const weeks = useMemo(() => {
+  // Časová osa: období od aktuálního zpět po nejstarší data zobrazených pacientů.
+  const periods = useMemo(() => {
     const earliest = rows.map((r) => r.tl.earliest).filter((d): d is string => !!d).sort()[0]
-    return earliest ? weeksBack(earliest, today) : []
-  }, [rows, today])
-  const years = useMemo(() => {
-    const out: { year: string; count: number }[] = []
-    for (const w of weeks) {
-      const last = out[out.length - 1]
-      if (last?.year === w.slice(0, 4)) last.count++
-      else out.push({ year: w.slice(0, 4), count: 1 })
-    }
-    return out
-  }, [weeks])
-  const yearStart = (i: number) => i === 0 || weeks[i].slice(0, 4) !== weeks[i - 1].slice(0, 4)
-  const detailed = density === 'detailed'
+    return earliest ? periodsBack(mode, earliest, today) : []
+  }, [rows, mode, today])
+  // Skupiny v hlavičce: týdny a měsíce po letech; roky a „Jen vyplněné“ = jedna skupina.
+  const byYear = mode === 'week' || mode === 'month'
+  const groupOf = (p: string) => (byYear ? p.slice(0, 4) : mode)
+  const groups: { key: string; label: string; hint: string; count: number }[] = []
+  for (const p of periods) {
+    const last = groups[groups.length - 1]
+    if (last?.key === groupOf(p)) last.count++
+    else
+      groups.push({
+        key: groupOf(p),
+        label: byYear ? p.slice(0, 4) : mode === 'year' ? 'Po letech' : 'Vyplněné',
+        hint: TIMELINE_MODES.find((m) => m.key === mode)!.header,
+        count: 1,
+      })
+  }
+  const groupStart = (i: number) => i === 0 || mode === 'year' || groupOf(periods[i]) !== groupOf(periods[i - 1])
 
   return (
     <div className="flex flex-col gap-8">
@@ -365,133 +371,113 @@ function PatientsBoard({
             <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
             <span className="text-sm text-gray-500 tabular-nums">{rows.length} pacientů</span>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 sm:px-6">
-            {/* Přepínač zobrazení: kondenzované = jeden řádek s výsledkem, podrobné = řádek za každý zdroj */}
-            <div className="inline-flex rounded-lg shadow-sm ring-1 ring-gray-950/10" role="group" aria-label="Zobrazení">
-              {DENSITIES.map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={density === key}
-                  onClick={() => changeDensity(key)}
-                  className={cx(
-                    'flex items-center gap-1.5 border-s border-gray-200 px-3 py-2 text-sm font-semibold transition first:rounded-s-lg first:border-s-0 last:rounded-e-lg',
-                    density === key ? 'bg-gray-50 text-primary-600' : 'bg-white text-gray-700 hover:bg-gray-50',
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  {label}
-                </button>
-              ))}
-            </div>
+          <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
             <SearchInput value={search} onChange={setSearch} className="w-full sm:max-w-xs" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full table-auto divide-y divide-gray-200 text-start">
               <thead className="whitespace-nowrap bg-gray-50/50">
                 <tr>
-                  <th rowSpan={2} className={cx('px-4 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950', detailed ? 'w-52 min-w-[13rem]' : 'w-px')}>
+                  <th rowSpan={2} className="w-px px-4 py-3 text-start align-bottom text-sm font-semibold text-gray-950">
                     <span className="inline-flex items-center gap-1.5">
                       Souhrn
                       <BadgeLegend dashboard />
                     </span>
                   </th>
-                  <th rowSpan={2} className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-4 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
+                  <th rowSpan={2} className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-4 py-3 text-start align-bottom text-sm font-semibold text-gray-950')}>
                     Pacient
                   </th>
-                  {/* Zdroj jen v podrobném zobrazení – kondenzovaný řádek je souhrn všech zdrojů */}
-                  {detailed && (
-                    <th rowSpan={2} className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
-                      Zdroj
-                    </th>
-                  )}
+                  <th rowSpan={2} className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3 text-start align-bottom text-sm font-semibold text-gray-950')}>
+                    Zdroj
+                  </th>
                   <th
                     rowSpan={2}
                     title="Poslední data každého zdroje; neaktuální data jsou čárkovaně"
-                    className={cx(
-                      'w-px bg-primary-50/60 px-2 pb-2 text-center align-bottom text-[10px] font-semibold uppercase tracking-normal text-primary-600',
-                      detailed && 'border-l border-gray-200 sm:border-l-0',
-                    )}
+                    className="w-px border-l border-gray-200 bg-primary-50/60 px-2 pb-2 text-center align-bottom text-[10px] font-semibold uppercase tracking-normal text-primary-600 sm:border-l-0"
                   >
                     Aktuální
                   </th>
-                  {years.map((y) => (
-                    <th key={y.year} colSpan={y.count} className="border-l border-gray-200 px-3 pb-1 pt-3 text-start text-sm font-semibold text-gray-950">
-                      {y.year} <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">· po týdnech</span>
+                  {groups.map((g) => (
+                    <th
+                      key={g.key}
+                      colSpan={g.count}
+                      rowSpan={mode === 'filled' ? 2 : 1}
+                      className={cx('border-l border-gray-200 px-3 pt-3 text-start text-sm font-semibold text-gray-950', mode === 'filled' ? 'pb-2 align-bottom' : 'pb-1')}
+                    >
+                      {g.label} {g.hint && <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">· {g.hint}</span>}
                     </th>
                   ))}
                   {/* Výplň – sloupce jsou jen tak široké, jak potřebují */}
                   <th rowSpan={2} className="border-l border-gray-200" />
                 </tr>
                 <tr>
-                  {weeks.map((w, i) => (
-                    <th
-                      key={w}
-                      title={`Týden od ${shortDate(w)}`}
-                      className={cx('w-px px-1.5 pb-2 pt-1 text-center align-bottom text-[10px] font-normal text-gray-400', yearStart(i) && 'border-l border-gray-200')}
-                    >
-                      {shortDate(w)}
-                    </th>
-                  ))}
+                  {mode !== 'filled' &&
+                    periods.map((p, i) => (
+                      <th
+                        key={p}
+                        title={mode === 'week' ? `Týden od ${shortDate(p)}` : undefined}
+                        className={cx(
+                          'w-px pb-2 pt-1 align-bottom text-[10px] font-normal text-gray-400',
+                          mode === 'week' ? 'px-1 text-center' : 'px-2 text-start',
+                          groupStart(i) && 'border-l border-gray-200',
+                        )}
+                      >
+                        {periodLabel(mode, p)}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               {rows.slice(0, perPage).map(({ patient, program, ready, tl }) => {
-                const lines: Line[] = detailed ? ['questionnaire', 'lab', 'wearables'] : ['all']
+                // Řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
+                const lines = ready.sources.map((s) => s.source)
                 return (
                   <tbody key={patient.id} className="group whitespace-nowrap">
                     {lines.map((line, i) => (
                       <tr key={line}>
                         {i === 0 && (
                           <>
-                            {/* Souhrn: barevný štítek připravenosti (v podrobném zobrazení i hraniční hodnoty); klik otevře detail. Proužek = barva souhrnu. */}
-                            <td
-                              rowSpan={lines.length}
-                              className={cx('px-4 py-3 group-hover:bg-gray-50', detailed ? 'align-top' : 'align-middle', OVERALL_META[ready.overall].stripe)}
-                            >
+                            {/* Souhrn: barevný štítek připravenosti, klik otevře detail. Proužek = barva souhrnu. */}
+                            <td rowSpan={lines.length} className={cx('px-4 py-1.5 align-top group-hover:bg-gray-50', OVERALL_META[ready.overall].stripe)}>
                               <button
                                 type="button"
                                 onClick={() => setDetail(patient.id)}
-                                title="Zobrazit detail: aktuální dotazník, laboratoř a wearables"
-                                className="flex flex-col items-start gap-1.5 rounded text-start hover:opacity-80"
+                                title={['Zobrazit detail: aktuální dotazník, laboratoř a wearables', ...ready.findings.map((f) => `• ${sourceMeta(f.source).label}: ${f.text}`)].join('\n')}
+                                className="mt-0.5 rounded hover:opacity-80"
                               >
                                 <ReadinessBadge level={ready.overall} />
-                                {detailed && <FindingList findings={ready.findings} />}
                               </button>
                             </td>
-                            <td
-                              rowSpan={lines.length}
-                              className={cx(STICKY_PATIENT, 'z-[1] bg-white px-4 py-3 text-sm text-gray-950 group-hover:bg-gray-50', detailed ? 'align-top' : 'align-middle')}
-                            >
-                              <Link to={`/kartoteka/${patient.id}/upravit`} className="font-medium hover:underline">
+                            <td rowSpan={lines.length} className={cx(STICKY_PATIENT, 'z-[1] bg-white px-4 py-1.5 align-top text-sm text-gray-950 group-hover:bg-gray-50')}>
+                              <Link to={`/kartoteka/${patient.id}/upravit`} className="font-medium leading-5 hover:underline">
                                 {tableName(patient)} →
                               </Link>
-                              <div className="mt-0.5 truncate text-xs text-gray-500">
+                              <div className="mt-0.5 truncate text-xs leading-4 text-gray-500">
                                 <span className="tabular-nums">RČ {patient.rodneCislo}</span>
                                 {program && <span className="text-gray-400"> · {program.name}</span>}
                               </div>
                             </td>
                           </>
                         )}
-                        {line !== 'all' && (
-                          <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-2 text-sm text-gray-600 group-hover:bg-gray-50', i > 0 && 'border-t border-gray-100')}>
-                            {`${sourceMeta(line).icon} ${sourceMeta(line).label}`}
-                          </td>
-                        )}
+                        <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-1 text-sm text-gray-600 group-hover:bg-gray-50', i > 0 && 'border-t border-gray-100')}>
+                          <span className="inline-flex items-center gap-1.5">
+                            <SourceIcon source={line} className="h-4 w-4 text-gray-400" />
+                            {sourceMeta(line).label}
+                          </span>
+                        </td>
                         <td
                           className={cx(
-                            'w-px bg-primary-50/60 px-2 py-2 align-middle [&>*]:mx-auto [&>div]:w-fit',
-                            detailed && 'border-l border-gray-200 sm:border-l-0',
+                            'w-px border-l border-gray-200 bg-primary-50/60 px-2 py-1 align-middle sm:border-l-0 [&>*]:mx-auto [&>div]:w-fit',
                             i > 0 && 'border-t border-t-gray-100',
                           )}
                         >
                           <CurrentCell line={line} ready={ready} onOpenReport={setReport} />
                         </td>
-                        {weeks.map((w, wi) => (
+                        {periods.map((p, pi) => (
                           <td
-                            key={w}
-                            className={cx('w-px px-1.5 py-2 align-middle group-hover:bg-gray-50', yearStart(wi) && 'border-l border-gray-200', i > 0 && 'border-t border-t-gray-100')}
+                            key={p}
+                            className={cx('w-px px-1 py-1 align-middle group-hover:bg-gray-50', groupStart(pi) && 'border-l border-gray-200', i > 0 && 'border-t border-t-gray-100')}
                           >
-                            <WeekCell line={line} week={w} tl={tl} onOpenReport={setReport} />
+                            <PeriodCell line={line} period={p} tl={tl} onOpenReport={setReport} />
                           </td>
                         ))}
                         <td className={cx('border-l border-gray-200 group-hover:bg-gray-50', i > 0 && 'border-t border-t-gray-100')} />
@@ -503,7 +489,7 @@ function PatientsBoard({
               {rows.length === 0 && (
                 <tbody>
                   <tr>
-                    <td colSpan={weeks.length + (detailed ? 5 : 4)} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={periods.length + 5} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>
@@ -522,7 +508,7 @@ function PatientsBoard({
           <div className="flex border-b border-gray-200 px-3" role="tablist">
             {TOOLS.map(({ key, label, icon: Icon }) => {
               const active = tool === key
-              const changed = key === 'filter' ? !!onReset : sort !== 'urgency' || desc
+              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week'
               return (
                 <button
                   key={key}
@@ -531,11 +517,11 @@ function PatientsBoard({
                   aria-selected={active}
                   onClick={() => setTool(key)}
                   className={cx(
-                    '-mb-px flex items-center gap-1.5 border-b-2 px-3 py-3.5 text-sm font-semibold transition',
+                    '-mb-px flex items-center gap-1 border-b-2 px-2 py-3.5 text-sm font-semibold transition',
                     active ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700',
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4" />
                   {label}
                   {changed && <span className="h-1.5 w-1.5 rounded-full bg-primary-600" title="Změněno oproti výchozímu" />}
                 </button>
@@ -567,6 +553,33 @@ function PatientsBoard({
                 </button>
               )}
               <p className="mt-6 text-xs text-gray-400">Řazení platí jen pro aktuální zobrazení a neukládá se do pohledu.</p>
+            </>
+          )}
+
+          {tool === 'view' && (
+            <>
+              <FilterGroup title="Časová osa">
+                {TIMELINE_MODES.map((m) => (
+                  <Radio
+                    key={m.key}
+                    name="mode"
+                    checked={mode === m.key}
+                    onChange={() => changeMode(m.key)}
+                    label={
+                      <span>
+                        {m.label}
+                        <span className="block text-xs text-gray-500">{m.hint}</span>
+                      </span>
+                    }
+                  />
+                ))}
+              </FilterGroup>
+              {mode !== 'week' && (
+                <button onClick={() => changeMode('week')} className="mt-6 self-start text-sm font-medium text-primary-600 hover:underline">
+                  Obnovit výchozí zobrazení
+                </button>
+              )}
+              <p className="mt-6 text-xs text-gray-400">Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.</p>
             </>
           )}
 
@@ -634,16 +647,8 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
   )
 }
 
-/** Buňka Aktuální: poslední data zdroje; neaktuální nebo chybějící = čárkovaný rámeček. Kondenzovaně = výsledek souhrnu. */
-function CurrentCell({ line, ready, onOpenReport }: { line: Line; ready: Readiness; onOpenReport: (q: Questionnaire) => void }) {
-  if (line === 'all') {
-    return (
-      <CombinedTile
-        level={ready.overall}
-        title={[`Souhrn: ${OVERALL_META[ready.overall].label}`, ...ready.findings.map((f) => `${sourceMeta(f.source).icon} ${f.text}`)].join('\n')}
-      />
-    )
-  }
+/** Buňka Aktuální: poslední data zdroje; neaktuální nebo chybějící = čárkovaný rámeček. */
+function CurrentCell({ line, ready, onOpenReport }: { line: SourceKey; ready: Readiness; onOpenReport: (q: Questionnaire) => void }) {
   const s = ready.sources.find((x) => x.source === line)!
   if (s.state !== 'ok') {
     return (
@@ -654,23 +659,19 @@ function CurrentCell({ line, ready, onOpenReport }: { line: Line; ready: Readine
       />
     )
   }
-  if (line === 'questionnaire') return <BadgeRow items={[s.questionnaire!]} onOpenReport={onOpenReport} />
+  if (line === 'questionnaire') return <BadgeRow items={[s.questionnaire!]} onOpenReport={onOpenReport} size="sm" />
   if (line === 'lab') return <LabTile lab={s.lab!} />
   return <WearTile week={{ level: s.level as Level, day: s.day!, findings: s.findings }} below={agoText(s.date!)} />
 }
 
-/** Buňka týdne časové osy. Kondenzovaně = nejhorší stav týdne ze všech zdrojů. */
-function WeekCell({ line, week, tl, onOpenReport }: { line: Line; week: string; tl: PatientTimeline; onOpenReport: (q: Questionnaire) => void }) {
-  if (line === 'all') {
-    const level = tl.combined.get(week)
-    return level ? <CombinedTile level={level} title={weekTitle(week, level, tl)} /> : <EmptyWeek />
-  }
+/** Buňka období časové osy: všechny položky zdroje v daném období, nejnovější vlevo. */
+function PeriodCell({ line, period, tl, onOpenReport }: { line: SourceKey; period: string; tl: PatientTimeline; onOpenReport: (q: Questionnaire) => void }) {
   if (line === 'questionnaire') {
-    const items = tl.questionnaires.get(week)
-    return items ? <BadgeRow items={items} onOpenReport={onOpenReport} /> : <EmptyWeek />
+    const items = tl.questionnaires.get(period)
+    return items ? <BadgeRow items={items} onOpenReport={onOpenReport} size="sm" /> : <EmptyCell />
   }
   if (line === 'lab') {
-    const labs = tl.labs.get(week)
+    const labs = tl.labs.get(period)
     return labs ? (
       <div className="flex gap-x-1.5">
         {labs.map((l) => (
@@ -678,24 +679,17 @@ function WeekCell({ line, week, tl, onOpenReport }: { line: Line; week: string; 
         ))}
       </div>
     ) : (
-      <EmptyWeek />
+      <EmptyCell />
     )
   }
-  const wear = tl.wearables.get(week)
-  return wear ? <WearTile week={wear} /> : <EmptyWeek />
-}
-
-/** Popisek kondenzovaného odznaku týdne: co do výsledku přispělo. */
-function weekTitle(week: string, level: Overall, tl: PatientTimeline) {
-  const out = [`Týden od ${shortDate(week)}: ${OVERALL_META[level].label}`]
-  for (const q of tl.questionnaires.get(week) ?? []) {
-    out.push(`📋 Dotazník ${shortDate(questionnaireDate(q))}: ${statusOf(q) === 'na' ? 'nevyplněn' : `${BAND_META[statusOf(q)].label}`}`)
-  }
-  for (const l of tl.labs.get(week) ?? []) {
-    const f = evalLab(l).findings
-    out.push(`🧪 Laboratoř ${shortDate(l.date)}: ${f.length ? f.map((x) => x.text).join(', ') : 'v mezích'}`)
-  }
-  const w = tl.wearables.get(week)
-  if (w) out.push(`⌚ Wearables: ${w.findings.length ? w.findings.map((f) => f.text).join(', ') : 'bez odchylek'}`)
-  return out.join('\n')
+  const weeks = tl.wearables.get(period)
+  return weeks ? (
+    <div className="flex gap-x-1.5">
+      {weeks.map((w) => (
+        <WearTile key={w.day.id} week={w} />
+      ))}
+    </div>
+  ) : (
+    <EmptyCell />
+  )
 }

@@ -3,8 +3,8 @@ import { CheckIcon, XMarkIcon } from '@heroicons/react/20/solid'
 import { ClockIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { BAND_META, type Status } from '../lib/scoring'
-import type { Overall } from '../lib/readiness'
-import { OVERALL_META, ReadinessBadge } from './Readiness'
+import type { Overall, SourceKey } from '../lib/readiness'
+import { OVERALL_META, ReadinessBadge, SourceIcon } from './Readiness'
 import { cx } from './ui'
 
 const QUESTIONNAIRE: { status: Status; sample: ReactNode; text: string }[] = [
@@ -17,9 +17,9 @@ const QUESTIONNAIRE: { status: Status; sample: ReactNode; text: string }[] = [
 ]
 
 const SUMMARY: { level: Overall; text: string }[] = [
-  { level: 'green', text: 'Všechny 3 zdroje aktuální a v mezích.' },
+  { level: 'green', text: 'Všechny zdroje pacienta aktuální a v mezích.' },
   { level: 'red', text: 'Kterýkoli aktuální zdroj je červený.' },
-  { level: 'gray', text: 'Některý zdroj chybí nebo je neaktuální.' },
+  { level: 'gray', text: 'Některý zdroj je neaktuální nebo chybí vyplněný dotazník.' },
   { level: 'yellow', text: 'Kterýkoli zdroj je žlutý (dotazník i modrý).' },
 ]
 
@@ -32,8 +32,9 @@ const Row = ({ sample, children }: { sample: ReactNode; children: ReactNode }) =
     <span className="text-sm text-gray-700">{children}</span>
   </span>
 )
-const Heading = ({ children }: { children: ReactNode }) => (
-  <span className="mt-1 block border-t border-gray-100 pt-3 text-xs font-semibold uppercase tracking-wider text-gray-400 first:mt-0 first:border-t-0 first:pt-0">
+const Heading = ({ icon, children }: { icon?: SourceKey; children: ReactNode }) => (
+  <span className="mt-1 flex items-center gap-1.5 border-t border-gray-100 pt-3 text-xs font-semibold uppercase tracking-wider text-gray-400 first:mt-0 first:border-t-0 first:pt-0">
+    {icon && <SourceIcon source={icon} className="h-4 w-4" />}
     {children}
   </span>
 )
@@ -80,7 +81,7 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
                   <span className="text-xs text-gray-500">Pořadí: červená, šedá, žlutá, zelená. Proužek u řádku má barvu souhrnu. Klik na souhrn otevře detail.</span>
                 </>
               )}
-              {dashboard && <Heading>📋 Dotazník</Heading>}
+              {dashboard && <Heading icon="questionnaire">Dotazník</Heading>}
               {/* Plánované dotazníky se na Dashboardu nezobrazují */}
               {QUESTIONNAIRE.filter((i) => !dashboard || i.status !== 'future').map((i) => (
                 <Row key={i.status} sample={<Box tone={cx(i.status === 'na' ? 'text-[11px]' : 'text-sm', BAND_META[i.status].badge)}>{i.sample}</Box>}>
@@ -90,7 +91,7 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
 
               {dashboard && (
                 <>
-                  <Heading>🧪 Laboratoř a ⌚ wearables</Heading>
+                  <Heading icon="lab">Laboratoř a wearables</Heading>
                   <Row sample={<Box tone={OVERALL_META.green.box}><CheckIcon className="h-5 w-5" /></Box>}>V mezích.</Row>
                   <Row sample={<Box tone={OVERALL_META.yellow.box}>!</Box>}>Hraniční hodnota (žlutá mez).</Row>
                   <Row
@@ -109,9 +110,9 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
                   <Row sample={<Box tone="border border-dashed border-red-300 text-sm text-red-400">—</Box>}>
                     Ve sloupci Aktuální: data jsou neaktuální (pod rámečkem jejich stáří), šedě = bez dat.
                   </Row>
-
-                  <Heading>Kondenzované zobrazení</Heading>
-                  <Row sample={<Box tone={OVERALL_META.yellow.box}>!</Box>}>Odznak týdne = nejhorší stav ze všech zdrojů v daném týdnu.</Row>
+                  <Row sample={<span className="flex h-8 w-8 shrink-0 items-center justify-center text-gray-300">·</span>}>
+                    Prázdné období na časové ose (týden, měsíc nebo rok bez dat).
+                  </Row>
                 </>
               )}
             </span>

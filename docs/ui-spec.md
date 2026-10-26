@@ -44,7 +44,7 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
   2. **POSLEDNÍ VYPLNĚNÝ** (v hlavičce tabulky zkráceně „POSLEDNÍ“, plný název v tooltipu; sloupec je úzký, cca 67 px, odznak vycentrovaný): vždy **jen jeden** dotazník, ten s nejnovějším datem vyplnění. Nevyplněné (N/A) sem nepatří ani když jsou novější, ty jsou ve sloupci roku;
   3. **starší po letech** („2026“, „2025“…).
   - Zařazení se řídí datem vyplnění, u nevyplněných datem termínu. Uvnitř skupiny je nejnovější vlevo.
-  - **Na Dashboardu a v pohledech se skupiny nepoužívají** (od 2026-10-25): dotazníky jsou v řádku „📋 Dotazník“ na časové ose po týdnech (viz *Dashboard*). Skupiny zůstávají v kartě pacienta.
+  - **Na Dashboardu a v pohledech se skupiny nepoužívají** (od 2026-10-25): dotazníky jsou v řádku „Dotazník“ na časové ose (viz *Dashboard*). Skupiny zůstávají v kartě pacienta.
   - V kartě pacienta (Monitorace pacienta) jsou skupiny vedle sebe v jednom řádku jako malé rámečky s popiskem (Plánované = čárkovaný rámeček).
 - **Rozměr**: vždy **čtverec 32 × 32 px** se zaoblením 4 px (rozestup odznaků 36 px), bez ohledu na obsah.
 - **Vyplněný dotazník**: barevný čtverec s celkovým skóre (bílé tučné číslo, 14 px), pod ním datum vyplnění ve formátu `12.4.` (10 px, šedá).
@@ -56,11 +56,10 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
 ### Legenda ⓘ
 
 Šedá ikona **ⓘ**: po najetí myší nebo kliknutí se zobrazí bublina „Legenda“. Bublina má pevnou pozici pod ikonou, takže ji posuvná tabulka neořízne. Při posunu stránky se zavře.
-- **Na Dashboardu a v pohledech** je ikona v hlavičce sloupce **Souhrn** a legenda má čtyři části:
+- **Na Dashboardu a v pohledech** je ikona v hlavičce sloupce **Souhrn** a legenda má tři části:
   1. *Souhrn připravenosti*: 4 barevné štítky s pravidlem, pořadí „červená, šedá, žlutá, zelená“, proužek u řádku = barva souhrnu, klik na souhrn = detail;
-  2. *📋 Dotazník*: 5 vzorových odznaků (zelené, žluté, červené, vyžádal kontrolu, N/A); odznak „plánováno“ jen v kartě pacienta;
-  3. *🧪 Laboratoř a ⌚ wearables*: ✓ v mezích, „!“ hraniční hodnota, červený odznak se zkratkou a hodnotou nejhoršího parametru (laboratoř), ✕ (wearables), čárkovaný „—“ = neaktuální / bez dat;
-  4. *Kondenzované zobrazení*: odznak týdne = nejhorší stav ze všech zdrojů.
+  2. *Dotazník* (s ikonou zdroje): 5 vzorových odznaků (zelené, žluté, červené, vyžádal kontrolu, N/A); odznak „plánováno“ jen v kartě pacienta;
+  3. *Laboratoř a wearables* (s ikonou zdroje): ✓ v mezích, „!“ hraniční hodnota, červený odznak se zkratkou a hodnotou nejhoršího parametru (laboratoř), ✕ (wearables), čárkovaný „—“ = neaktuální / bez dat, šedá tečka „·“ = prázdné období na ose.
 - **V kartě pacienta** (Monitorace pacienta) je ikona u dotazníků a legenda ukazuje jen odznaky dotazníku.
 - Dole poznámka „Pod odznakem je datum (vyplnění, odběru nebo měření).“
 
@@ -77,62 +76,69 @@ Celkové skóre je součet bodů všech odpovědí. Pravidla jsou na jednom mís
 
 ## Dashboard
 
-Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patients Table“) s počtem pacientů vpravo v hlavičce, vpravo panel nástrojů se záložkami Filtr a Řazení (šířka 288 px). Na menší obrazovce je panel pod tabulkou.
+Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patients Table“) s počtem pacientů vpravo v hlavičce, vpravo panel nástrojů se záložkami Filtr, Řazení a Zobrazení (šířka 288 px). Na menší obrazovce je panel pod tabulkou.
 
-**Tabulka**
-- Nad tabulkou vlevo je přepínač **zobrazení** (NOVÉ): skupina dvou tlačítek ve stylu Filament, aktivní tlačítko je modré na šedém podkladu.
-  - **Kondenzované** (ikona dvou čar, výchozí): jeden řádek na pacienta s výsledkem ze všech zdrojů.
-  - **Podrobné** (ikona čtyř čar): tři řádky na pacienta – Dotazník, Laboratoř, Wearables (odpovídá návrhu „jedna časová osa pro pacienta“).
-  - Volba se pamatuje v prohlížeči a platí pro Dashboard i pohledy. Do pohledu se neukládá. **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
-- Vpravo od přepínače je hledání (jméno a rodné číslo).
-- **Řazení** je v pravém panelu na záložce *Řazení* (viz *Panel nástrojů*). Výchozí je řazení podle naléhavosti.
-- **Sloupce** (zleva): Souhrn · Pacient · Zdroj (jen podrobně) · Aktuální · časová osa po týdnech · prázdná výplň.
-  - **Souhrn** (NOVÉ, před jménem): **barevný štítek připravenosti** – plná barva jako odznaky, zaoblení 6 px, bílý tučný text 14 px s ikonou: **✓ Připraveno** (zelená), **! K posouzení** (žlutá), **✕ Nepřipraveno** (červená), **? Neúplné** (světle šedá s šedým rámečkem a šedým textem). Ikona semaforu se nepoužívá.
-    - Kondenzovaně: jen štítek, sloupec je široký podle obsahu.
-    - Podrobně: pod štítkem jsou navíc **hraniční hodnoty** (12 px, ikona zdroje + text, barva podle úrovně), sloupec má 208 px a text se zalamuje. Pořadí: nejdřív hodnoty mimo meze (červené, pak žluté), pak chybějící nebo neaktuální data. Příklady:
-      - „🧪 Neutrofily 1,2 (mez ≥ 1,5)“, „🧪 Trombocyty 85 (mez ≥ 100)“;
-      - „⌚ Teplota 38,1 °C (mez < 38,0)“, „⌚ Kroky −50 % za 7 dní (mez −40 %)“;
-      - „📋 Vyžádal kontrolu (skóre 8)“, „📋 Skóre 14 – červené pásmo“;
-      - „🧪 Neaktuální – před 24 dny“, „⌚ Bez dat“.
-    - Klik na buňku otevře *Detail souhrnu připravenosti*.
-    - **Barevný proužek vlevo u řádku** (3 px) má barvu souhrnu – i zelený a šedý. Dříve ukazoval stav posledního dotazníku.
-  - **Pacient**: na prvním řádku `Příjmení Jméno →` (odkaz na úpravu pacienta), pod ním šedě „RČ 3 · název monitorace“ (dlouhý text se zkrátí „…“). Šířka 208 px.
-  - **Zdroj**: jen v podrobném zobrazení – tři řádky „📋 Dotazník“, „🧪 Laboratoř“, „⌚ Wearables“ (šedý text). V kondenzovaném zobrazení sloupec není (od 2026-10-26; dříve „📋🧪⌚ Vše“).
-  - Při vodorovném posunu zůstávají **Pacient a Zdroj** (kondenzovaně jen Pacient) na místě, za nimi je svislá linka. Souhrn odjede doleva pod ně a časová osa pod ně „podjíždí“. Na mobilu (< 640 px) zůstává na místě jen Pacient.
-  - Plánované (budoucí) dotazníky se na Dashboardu ani v pohledech **nezobrazují** (sloupec Plánované byl odebrán 2026-10-26). Vidět jsou jen v kartě pacienta (Monitorace pacienta).
-  - **Aktuální** (světle modrý podklad, záhlaví modře; nahrazuje sloupec „Poslední vyplněný“): poslední data každého zdroje, pokud jsou aktuální.
+**Tabulka** (jedno zobrazení; přepínač Kondenzované / Podrobné byl 2026-10-26 odebrán)
+- Nad tabulkou vpravo je hledání (jméno a rodné číslo).
+- **Řazení** a **časová osa** se nastavují v pravém panelu (viz *Panel nástrojů*).
+- **Řádky**: pacient má **řádek za každý zdroj, který má**, v pořadí Dotazník, Laboratoř, Wearables.
+  - Dotazník má každý pacient na Dashboardu (má monitoraci).
+  - Laboratoř jen když má aspoň jeden výsledek, wearables jen když má aspoň jeden den dat z připojeného zařízení.
+  - Pacient má tedy 1–3 řádky. Souhrn a Pacient jsou sloučené buňky přes všechny jeho řádky.
+- **Nižší řádky** (2026-10-26): řádek zdroje má cca 50 px (dříve cca 63 px).
+  - Odznaky na Dashboardu jsou **28 × 28 px** (v kartě pacienta dál 32 × 32 px), číslo skóre 13 px, „N/A“ 10 px, datum pod odznakem 10 px.
+  - Buňky mají svislý okraj 4 px, Souhrn a Pacient 6 px.
+- **Sloupce** (zleva): Souhrn · Pacient · Zdroj · Aktuální · časová osa · prázdná výplň.
+  - **Souhrn** (před jménem): **barevný štítek připravenosti** – plná barva jako odznaky, zaoblení 6 px, bílý tučný text 14 px s ikonou: **✓ Připraveno** (zelená), **! K posouzení** (žlutá), **✕ Nepřipraveno** (červená), **? Neúplné** (světle šedá s šedým rámečkem a šedým textem).
+    - Jen štítek, zarovnaný nahoru; sloupec je široký podle obsahu. Hraniční hodnoty jsou v tooltipu štítku a v detailu.
+    - Klik na štítek otevře *Detail souhrnu připravenosti*.
+    - **Barevný proužek vlevo u řádku** (3 px) má barvu souhrnu – i zelený a šedý.
+  - **Pacient**: na prvním řádku `Příjmení Jméno →` (odkaz na úpravu pacienta), pod ním šedě „RČ 3 · název monitorace“ (dlouhý text se zkrátí „…“). Šířka 208 px, zarovnaný nahoru.
+  - **Zdroj**: **minimalistická ikona** (16 px, šedá, obrys 1,5 px ve stylu Heroicons) a název šedým textem 14 px:
+    - Dotazník – podložka s řádky;
+    - Laboratoř – zkumavka;
+    - Wearables – hodinky.
+    - Stejné ikony jsou v detailu souhrnu, v seznamu hraničních hodnot a v legendě (dříve emoji 📋 🧪 ⌚).
+  - Při vodorovném posunu zůstávají **Pacient a Zdroj** na místě, za nimi je svislá linka. Souhrn odjede doleva pod ně a časová osa pod ně „podjíždí“. Na mobilu (< 640 px) zůstává na místě jen Pacient.
+  - Plánované (budoucí) dotazníky se na Dashboardu ani v pohledech **nezobrazují**. Vidět jsou jen v kartě pacienta (Monitorace pacienta).
+  - **Aktuální** (světle modrý podklad, záhlaví modře): poslední data každého zdroje, pokud jsou aktuální.
     - Dotazník: poslední vyplněný (odznak se skóre, klik otevře report).
     - Laboratoř: poslední odběr (pod odznakem datum).
     - Wearables: poslední den (pod odznakem „dnes“ nebo „včera“).
     - Neaktuální data: čárkovaný červený rámeček s „—“, pod ním červeně stáří („před 24 dny“). Tooltip ukazuje datum posledních dat.
-    - Žádná data: šedý čárkovaný rámeček s „—“ a „bez dat“.
-    - Kondenzovaně: odznak souhrnu v barvě štítku (✓ / ! / ✕ / „?“), tooltip vypíše hraniční hodnoty.
-  - **Časová osa po týdnech** (nahrazuje sloupce let):
-    - Týden je pondělí–neděle a nejnovější je vlevo.
-    - Hlavička má dva řádky: rok („2026 · po týdnech“) přes všechny jeho týdny, pod tím datum pondělí („19.10.“). Svislá čára je jen mezi roky.
-    - Osa sahá od aktuálního týdne po nejstarší data zobrazených pacientů. Prázdný týden ukazuje šedou tečku „·“. Každý týden je stejně široký sloupec u všech pacientů (v zákrytu).
-    - Dotazník: všechny dotazníky týdne (vyplněné i N/A; řadí se podle data vyplnění, jinak termínu). Odznaky a kliky jsou stejné jako dřív.
-    - Laboratoř: jeden odznak za každý odběr.
-    - Wearables: jeden odznak za týden = nejhorší den (pod ním datum toho dne).
-    - Kondenzovaně: jeden odznak za týden = nejhorší stav ze všech zdrojů v daném týdnu (pořadí jako u souhrnu; nevyplněný dotazník = šedé „?“). Tooltip vypíše, co do týdne přispělo. **⚠️ OVĚŘIT**, jestli je historický souhrn po týdnech užitečný.
-- Podrobně jsou řádky jednoho pacienta oddělené světlou linkou a pacienti tmavší linkou. Najetí myší zvýrazní celého pacienta.
+    - Žádný vyplněný dotazník: šedý čárkovaný rámeček s „—“ a „bez dat“.
+  - **Časová osa** – vyplněné dotazníky, nevyplněné dotazníky (N/A) a výsledky laboratoře jsou zasazené do sloupců podle data. Členění se volí na záložce *Zobrazení*:
+    - **Po týdnech** (výchozí): sloupec = týden (pondělí–neděle). Hlavička: rok („2026 · po týdnech“) přes jeho týdny, pod tím datum pondělí („19.10.“, na střed).
+    - **Po měsících**: sloupec = měsíc. Hlavička: rok („2026 · po měsících“), pod tím zkratka měsíce („říj“, vlevo).
+    - **Po letech**: sloupec = rok. Hlavička „Po letech“, pod tím rok („2026“, vlevo); svislá čára mezi všemi roky.
+    - **Jen vyplněné**: jediný sloupec „Vyplněné · nejnovější vlevo“. Položky jdou za sebou bez prázdných období a **bez nevyplněných dotazníků (N/A)**; řádky pacientů nejsou v zákrytu.
+    - Nejnovější je vždy vlevo, i uvnitř sloupce.
+    - Osa sahá od aktuálního období po nejstarší data zobrazených pacientů. Každé období je stejně široký sloupec u všech pacientů (v zákrytu). Prázdné období ukazuje šedou tečku „·“. Svislá čára je mezi roky.
+    - Dotazník: všechny dotazníky období (vyplněné i N/A; zařazení podle data vyplnění, jinak termínu). Odznaky a kliky jsou stejné jako dřív.
+    - Laboratoř: odznak za každý odběr.
+    - Wearables: odznak za každý týden = nejhorší den (pod ním datum toho dne). Ve sloupci měsíce nebo roku je tedy víc týdenních odznaků vedle sebe.
+- Řádky zdrojů jednoho pacienta jsou oddělené světlou linkou, pacienti tmavší linkou. Najetí myší zvýrazní celého pacienta.
 - V patičce je uprostřed výběr „na stránku“ (výchozí 500).
 - Dotazníky se berou z aktivní monitorace pacienta. Pokud žádná aktivní není, zobrazí se poslední monitorace. Souhrn hledá poslední vyplněný dotazník ve všech monitoracích pacienta.
 
-**Odznaky laboratoře a wearables** (NOVÉ; čtverec 32 × 32 px jako odznak dotazníku, pod ním datum 10 px)
+**Odznaky laboratoře a wearables** (čtverec 28 × 28 px jako odznak dotazníku na Dashboardu, pod ním datum 10 px)
 - Zelená s ✓ = vše v mezích.
 - Žlutá s „!“ = hraniční hodnota.
 - Červená:
-  - laboratoř: **zkratka (8 px) a hodnota nejhoršího parametru** (11 px), např. „NEU / 1,2“, „PLT / 85“. Nejhorší je parametr s nejzávažnější úrovní, při shodě ten, který je nejdál za červenou mezí;
+  - laboratoř: **zkratka (7 px) a hodnota nejhoršího parametru** (10 px), např. „NEU / 1,2“, „PLT / 85“. Nejhorší je parametr s nejzávažnější úrovní, při shodě ten, který je nejdál za červenou mezí;
   - wearables: ✕.
 - Tooltip vypíše všechny hodnoty mimo meze.
 - Odznaky jsou zatím jen pro čtení. **⚠️ OVĚŘIT**, kam má vést klik.
 
-**Pravidlo souhrnu** – `src/lib/readiness.ts`, **⚠️ OVĚŘIT** s klinikem. Pravidla se vyhodnocují v tomto pořadí:
+**Pravidlo souhrnu** – `src/lib/readiness.ts`, **⚠️ OVĚŘIT** s klinikem.
+- Počítají se **jen zdroje, které pacient má** (stejné jako řádky v tabulce).
+- Pacient bez laboratoře nebo bez zařízení tedy kvůli nim není „Neúplné“. **⚠️ OVĚŘIT**, zda nemá být laboratoř pro chemoterapii vždy povinná (např. nastavením v monitoraci).
+
+Pravidla se vyhodnocují v tomto pořadí:
 1. Kterýkoli aktuální zdroj je červený → **Nepřipraveno**.
-2. Některý zdroj chybí nebo je neaktuální → **Neúplné**.
+2. Některý zdroj je neaktuální nebo chybí vyplněný dotazník → **Neúplné**.
 3. Kterýkoli zdroj je žlutý (dotazník žlutý nebo modrý) → **K posouzení**.
-4. Jinak (všechny 3 zdroje aktuální a zelené) → **Připraveno**.
+4. Jinak (všechny zdroje pacienta aktuální a zelené) → **Připraveno**.
 - Aktuální znamená:
   - dotazník vyplněný v intervalu monitorace, nejméně však 7 dní;
   - laboratoř nejvýš 7 dní stará (návrh počítal s „3 dny před cyklem“ – cykly léčby zatím nejsou v datech);
@@ -160,16 +166,18 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
 
 **Detail souhrnu připravenosti** (modal, NOVÉ – otevře se klikem na Souhrn)
 - Hlavička: „Souhrn připravenosti — Jméno Příjmení“, pod tím „RČ 1 · monitorace · stav k 25.10.2026“ a zavírací křížek.
-- Šedý box: velký barevný štítek připravenosti (16 px) a pod ním seznam hraničních hodnot jako v tabulce. Vpravo je text pravidla a oken aktuálnosti.
-- Karta **📋 Dotazník**:
+- Šedý box: velký barevný štítek připravenosti (16 px) a pod ním seznam hraničních hodnot (ikona zdroje + text, barva podle úrovně; nejdřív červené, pak žluté, pak neaktuální data). Vpravo je text pravidla a oken aktuálnosti.
+- Karty mají v záhlaví ikonu zdroje a název.
+- Karta **Dotazník**:
   - štítek stavu: V pořádku / K posouzení / Mimo mez / Neaktuální / Bez dat; vpravo datum a stáří (u neaktuálních červeně);
   - štítek pásma se skóre, důvod pásma a odkaz „Klinický report z 19.10. →“ (zavře detail a otevře report);
   - odpovědi za 3 a více bodů (nejzávažnější nahoře, body v závorce).
-- Karty **🧪 Laboratoř** a **⌚ Wearables** jsou vedle sebe (na mobilu pod sebou).
+- Karty **Laboratoř** a **Wearables** jsou vedle sebe (na mobilu pod sebou).
   - Tabulka: Parametr · Hodnota (barva podle úrovně, jednotka šedě) · Mez („≥ 2,0 · červená < 1,5“) · Stav (tečka + V mezích / Hraniční / Mimo mez).
   - Wearables mají navíc řádek Kroky se změnou za 7 dní.
   - Neaktuální zdroj ukazuje poslední data se štítkem „Neaktuální“.
 - Bez dat: „Pacient zatím nevyplnil žádný dotazník.“, „Žádný výsledek laboratoře.“, „Pacient nemá připojené zařízení.“
+  - Zdroj, který pacient nemá, má šedý štítek **„Nesleduje se“** a do souhrnu se nepočítá.
 
 **Demo data připravenosti**
 - Laboratoř a wearables jsou smyšlené (`src/data/readinessSeed.ts`).
@@ -181,14 +189,24 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - Krokerová = Nepřipraveno (neutrofily, horečka);
   - Dvořáková = Nepřipraveno (trombocyty);
   - Kokošková = Neúplné (laboratoř před 24 dny);
-  - ostatní = Neúplné (skončená monitorace nebo chybějící data).
+  - ostatní = Neúplné (skončená monitorace / neaktuální dotazník nebo laboratoř, Plyšová bez vyplněného dotazníku).
 
 **Panel nástrojů** (pravý sloupec, NOVÉ)
-- Nahoře jsou záložky s ikonou a názvem: **Filtr** (ikona trychtýře) a **Řazení** (ikona šipek ↑↓).
+- Nahoře jsou záložky s ikonou (16 px) a názvem: **Filtr** (ikona trychtýře), **Řazení** (ikona šipek ↑↓) a **Zobrazení** (ikona sloupců, NOVÉ 2026-10-26).
   - Aktivní záložka je modrá a podtržená, neaktivní šedá. Přepíná se kliknutím, výchozí je Filtr.
   - Když se nastavení záložky liší od výchozího, je za jejím názvem malá modrá tečka.
 - Panel je **škálovatelný**: další nástroje (např. Export, Sloupce) se přidají jako další záložka (`TOOLS` v `Dashboard.tsx`).
 - Tlačítko dole v panelu („Uložit jako pohled“ / „Uložit změny filtru“) je vidět na všech záložkách.
+
+**Záložka Zobrazení** (NOVÉ)
+- *Časová osa* (přepínač, pod každou volbou šedý popis 12 px):
+  - **Po týdnech** (výchozí) – „Sloupec = týden (pondělí–neděle)“;
+  - **Po měsících** – „Sloupec = měsíc“;
+  - **Po letech** – „Sloupec = rok“;
+  - **Jen vyplněné** – „Bez prázdných období a bez nevyplněných dotazníků“.
+- Odkaz „Obnovit výchozí zobrazení“ se zobrazí jen při změně.
+- Poznámka: „Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.“ **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
+- Do záložky lze později přidat další volby zobrazení (např. výběr zdrojů).
 
 **Záložka Řazení**
 - *Řadit podle* (přepínač):
@@ -492,12 +510,13 @@ Klik na řádek otevře **detail výsledku**:
 8. Některá jména jsou v produkčních datech zadaná obráceně (Příjmení „Anna“, Jméno „Malá“). Replika to přebírá. Doporučení: v UI zdůraznit pořadí polí.
 9. Meze laboratoře a wearables, okna aktuálnosti (vázat laboratoř na datum příštího cyklu léčby?) a pořadí v souhrnu (má „Neúplné“ přebíjet „K posouzení“?).
 10. Odkud přijdou data laboratoře (LIS / nemocniční systém) a wearables (které zařízení, jak často), a co má otevřít klik na jejich odznak.
-11. Kondenzované zobrazení: má časová osa ukazovat historický souhrn po týdnech, nebo jen dotazníky?
+11. Které zdroje jsou pro připravenost povinné (např. laboratoř u chemoterapie)? Nastavovat to v monitoraci?
 
 ## Changelog
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | Dashboard a pohledy: odebráno podrobné zobrazení i přepínač Kondenzované / Podrobné. Jedno zobrazení se sloupcem Zdroj a řádkem za každý zdroj, který pacient má (1–3 řádky). Nové minimalistické ikony zdrojů místo emoji. Nižší řádky (odznaky 28 px). Nová záložka Zobrazení: časová osa po týdnech / měsících / letech / jen vyplněné. Souhrn: jen štítek (hraniční hodnoty v tooltipu a detailu); počítá jen zdroje, které pacient má. |
 | 2026-10-26 | Dashboard a pohledy: v kondenzovaném zobrazení odebrán sloupec Zdroj (zůstává jen v podrobném). |
 | 2026-10-26 | Dashboard a pohledy: odebrán sloupec Plánované (budoucí dotazníky jsou jen v kartě pacienta). Legenda ⓘ na Dashboardu bez odznaku „plánováno“. |
 | 2026-10-26 | Souhrn: místo ikony semaforu barevný štítek připravenosti (✓ Připraveno / ! K posouzení / ✕ Nepřipraveno / ? Neúplné) v tabulce, v detailu i v legendě. |

@@ -1,10 +1,10 @@
-// Ikona ⓘ s legendou: štítek souhrnu, odznaky dotazníku, laboratoře a wearables (otevírá se kliknutím i najetím myší).
+// Ikona ⓘ s legendou: dlaždice dotazníku, laboratoře a wearables (otevírá se kliknutím i najetím myší).
 import { CheckIcon, XMarkIcon } from '@heroicons/react/20/solid'
 import { ClockIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { BAND_META, type Status } from '../lib/scoring'
-import type { Overall, SourceKey } from '../lib/readiness'
-import { OVERALL_META, ReadinessBadge, SourceIcon } from './Readiness'
+import type { SourceKey } from '../lib/readiness'
+import { OVERALL_META, SourceIcon } from './Readiness'
 import { cx } from './ui'
 
 const QUESTIONNAIRE: { status: Status; sample: ReactNode; text: string }[] = [
@@ -14,13 +14,6 @@ const QUESTIONNAIRE: { status: Status; sample: ReactNode; text: string }[] = [
   { status: 'blue', sample: '8', text: 'Pacient si vyžádal kontrolu.' },
   { status: 'na', sample: 'N/A', text: 'Termín proběhl, dotazník chybí. Kliknutím ho lze vyplnit.' },
   { status: 'future', sample: <ClockIcon className="h-4 w-4" />, text: 'Plánovaný termín (datum pod odznakem). Lze vyplnit předem.' },
-]
-
-const SUMMARY: { level: Overall; text: string }[] = [
-  { level: 'green', text: 'Všechny zdroje pacienta aktuální a v mezích.' },
-  { level: 'red', text: 'Kterýkoli aktuální zdroj je červený.' },
-  { level: 'gray', text: 'Některý zdroj je neaktuální nebo chybí vyplněný dotazník.' },
-  { level: 'yellow', text: 'Kterýkoli zdroj je žlutý (dotazník i modrý).' },
 ]
 
 const Box = ({ tone, children }: { tone: string; children: ReactNode }) => (
@@ -39,7 +32,7 @@ const Heading = ({ icon, children }: { icon?: SourceKey; children: ReactNode }) 
   </span>
 )
 
-/** `dashboard` = celá legenda (souhrn, laboratoř, wearables); jinak jen odznaky dotazníku (karta pacienta). */
+/** `dashboard` = celá legenda (dlaždice, laboratoř, wearables); jinak jen odznaky dotazníku (karta pacienta). */
 export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
   const ref = useRef<HTMLSpanElement>(null)
@@ -71,15 +64,11 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
             <span className="mb-3 block text-sm font-semibold text-gray-950">Legenda</span>
             <span className="flex flex-col gap-2.5 whitespace-normal">
               {dashboard && (
-                <>
-                  <Heading>Souhrn připravenosti</Heading>
-                  {SUMMARY.map((s) => (
-                    <Row key={s.level} sample={<ReadinessBadge level={s.level} />}>
-                      {s.text}
-                    </Row>
-                  ))}
-                  <span className="text-xs text-gray-500">Pořadí: červená, šedá, žlutá, zelená. Proužek u řádku má barvu souhrnu. Klik na souhrn otevře detail.</span>
-                </>
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium text-gray-950">Čtverec</span> ve sloupci Aktuální = poslední data zdroje,{' '}
+                  <span className="font-medium text-gray-950">úzké dlaždice</span> = minulé týdny seskupené po měsících. Datum a hodnoty jsou v
+                  tooltipu.
+                </span>
               )}
               {dashboard && <Heading icon="questionnaire">Dotazník</Heading>}
               {/* Plánované dotazníky se na Dashboardu nezobrazují */}
@@ -104,19 +93,19 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
                       </Box>
                     }
                   >
-                    Laboratoř mimo mez – zkratka a hodnota nejhoršího parametru.
+                    Laboratoř mimo mez – hodnota nejhoršího parametru (ve čtverci i jeho zkratka).
                   </Row>
                   <Row sample={<Box tone={OVERALL_META.red.box}><XMarkIcon className="h-5 w-5" /></Box>}>Wearables mimo mez (např. horečka).</Row>
                   <Row sample={<Box tone="border border-dashed border-red-300 text-sm text-red-400">—</Box>}>
-                    Ve sloupci Aktuální: data jsou neaktuální (pod rámečkem jejich stáří), šedě = bez dat.
+                    Aktuální: data jsou neaktuální (stáří v tooltipu), šedě = bez dat.
                   </Row>
-                  <Row sample={<span className="flex h-8 w-8 shrink-0 items-center justify-center text-gray-300">·</span>}>
-                    Prázdné období na časové ose (týden, měsíc nebo rok bez dat).
+                  <Row sample={<span className="flex h-8 w-8 shrink-0 items-center justify-center"><span className="h-8 w-5 rounded bg-gray-100" /></span>}>
+                    Období bez dat na časové ose.
                   </Row>
                 </>
               )}
             </span>
-            <span className="mt-3 block text-xs text-gray-400">Pod odznakem je datum (vyplnění, odběru nebo měření).</span>
+            {!dashboard && <span className="mt-3 block text-xs text-gray-400">Pod odznakem je datum vyplnění.</span>}
           </span>
         </span>
       )}

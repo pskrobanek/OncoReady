@@ -1,7 +1,7 @@
 // Prvky připravenosti k léčbě: barevný štítek souhrnu, ikony zdrojů a odznaky laboratoře a wearables.
 import { CheckIcon, XMarkIcon } from '@heroicons/react/20/solid'
 import type { ReactNode } from 'react'
-import { shortDate, todayIso } from '../lib/format'
+import { shortDate } from '../lib/format'
 import { evalLab, sourceMeta, type Finding, type Overall, type SourceKey, type WearWeek } from '../lib/readiness'
 import type { LabResult } from '../lib/types'
 import { cx } from './ui'
@@ -81,72 +81,85 @@ export function FindingList({ findings, className }: { findings: Finding[]; clas
   )
 }
 
-const caption = (date: string) => (date === todayIso() ? 'dnes' : shortDate(date))
+export type TileShape = 'square' | 'narrow'
+const SHAPE: Record<TileShape, string> = { square: 'h-9 w-9', narrow: 'h-9 w-[22px]' }
 
-/** Čtvercový odznak 28 × 28 px s popiskem pod ním – stejné rozměry jako malý odznak dotazníku na Dashboardu. */
-function Tile({ tone, title, children, below, belowClass }: { tone: string; title: string; children: ReactNode; below?: string; belowClass?: string }) {
-  return (
-    <span title={title} className="flex w-8 flex-col items-center gap-0.5">
-      <span className={cx('flex h-7 w-7 items-center justify-center rounded font-semibold leading-none', tone)}>{children}</span>
-      {below !== undefined && <span className={cx('text-[10px] leading-3', belowClass ?? 'text-gray-400')}>{below}</span>}
+/**
+ * Dlaždice bez popisku (datum a hodnoty jsou v tooltipu).
+ * square = sloupec Aktuální (36 × 36 px), narrow = týden / položka na časové ose (22 × 36 px).
+ */
+function Tile({ tone, title, shape, onClick, children }: { tone: string; title: string; shape: TileShape; onClick?: () => void; children: ReactNode }) {
+  const cls = cx('flex shrink-0 items-center justify-center rounded font-semibold leading-none', SHAPE[shape], tone)
+  return onClick ? (
+    <button type="button" title={title} onClick={onClick} className={cx(cls, 'transition hover:opacity-80')}>
+      {children}
+    </button>
+  ) : (
+    <span title={title} className={cls}>
+      {children}
     </span>
   )
 }
 
-const ICON: Record<Overall, ReactNode> = {
-  green: <CheckIcon className="h-4 w-4" />,
-  yellow: <span className="text-sm">!</span>,
-  red: <XMarkIcon className="h-4 w-4" />,
-  gray: <span className="text-sm">?</span>,
+const icon = (level: Overall, shape: TileShape): ReactNode => {
+  const i = shape === 'square' ? 'h-5 w-5' : 'h-3.5 w-3.5'
+  return level === 'green' ? <CheckIcon className={i} /> : level === 'red' ? <XMarkIcon className={i} /> : <span className={shape === 'square' ? 'text-base' : 'text-xs'}>{level === 'yellow' ? '!' : '?'}</span>
 }
 
 const tooltip = (head: string, findings: Finding[]) => [head, ...findings.map((f) => `• ${f.text}`)].join('\n')
 
 /**
- * Odznak laboratoře: zelená ✓, žlutá !, červená = hodnota nejhoršího parametru (nad ní jeho zkratka).
+ * Laboratoř: zelená ✓, žlutá !, červená = hodnota nejhoršího parametru
+ * (ve čtverci nad ní i zkratka parametru, v úzké dlaždici jen hodnota – zkratka je v tooltipu).
  */
-export function LabTile({ lab, below }: { lab: LabResult; below?: string }) {
+export function LabTile({ lab, shape, onClick, hint }: { lab: LabResult; shape: TileShape; onClick?: () => void; hint?: string }) {
   const ev = evalLab(lab)
+  const head = `Laboratoř ${shortDate(lab.date)}${hint ? ` – ${hint}` : ''}`
   return (
-    <Tile tone={OVERALL_META[ev.level].box} title={tooltip(`Laboratoř ${shortDate(lab.date)}`, ev.findings.length ? ev.findings : [{ source: 'lab', level: 'green', text: 'Všechny parametry v mezích' }])} below={below ?? caption(lab.date)}>
+    <Tile
+      tone={OVERALL_META[ev.level].box}
+      shape={shape}
+      onClick={onClick}
+      title={tooltip(head, ev.findings.length ? ev.findings : [{ source: 'lab', level: 'green', text: 'Všechny parametry v mezích' }])}
+    >
       {ev.level === 'red' && ev.worst ? (
-        <span className="flex flex-col items-center gap-px">
-          <span className="text-[7px] font-medium tracking-wide opacity-90">{ev.worst.metric.short}</span>
-          <span className="text-[10px] tabular-nums">{ev.worst.value}</span>
-        </span>
+        shape === 'square' ? (
+          <span className="flex flex-col items-center gap-px">
+            <span className="text-[8px] font-medium tracking-wide opacity-90">{ev.worst.metric.short}</span>
+            <span className="text-[11px] tabular-nums">{ev.worst.value}</span>
+          </span>
+        ) : (
+          <span className="text-[9px] tabular-nums">{ev.worst.value}</span>
+        )
       ) : (
-        ICON[ev.level]
+        icon(ev.level, shape)
       )}
     </Tile>
   )
 }
 
-/** Odznak wearables za týden (nejhorší den) nebo za den. */
-export function WearTile({ week, below }: { week: WearWeek; below?: string }) {
+/** Wearables za týden (nejhorší den) nebo poslední den. */
+export function WearTile({ week, shape, onClick, hint }: { week: WearWeek; shape: TileShape; onClick?: () => void; hint?: string }) {
   return (
     <Tile
       tone={OVERALL_META[week.level].box}
-      title={tooltip(`Wearables ${shortDate(week.day.date)}`, week.findings.length ? week.findings : [{ source: 'wearables', level: 'green', text: 'Bez odchylek' }])}
-      below={below ?? caption(week.day.date)}
+      shape={shape}
+      onClick={onClick}
+      title={tooltip(`Wearables ${shortDate(week.day.date)}${hint ? ` – ${hint}` : ''}`, week.findings.length ? week.findings : [{ source: 'wearables', level: 'green', text: 'Bez odchylek' }])}
     >
-      {ICON[week.level]}
+      {icon(week.level, shape)}
     </Tile>
   )
 }
 
-/** Zdroj bez aktuálních dat: čárkovaný rámeček s pomlčkou, pod ním stáří posledních dat. */
-export function MissingTile({ stale, below, title }: { stale: boolean; below: string; title: string }) {
+/** Zdroj bez aktuálních dat (sloupec Aktuální): čárkovaný čtverec s pomlčkou; stáří posledních dat je v tooltipu. */
+export function MissingTile({ stale, title }: { stale: boolean; title: string }) {
   return (
-    <Tile
-      tone={cx('border border-dashed text-sm', stale ? 'border-red-300 text-red-400' : 'border-gray-300 text-gray-400')}
-      title={title}
-      below={below}
-      belowClass={cx('whitespace-nowrap', stale ? 'text-red-500' : 'text-gray-400')}
-    >
+    <Tile shape="square" title={title} tone={cx('border border-dashed text-sm', stale ? 'border-red-300 text-red-400' : 'border-gray-300 text-gray-400')}>
       —
     </Tile>
   )
 }
 
-/** Prázdné období v časové ose. */
-export const EmptyCell = () => <span className="block min-w-8 text-center text-gray-300">·</span>
+/** Prázdné období na časové ose: světle šedá úzká dlaždice. */
+export const EmptySlot = () => <span className="block h-9 w-[22px] rounded bg-gray-100" aria-hidden />

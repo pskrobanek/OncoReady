@@ -1,7 +1,7 @@
 // Pravidla připravenosti k léčbě: laboratoř, wearables a souhrnný stav ze zdrojů, které pacient má.
 // Meze a okna aktuálnosti jsou předpoklad pro prototyp – ⚠️ OVĚŘIT s klinikem.
 import { statusOf } from '../components/QuestionnaireBadges'
-import { addDays, agoText, daysBetween, num, shortDate, signed, todayIso } from './format'
+import { addDays, agoText, daysBetween, num, signed, todayIso } from './format'
 import { bandOf, totalScore, type Band } from './scoring'
 import type { DB, LabParam, LabResult, Questionnaire, WearableDay } from './types'
 
@@ -231,7 +231,10 @@ export const weekOf = (iso: string) => {
   return addDays(iso.slice(0, 10), -((day + 6) % 7))
 }
 
-const MONTHS = ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro']
+const MONTH_NAMES = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec']
+
+/** „Říjen 2026“ z klíče měsíce „2026-10“ nebo z data. */
+export const monthName = (iso: string) => `${MONTH_NAMES[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`
 
 /** Klíč období (sloupce osy), do kterého datum patří: pondělí týdne, „2026-10“, „2026“; „Jen vyplněné“ = jediný sloupec. */
 export const periodOf = (mode: TimelineMode, iso: string) =>
@@ -253,10 +256,6 @@ export function periodsBack(mode: TimelineMode, from: string, to: string): strin
   }
   return out
 }
-
-/** Popisek sloupce: „19.10.“, „říj“, „2026“. */
-export const periodLabel = (mode: TimelineMode, key: string) =>
-  mode === 'week' ? shortDate(key) : mode === 'month' ? MONTHS[Number(key.slice(5, 7)) - 1] : mode === 'year' ? key : ''
 
 /** Datum, podle kterého se dotazník zařadí na osu: vyplnění, jinak termín. */
 export const questionnaireDate = (q: Questionnaire) => (q.filledAt ? q.filledAt.slice(0, 10) : q.scheduledFor)

@@ -49,19 +49,7 @@ export const groupTone = (key: string) => (key === 'future' ? 'bg-white' : key =
  * Nevyplněný po termínu → „N/A“ a pomlčka; budoucí termín → čárkovaný rámeček s hodinami a datem termínu.
  * Klik na nevyplněný otevře vyplnění dotazníku (např. v ambulanci).
  */
-export function BadgeRow({
-  items,
-  onOpenReport,
-  wrap = false,
-  size = 'md',
-}: {
-  items: Questionnaire[]
-  onOpenReport: (q: Questionnaire) => void
-  wrap?: boolean
-  /** sm = 28 × 28 px (Dashboard, nižší řádky), md = 32 × 32 px */
-  size?: 'sm' | 'md'
-}) {
-  const sm = size === 'sm'
+export function BadgeRow({ items, onOpenReport, wrap = false }: { items: Questionnaire[]; onOpenReport: (q: Questionnaire) => void; wrap?: boolean }) {
   const navigate = useNavigate()
   const location = useLocation()
   return (
@@ -81,13 +69,12 @@ export function BadgeRow({
                   : `Nevyplněno (termín ${shortDate(q.scheduledFor)}) – vyplnit dotazník`
             }
             onClick={() => (filled ? onOpenReport(q) : navigate(`/vyplnit/${q.id}`, { state: { from: location.pathname } }))}
-            className={cx('group flex flex-col items-center gap-0.5', sm ? 'w-8' : 'w-9')}
+            className="group flex w-9 flex-col items-center gap-0.5"
           >
             <span
               className={cx(
-                'flex items-center justify-center rounded font-semibold leading-none transition group-hover:opacity-80',
-                sm ? 'h-7 w-7' : 'h-8 w-8',
-                filled ? (sm ? 'text-[13px]' : 'text-sm') : sm ? 'text-[10px]' : 'text-[11px]',
+                'flex h-8 w-8 items-center justify-center rounded font-semibold leading-none transition group-hover:opacity-80',
+                filled ? 'text-sm' : 'text-[11px]',
                 BAND_META[status].badge,
               )}
             >
@@ -128,5 +115,52 @@ export function QuestionnaireBadges({
         </div>
       ))}
     </div>
+  )
+}
+
+/** Závažnost stavu pro výběr dotazníku, který zastupuje týden: červené > vyžádal kontrolu > žluté > zelené > N/A. */
+const SEVERITY: Record<Status, number> = { red: 4, blue: 3, yellow: 2, green: 1, na: 0, future: -1 }
+
+/** Nejzávažnější dotazník (položky jsou od nejnovějšího, při shodě vyhrává novější). */
+export const worstQuestionnaire = (items: Questionnaire[]) => items.reduce((a, b) => (SEVERITY[statusOf(b)] > SEVERITY[statusOf(a)] ? b : a))
+
+/**
+ * Dlaždice dotazníku na Dashboardu bez popisku pod sebou (datum je v tooltipu).
+ * square = sloupec Aktuální (36 × 36 px), narrow = týden / položka na časové ose (22 × 36 px).
+ * Klik: vyplněný → klinický report, nevyplněný → vyplnění dotazníku.
+ */
+export function QuestionnaireTile({
+  q,
+  shape,
+  more = 0,
+  onOpenReport,
+}: {
+  q: Questionnaire
+  shape: 'square' | 'narrow'
+  /** Počet dalších dotazníků ve stejném týdnu (jen do tooltipu). */
+  more?: number
+  onOpenReport: (q: Questionnaire) => void
+}) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const status = statusOf(q)
+  const filled = q.answers && q.filledAt
+  const title = filled
+    ? `Dotazník ${shortDate(q.filledAt!)} · skóre ${totalScore(q.answers!)} – zobrazit klinický report`
+    : `Nevyplněno (termín ${shortDate(q.scheduledFor)}) – vyplnit dotazník`
+  return (
+    <button
+      type="button"
+      title={more ? `${title}\n+ ${more} další ve stejném týdnu` : title}
+      onClick={() => (filled ? onOpenReport(q) : navigate(`/vyplnit/${q.id}`, { state: { from: location.pathname } }))}
+      className={cx(
+        'flex shrink-0 items-center justify-center rounded font-semibold leading-none transition hover:opacity-80',
+        shape === 'square' ? 'h-9 w-9' : 'h-9 w-[22px]',
+        filled ? (shape === 'square' ? 'text-sm' : 'text-[11px]') : shape === 'square' ? 'text-[11px]' : 'text-[8px]',
+        BAND_META[status].badge,
+      )}
+    >
+      {filled ? totalScore(q.answers!) : 'N/A'}
+    </button>
   )
 }

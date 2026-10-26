@@ -150,6 +150,17 @@ export type SourceState = {
 }
 export type Readiness = { overall: Overall; sources: SourceState[]; findings: Finding[] }
 
+const BAND_RANK: Record<Band, number> = { red: 3, blue: 2, yellow: 1, green: 0 }
+
+/**
+ * Nejhorší výsledek z aktuálních zdrojů (barevná čára za sloupcem Aktuální):
+ * červená > vyžádal kontrolu (modrá) > žlutá > zelená. Neaktuální zdroje se nepočítají; null = žádný zdroj není aktuální.
+ */
+export function worstCurrent(r: Readiness): Band | null {
+  const bands = r.sources.filter((s) => s.state === 'ok').map((s): Band => (s.source === 'questionnaire' ? bandOf(s.questionnaire!.answers!) : (s.level as Level)))
+  return bands.length ? bands.reduce((a, b) => (BAND_RANK[b] > BAND_RANK[a] ? b : a)) : null
+}
+
 const staleFinding = (source: SourceKey, date: string | null, today: string): Finding => ({
   source,
   level: 'gray',

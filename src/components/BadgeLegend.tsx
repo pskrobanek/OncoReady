@@ -102,6 +102,17 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
                   <Row sample={<span className="flex h-8 w-8 shrink-0 items-center justify-center"><span className="h-8 w-5 rounded bg-gray-100" /></span>}>
                     Období bez dat na časové ose.
                   </Row>
+                  <Row
+                    sample={
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center gap-1">
+                        <span className="h-8 w-[3px] bg-red-600" />
+                        <span className="h-8 w-[3px] bg-blue-600" />
+                        <span className="h-8 w-[3px] bg-gray-200" />
+                      </span>
+                    }
+                  >
+                    Svislá čára za sloupcem Aktuální = nejhorší výsledek z aktuálních zdrojů (červená, modrá, žlutá, zelená; šedá = nic aktuálního).
+                  </Row>
                 </>
               )}
             </span>

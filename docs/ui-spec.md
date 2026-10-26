@@ -64,7 +64,8 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
      - červená laboratoř = hodnota nejhoršího parametru (ve čtverci i jeho zkratka);
      - ✕ wearables mimo mez;
      - čárkovaný „—“ = neaktuální data (stáří v tooltipu), šedě = bez dat;
-     - světle šedá úzká dlaždice = období bez dat.
+     - světle šedá úzká dlaždice = období bez dat;
+     - svislá čára za sloupcem Aktuální = nejhorší výsledek z aktuálních zdrojů (šedá = nic aktuálního).
 - **V kartě pacienta** (Monitorace pacienta) je ikona u dotazníků a legenda ukazuje jen odznaky dotazníku, dole „Pod odznakem je datum vyplnění.“
 
 ### Pravidla pásma (⚠️ OVĚŘIT – odvozeno ze screenshotů)
@@ -109,6 +110,11 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - Wearables: poslední den (✓ / ! / ✕). Klik otevře *Detail připravenosti*.
   - Neaktuální data: čárkovaný červený čtverec s „—“; tooltip „Laboratoř: poslední data 2.10. (před 24 dny) – neaktuální“.
   - Žádný vyplněný dotazník: šedý čárkovaný čtverec s „—“.
+  - **Svislá čára na konci sloupce** (3 px, přes všechny řádky pacienta) odděluje Aktuální od měsíců. Její barva = **nejhorší výsledek z aktuálních zdrojů** pacienta:
+    - pořadí: červená > modrá (vyžádal kontrolu) > žlutá > zelená;
+    - neaktuální zdroje se nepočítají; když není aktuální žádný zdroj, je čára světle šedá;
+    - v hlavičce je za sloupcem Aktuální šedá čára 1 px.
+    - **⚠️ OVĚŘIT**, jestli mají neaktuální zdroje čáru ovlivnit (např. šedě jako „Neúplné“).
 - **Časová osa** – **úzké dlaždice 22 × 36 px**, mezi dlaždicemi 4 px, **mezi skupinami (měsíci) malá mezera** 20 px, bez svislých čar. Nejnovější je vlevo. Členění se volí na záložce *Zobrazení*:
   - **Po týdnech** (výchozí):
     - jedna úzká dlaždice = jeden týden (pondělí–neděle);
@@ -523,6 +529,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | Dashboard: čára mezi sloupcem Aktuální a měsíci; v řádcích pacienta je barevná (3 px) podle nejhoršího výsledku z aktuálních zdrojů. |
 | 2026-10-26 | Dashboard podle náčrtu: odebrán sloupec Souhrn i proužek řádku. Pacient = jméno tučně, RČ a podtržená monitorace (odkaz). Sloupec zdrojů bez nadpisu, mezi řádky zdrojů bez čar. Aktuální = čtverec 36 px, časová osa = úzké dlaždice 22 × 36 px; po týdnech seskupené po měsících („Říjen 2026“) s malou mezerou mezi měsíci, osa začíná minulým týdnem. Bez datumů pod dlaždicemi (jsou v tooltipu). Detail připravenosti se otevírá ze čtverce Laboratoř / Wearables. |
 | 2026-10-26 | Dashboard a pohledy: odebráno podrobné zobrazení i přepínač Kondenzované / Podrobné. Jedno zobrazení se sloupcem Zdroj a řádkem za každý zdroj, který pacient má (1–3 řádky). Nové minimalistické ikony zdrojů místo emoji. Nižší řádky (odznaky 28 px). Nová záložka Zobrazení: časová osa po týdnech / měsících / letech / jen vyplněné. Souhrn: jen štítek (hraniční hodnoty v tooltipu a detailu); počítá jen zdroje, které pacient má. |
 | 2026-10-26 | Dashboard a pohledy: v kondenzovaném zobrazení odebrán sloupec Zdroj (zůstává jen v podrobném). |

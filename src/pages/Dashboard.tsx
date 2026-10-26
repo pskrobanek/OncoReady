@@ -9,8 +9,8 @@ import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
 import { DEFAULT_FILTERS } from '../data/programs'
 import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
-import { evalLab, monthName, periodsBack, readinessOf, sourceMeta, timelineOf, weekOf, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
-import { BAND_META, type Status } from '../lib/scoring'
+import { evalLab, monthName, periodsBack, readinessOf, sourceMeta, timelineOf, weekOf, worstCurrent, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
+import { BAND_META, type Band, type Status } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
 import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
 
@@ -46,6 +46,15 @@ const loadMode = (): TimelineMode => {
   } catch {
     return 'week'
   }
+}
+
+/** Barva svislé čáry za sloupcem Aktuální (3 px) podle nejhoršího aktuálního výsledku; šedá = žádný zdroj není aktuální. */
+const WORST_BAR: Record<Band | 'none', string> = {
+  red: 'shadow-[inset_-3px_0_0_#dc2626]',
+  blue: 'shadow-[inset_-3px_0_0_#2563eb]',
+  yellow: 'shadow-[inset_-3px_0_0_#fbbf24]',
+  green: 'shadow-[inset_-3px_0_0_#10b981]',
+  none: 'shadow-[inset_-3px_0_0_#e5e7eb]',
 }
 
 /** Nástroje v pravém panelu (přepínají se záložkami). Další nástroje lze přidat sem. */
@@ -380,7 +389,7 @@ function PatientsBoard({
                   <th className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3')}>
                     <span className="sr-only">Zdroj</span>
                   </th>
-                  <th className="w-px px-3 py-3 text-start text-sm font-semibold text-gray-950">
+                  <th className="w-px border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">
                     <span className="inline-flex items-center gap-1.5">
                       Aktuální
                       <BadgeLegend dashboard />
@@ -431,7 +440,8 @@ function PatientsBoard({
                               {sourceMeta(line).label}
                             </span>
                           </td>
-                          <td className={cx('w-px px-3 py-1 align-middle group-hover:bg-gray-50', edge)}>
+                          {/* Svislá čára na konci sloupce = nejhorší výsledek z aktuálních zdrojů pacienta; odděluje Aktuální od měsíců */}
+                          <td className={cx('w-px py-1 pl-3 pr-4 align-middle group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'], edge)}>
                             <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
                           </td>
                           {periods.map((p, pi) => (

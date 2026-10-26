@@ -58,7 +58,7 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
 Šedá ikona **ⓘ**: po najetí myší nebo kliknutí se zobrazí bublina „Legenda“. Bublina má pevnou pozici pod ikonou, takže ji posuvná tabulka neořízne. Při posunu stránky se zavře.
 - **Na Dashboardu a v pohledech** je ikona v hlavičce sloupce **Souhrn** a legenda má čtyři části:
   1. *Souhrn připravenosti*: 4 barevné štítky s pravidlem, pořadí „červená, šedá, žlutá, zelená“, proužek u řádku = barva souhrnu, klik na souhrn = detail;
-  2. *📋 Dotazník*: 6 vzorových odznaků (zelené, žluté, červené, vyžádal kontrolu, N/A, plánováno);
+  2. *📋 Dotazník*: 5 vzorových odznaků (zelené, žluté, červené, vyžádal kontrolu, N/A); odznak „plánováno“ jen v kartě pacienta;
   3. *🧪 Laboratoř a ⌚ wearables*: ✓ v mezích, „!“ hraniční hodnota, červený odznak se zkratkou a hodnotou nejhoršího parametru (laboratoř), ✕ (wearables), čárkovaný „—“ = neaktuální / bez dat;
   4. *Kondenzované zobrazení*: odznak týdne = nejhorší stav ze všech zdrojů.
 - **V kartě pacienta** (Monitorace pacienta) je ikona u dotazníků a legenda ukazuje jen odznaky dotazníku.
@@ -86,7 +86,7 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - Volba se pamatuje v prohlížeči a platí pro Dashboard i pohledy. Do pohledu se neukládá. **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
 - Vpravo od přepínače je hledání (jméno a rodné číslo).
 - **Řazení** je v pravém panelu na záložce *Řazení* (viz *Panel nástrojů*). Výchozí je řazení podle naléhavosti.
-- **Sloupce** (zleva): Souhrn · Pacient · Zdroj · Plánované · Aktuální · časová osa po týdnech · prázdná výplň.
+- **Sloupce** (zleva): Souhrn · Pacient · Zdroj · Aktuální · časová osa po týdnech · prázdná výplň.
   - **Souhrn** (NOVÉ, před jménem): **barevný štítek připravenosti** – plná barva jako odznaky, zaoblení 6 px, bílý tučný text 14 px s ikonou: **✓ Připraveno** (zelená), **! K posouzení** (žlutá), **✕ Nepřipraveno** (červená), **? Neúplné** (světle šedá s šedým rámečkem a šedým textem). Ikona semaforu se nepoužívá.
     - Kondenzovaně: jen štítek, sloupec je široký podle obsahu.
     - Podrobně: pod štítkem jsou navíc **hraniční hodnoty** (12 px, ikona zdroje + text, barva podle úrovně), sloupec má 208 px a text se zalamuje. Pořadí: nejdřív hodnoty mimo meze (červené, pak žluté), pak chybějící nebo neaktuální data. Příklady:
@@ -99,7 +99,7 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - **Pacient**: na prvním řádku `Příjmení Jméno →` (odkaz na úpravu pacienta), pod ním šedě „RČ 3 · název monitorace“ (dlouhý text se zkrátí „…“). Šířka 208 px.
   - **Zdroj**: kondenzovaně „📋🧪⌚ Vše“, podrobně tři řádky „📋 Dotazník“, „🧪 Laboratoř“, „⌚ Wearables“ (šedý text).
   - Při vodorovném posunu zůstávají **Pacient a Zdroj** na místě, za nimi je svislá linka. Souhrn odjede doleva pod ně a časová osa pod ně „podjíždí“. Na mobilu (< 640 px) zůstává na místě jen Pacient.
-  - **Plánované**: budoucí dotazníky (jen řádek Dotazník; kondenzovaně v jediném řádku). Sbalené jako dřív: vidět je jen nejbližší další dotazník a vlevo od něj šedé tlačítko „+N“. Klik rozbalí všechny plánované termíny a tlačítko se změní na „−“; rozbalení se neukládá. Při jediném plánovaném termínu tlačítko chybí, bez plánovaných je „—“.
+  - Plánované (budoucí) dotazníky se na Dashboardu ani v pohledech **nezobrazují** (sloupec Plánované byl odebrán 2026-10-26). Vidět jsou jen v kartě pacienta (Monitorace pacienta).
   - **Aktuální** (světle modrý podklad, záhlaví modře; nahrazuje sloupec „Poslední vyplněný“): poslední data každého zdroje, pokud jsou aktuální.
     - Dotazník: poslední vyplněný (odznak se skóre, klik otevře report).
     - Laboratoř: poslední odběr (pod odznakem datum).
@@ -498,6 +498,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | Dashboard a pohledy: odebrán sloupec Plánované (budoucí dotazníky jsou jen v kartě pacienta). Legenda ⓘ na Dashboardu bez odznaku „plánováno“. |
 | 2026-10-26 | Souhrn: místo ikony semaforu barevný štítek připravenosti (✓ Připraveno / ! K posouzení / ✕ Nepřipraveno / ? Neúplné) v tabulce, v detailu i v legendě. |
 | 2026-10-25 | Dashboard a pohledy: přepínač zobrazení Kondenzované / Podrobné. Nový sloupec Souhrn (semafor, v podrobném zobrazení i hraniční hodnoty) s detailem po kliku. Zdroje Laboratoř a Wearables, sloupec Aktuální a časová osa po týdnech (nahrazuje sloupce Poslední vyplněný a roky). Červený odznak laboratoře ukazuje hodnotu nejhoršího parametru. Proužek řádku má barvu souhrnu. Sloupce Pacient a Zdroj jsou ukotvené, Pacient má 208 px. Legenda ⓘ rozšířena (v kartě pacienta jen dotazník). Demo data: laboratoř a wearables, posun dat k dnešku, monitorace Prostata – kurativní RT každé 2 týdny (odpovídá datům Dlouhé). |
 | 2026-10-14 | Dashboard a pohledy: nový sloupec „Zdroj“ za sloupcem Pacient, zatím jen typ „📋 Dotazník“. |

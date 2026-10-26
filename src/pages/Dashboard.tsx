@@ -269,8 +269,6 @@ function PatientsBoard({
   const [perPage, setPerPage] = useState(500)
   const [report, setReport] = useState<Questionnaire | null>(null)
   const [tool, setTool] = useState<ToolKey>('filter')
-  // Pacienti, u kterých je rozbalený sloupec Plánované
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [sort, setSort] = useState<SortKey>('urgency')
   const [desc, setDesc] = useState(false)
   const [density, setDensity] = useState<Density>(loadDensity)
@@ -404,13 +402,10 @@ function PatientsBoard({
                   <th rowSpan={2} className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3.5 text-start align-bottom text-sm font-semibold text-gray-950')}>
                     Zdroj
                   </th>
-                  <th rowSpan={2} className="w-px px-3 pb-2 text-start align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                    Plánované
-                  </th>
                   <th
                     rowSpan={2}
                     title="Poslední data každého zdroje; neaktuální data jsou čárkovaně"
-                    className="w-px border-l border-gray-200 bg-primary-50/60 px-2 pb-2 text-center align-bottom text-[10px] font-semibold uppercase tracking-normal text-primary-600"
+                    className="w-px border-l border-gray-200 bg-primary-50/60 px-2 pb-2 text-center sm:border-l-0 align-bottom text-[10px] font-semibold uppercase tracking-normal text-primary-600"
                   >
                     Aktuální
                   </th>
@@ -434,28 +429,8 @@ function PatientsBoard({
                   ))}
                 </tr>
               </thead>
-              {rows.slice(0, perPage).map(({ patient, qs, program, ready, tl }) => {
+              {rows.slice(0, perPage).map(({ patient, program, ready, tl }) => {
                 const lines: Line[] = detailed ? ['questionnaire', 'lab', 'wearables'] : ['all']
-                const planned = qs.filter((q) => statusOf(q) === 'future')
-                const plannedCell = planned.length > 1 ? (
-                  <PlannedCell
-                    items={planned}
-                    expanded={expanded.has(patient.id)}
-                    onToggle={() =>
-                      setExpanded((s) => {
-                        const n = new Set(s)
-                        if (n.has(patient.id)) n.delete(patient.id)
-                        else n.add(patient.id)
-                        return n
-                      })
-                    }
-                    onOpenReport={setReport}
-                  />
-                ) : planned.length ? (
-                  <BadgeRow items={planned} onOpenReport={setReport} />
-                ) : (
-                  <span className="block min-w-[2.25rem] text-center text-sm text-gray-300">—</span>
-                )
                 return (
                   <tbody key={patient.id} className="group whitespace-nowrap">
                     {lines.map((line, i) => (
@@ -498,10 +473,7 @@ function PatientsBoard({
                             `${sourceMeta(line).icon} ${sourceMeta(line).label}`
                           )}
                         </td>
-                        <td className={cx('w-px px-3 py-2 align-middle group-hover:bg-gray-50', i > 0 && 'border-t border-gray-100')}>
-                          {line === 'all' || line === 'questionnaire' ? plannedCell : null}
-                        </td>
-                        <td className={cx('w-px border-l border-gray-200 bg-primary-50/60 px-2 py-2 align-middle [&>*]:mx-auto [&>div]:w-fit', i > 0 && 'border-t border-t-gray-100')}>
+                        <td className={cx('w-px border-l border-gray-200 bg-primary-50/60 px-2 py-2 align-middle sm:border-l-0 [&>*]:mx-auto [&>div]:w-fit', i > 0 && 'border-t border-t-gray-100')}>
                           <CurrentCell line={line} ready={ready} onOpenReport={setReport} />
                         </td>
                         {weeks.map((w, wi) => (
@@ -521,7 +493,7 @@ function PatientsBoard({
               {rows.length === 0 && (
                 <tbody>
                   <tr>
-                    <td colSpan={weeks.length + 6} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={weeks.length + 5} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>
@@ -648,38 +620,6 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
     <div className="mt-6">
       <h3 className="mb-3 text-sm font-medium text-gray-950">{title}</h3>
       <div className="flex flex-col gap-3">{children}</div>
-    </div>
-  )
-}
-
-/**
- * Sloupec Plánované: ve výchozím stavu jen nejbližší další dotazník a tlačítko „+N“,
- * po rozkliknutí všechny plánované termíny (nejbližší vpravo, u sloupce Poslední vyplněný).
- */
-function PlannedCell({
-  items,
-  expanded,
-  onToggle,
-  onOpenReport,
-}: {
-  items: Questionnaire[]
-  expanded: boolean
-  onToggle: () => void
-  onOpenReport: (q: Questionnaire) => void
-}) {
-  const next = items[items.length - 1] // položky jsou seřazené od nejvzdálenějšího termínu
-  const rest = items.length - 1
-  return (
-    <div className="flex items-start gap-1.5">
-      <button
-        type="button"
-        onClick={onToggle}
-        title={expanded ? 'Skrýt další plánované dotazníky' : `Zobrazit další plánované dotazníky (${rest})`}
-        className="flex h-8 min-w-8 items-center justify-center rounded border border-gray-200 bg-gray-50 px-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-      >
-        {expanded ? '−' : `+${rest}`}
-      </button>
-      <BadgeRow items={expanded ? items : [next]} onOpenReport={onOpenReport} />
     </div>
   )
 }

@@ -81,7 +81,8 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
                 </>
               )}
               {dashboard && <Heading>📋 Dotazník</Heading>}
-              {QUESTIONNAIRE.map((i) => (
+              {/* Plánované dotazníky se na Dashboardu nezobrazují */}
+              {QUESTIONNAIRE.filter((i) => !dashboard || i.status !== 'future').map((i) => (
                 <Row key={i.status} sample={<Box tone={cx(i.status === 'na' ? 'text-[11px]' : 'text-sm', BAND_META[i.status].badge)}>{i.sample}</Box>}>
                   {i.text}
                 </Row>

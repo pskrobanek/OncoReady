@@ -311,20 +311,18 @@ function PatientsBoard({
       .filter((r) => !term || tableName(r.patient).toLowerCase().includes(term) || r.patient.rodneCislo.includes(term))
       // Monitorace: pacient se zobrazí, pokud má některou ze zaškrtnutých monitorací.
       .filter((r) => filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
+      // Datum vyplnění: pacient má v časovém okně aspoň jeden dotazník (vyplněný, nebo nevyplněný po termínu).
       .filter((r) => {
-        // Pacient se zobrazí, pokud má alespoň jeden dotazník ve zvoleném pásmu (a v časovém okně).
-        if (scores.size === 0 && !since) return true
+        if (!since) return true
         return r.qs.some((q) => {
-          const st = statusOf(q)
-          if (st === 'future') return false // budoucí termíny se do filtru nepočítají
-          if (scores.size > 0 && !scores.has(st)) return false
-          if (since) {
-            const date = q.filledAt ? q.filledAt.slice(0, 10) : q.scheduledFor
-            if (date < since || date > todayIso()) return false
-          }
-          return true
+          if (statusOf(q) === 'future') return false // budoucí termíny se do filtru nepočítají
+          const date = q.filledAt ? q.filledAt.slice(0, 10) : q.scheduledFor
+          return date >= since && date <= todayIso()
         })
       })
+      .map((r) => ({ ...r, ready: readinessOf(db, r.patient.id, today) }))
+      // Skóre (pásmo) = barva pruhu u jména: nejhorší výsledek z aktuálních zdrojů; „Nevyplněno“ = nic aktuálního (šedý pruh).
+      .filter((r) => scores.size === 0 || scores.has(worstCurrent(r.ready) ?? 'na'))
       .map((r) => {
         const due = latestDue(r.qs)
         const lastFilled = r.qs.reduce((m, q) => (q.filledAt && q.filledAt > m ? q.filledAt : m), '')
@@ -332,7 +330,6 @@ function PatientsBoard({
           ...r,
           latest: due ? statusOf(due) : ('future' as Status),
           lastFilled,
-          ready: readinessOf(db, r.patient.id, today),
           tl: timelineOf(db, r.patient.id, r.qs, mode, today),
         }
       })

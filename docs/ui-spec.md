@@ -241,7 +241,12 @@ Pravidla se vyhodnocují v tomto pořadí:
 - *Skóre* (zaškrtávací pole s barevnou tečkou): Zelené pásmo, Žluté pásmo, Červené pásmo, Vyžádal kontrolu, Nevyplněno.
   - Výchozí stav: zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
-- Logika: pacient se zobrazí, pokud má **alespoň jeden** dotazník ve zaškrtnutém pásmu a ve zvoleném období. Budoucí termíny se nepočítají. **⚠️ OVĚŘIT** logiku produkce.
+- **Logika Skóre (od 2026-10-26): pásmo = barva pruhu vlevo u jména pacienta**, tj. nejhorší výsledek z aktuálních zdrojů (dotazník, laboratoř, wearables):
+  - Zelené / Žluté / Červené pásmo / Vyžádal kontrolu = pruh v této barvě;
+  - **Nevyplněno** = šedý pruh, tj. pacient nemá žádný aktuální zdroj.
+  - Dříve se pacient zobrazil, když měl kdykoli v historii aspoň jeden dotazník v pásmu – to už neplatí. **⚠️ OVĚŘIT** s produkcí, která filtruje jen podle dotazníků.
+- *Datum vyplnění* se vyhodnocuje zvlášť: pacient má v časovém okně aspoň jeden dotazník (vyplněný, nebo nevyplněný po termínu). Budoucí termíny se nepočítají.
+- Skupiny se kombinují A ZÁROVEŇ.
 
 ## Pohledy (podstránky Dashboardu) – NOVÉ
 
@@ -532,6 +537,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | Filtr Skóre (Dashboard i pohledy) filtruje podle barvy pruhu u jména – nejhoršího výsledku z aktuálních zdrojů; „Nevyplněno“ = žádný aktuální zdroj. Datum vyplnění se vyhodnocuje samostatně. |
 | 2026-10-26 | Dashboard: barevný pruh nejhoršího aktuálního výsledku přesunut na levou stranu buňky Pacient a zesílen na 9 px. Rodné číslo bez popisku „RČ“. Demo data: smyšlená platná rodná čísla a dopočítané datum narození (úložiště v6). |
 | 2026-10-26 | Dashboard: barevná čára přesunuta na konec sloupce Pacient; za sloupcem Aktuální šedá čára. Ve sloupci Aktuální je vedle čtverce stáří dat („dnes“, „včera“, „před 3 dny“; neaktuální červeně). |
 | 2026-10-26 | Dashboard: čára mezi sloupcem Aktuální a měsíci; v řádcích pacienta je barevná (3 px) podle nejhoršího výsledku z aktuálních zdrojů. |

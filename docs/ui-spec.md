@@ -65,7 +65,7 @@ Používá se na Dashboardu i v tabulce Monitorace pacienta.
      - ✕ wearables mimo mez;
      - čárkovaný „—“ = neaktuální data (stáří v tooltipu), šedě = bez dat;
      - světle šedá úzká dlaždice = období bez dat;
-     - svislá čára na konci sloupce Pacient = nejhorší výsledek z aktuálních zdrojů (šedá = nic aktuálního).
+     - barevný pruh vlevo u jména pacienta = nejhorší výsledek z aktuálních zdrojů (šedá = nic aktuálního).
 - **V kartě pacienta** (Monitorace pacienta) je ikona u dotazníků a legenda ukazuje jen odznaky dotazníku, dole „Pod odznakem je datum vyplnění.“
 
 ### Pravidla pásma (⚠️ OVĚŘIT – odvozeno ze screenshotů)
@@ -94,13 +94,13 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - Mezi řádky zdrojů jednoho pacienta nejsou čáry, mezi pacienty je šedá linka. Najetí myší zvýrazní celého pacienta.
   - Řádek zdroje má cca 44 px (dlaždice 36 px + 4 px nahoře a dole), blok pacienta má navíc 10 px nahoře a dole.
 - **Pacient** (208 px, zarovnaný nahoru):
-  - **Svislá čára na konci sloupce** (3 px vpravo, přes všechny řádky pacienta) má barvu **nejhoršího výsledku z aktuálních zdrojů**:
+  - **Barevný pruh na levé straně** (9 px, přes všechny řádky pacienta; obsah buňky je odsazený 24 px) má barvu **nejhoršího výsledku z aktuálních zdrojů**:
     - pořadí: červená > modrá (vyžádal kontrolu) > žlutá > zelená;
     - neaktuální zdroje se nepočítají; když není aktuální žádný zdroj, je čára světle šedá;
     - **⚠️ OVĚŘIT**, jestli mají neaktuální zdroje čáru ovlivnit (např. šedě jako „Neúplné“).
   - Obsah má tři řádky:
     1. jméno `Příjmení Jméno` tučně (odkaz na úpravu pacienta, bez šipky);
-    2. „RČ“ světle šedě a rodné číslo šedě;
+    2. rodné číslo šedě, bez popisku „RČ“ (např. „7061233652“);
     3. po malé mezeře **název monitorace podtržený** (odkaz na úpravu monitorace; dlouhý název se zkrátí „…“).
 - **Zdroj** (sloupec bez nadpisu): minimalistická ikona (16 px, šedá, obrys 1,5 px ve stylu Heroicons) a název šedým textem 14 px:
   - Dotazník – podložka s řádky;
@@ -197,7 +197,8 @@ Pravidla se vyhodnocují v tomto pořadí:
 **Demo data připravenosti**
 - Laboratoř a wearables jsou smyšlené (`src/data/readinessSeed.ts`).
 - Všechna demo data se při vytvoření posunou tak, aby „dnešek“ dema odpovídal skutečnému dni. Data jsou tak vždy aktuální.
-- Verze úložiště je v5, takže starší lokální data se nahradí demem.
+- Verze úložiště je v6, takže starší lokální data se nahradí demem.
+- Rodná čísla pacientů jsou **smyšlená, ale formálně platná** (ženy: měsíc +50, platné datum, 10 číslic dělitelných 11), např. Dvořáková 7061233652. Datum narození v kartě pacienta je dopočítané z rodného čísla.
 - Stavy v demu:
   - Šťastná = Připraveno;
   - Dlouhá = K posouzení (pokles kroků);
@@ -531,6 +532,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | Dashboard: barevný pruh nejhoršího aktuálního výsledku přesunut na levou stranu buňky Pacient a zesílen na 9 px. Rodné číslo bez popisku „RČ“. Demo data: smyšlená platná rodná čísla a dopočítané datum narození (úložiště v6). |
 | 2026-10-26 | Dashboard: barevná čára přesunuta na konec sloupce Pacient; za sloupcem Aktuální šedá čára. Ve sloupci Aktuální je vedle čtverce stáří dat („dnes“, „včera“, „před 3 dny“; neaktuální červeně). |
 | 2026-10-26 | Dashboard: čára mezi sloupcem Aktuální a měsíci; v řádcích pacienta je barevná (3 px) podle nejhoršího výsledku z aktuálních zdrojů. |
 | 2026-10-26 | Dashboard podle náčrtu: odebrán sloupec Souhrn i proužek řádku. Pacient = jméno tučně, RČ a podtržená monitorace (odkaz). Sloupec zdrojů bez nadpisu, mezi řádky zdrojů bez čar. Aktuální = čtverec 36 px, časová osa = úzké dlaždice 22 × 36 px; po týdnech seskupené po měsících („Říjen 2026“) s malou mezerou mezi měsíci, osa začíná minulým týdnem. Bez datumů pod dlaždicemi (jsou v tooltipu). Detail připravenosti se otevírá ze čtverce Laboratoř / Wearables. |

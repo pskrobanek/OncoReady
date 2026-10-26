@@ -1,4 +1,5 @@
-// Demo data – odpovídají screenshotům z produkce (jména, rodná čísla, skóre, data).
+// Demo data – odpovídají screenshotům z produkce (jména, skóre, data).
+// Rodná čísla jsou smyšlená, ale formálně platná (datum narození + kontrolní číslice, dělitelné 11).
 // Kontakty jsou smyšlené. Nepoužívat skutečné údaje pacientů.
 import type { Answers, DB, Monitoring, Patient, Questionnaire } from '../lib/types'
 import { QUESTIONS, scaleValueForPoints } from './questionnaire'
@@ -90,28 +91,35 @@ function monitoring(
   return { m: { id, patientId, programId, start, end, active }, qs }
 }
 
+/** Datum narození z 10místného rodného čísla (ženy mají k měsíci +50). */
+const birthDate = (rc: string) => {
+  const yy = Number(rc.slice(0, 2))
+  const mm = Number(rc.slice(2, 4)) % 50
+  return `${yy >= 54 ? 1900 + yy : 2000 + yy}-${String(mm).padStart(2, '0')}-${rc.slice(4, 6)}`
+}
+
 const P = (id: string, prijmeni: string, jmeno: string, rodneCislo: string, email: string, telefon = ''): Patient => ({
   id,
   prijmeni,
   jmeno,
   rodneCislo,
-  datumNarozeni: '',
+  datumNarozeni: birthDate(rodneCislo),
   telefon,
   email,
 })
 
 // Pozn.: v produkci jsou některá jména zadaná obráceně (např. Příjmení „Anna“, Jméno „Malá“) – replikováno.
 const patients: Patient[] = [
-  P('p1', 'Anna', 'Malá', '3', 'anna.mala@example.com', '420603277036'),
-  P('p2', 'Dlouhá', 'Eva', '7', 'eva.dlouha@example.com'),
-  P('p3', 'Dvořáková', 'Dáša', '1', 'dasa.dvorakova@example.com'),
-  P('p4', 'Kokošková', 'Ema', '5', 'ema.kokoskova@example.com'),
-  P('p5', 'Kristýna', 'Dušková', '10', 'kristyna.duskova@example.com'),
-  P('p6', 'Krokerová', 'Petra', '6', 'petra.krokerova@example.com'),
-  P('p7', 'Krutá', 'Daniela', '4', 'daniela.kruta@example.com'),
-  P('p8', 'Nová', 'Pavla', '2', 'pavla.nova@example.com'),
-  P('p9', 'Plyšová', 'Adéla', '9', 'adela.plysova@example.com'),
-  P('p10', 'Šťastná', 'Lucie', '8', 'lucie.stastna@example.com'),
+  P('p1', 'Anna', 'Malá', '5853144187', 'anna.mala@example.com', '420603277036'),
+  P('p2', 'Dlouhá', 'Eva', '6257022079', 'eva.dlouha@example.com'),
+  P('p3', 'Dvořáková', 'Dáša', '7061233652', 'dasa.dvorakova@example.com'),
+  P('p4', 'Kokošková', 'Ema', '8455091293', 'ema.kokoskova@example.com'),
+  P('p5', 'Kristýna', 'Dušková', '7951304823', 'kristyna.duskova@example.com'),
+  P('p6', 'Krokerová', 'Petra', '6659172520', 'petra.krokerova@example.com'),
+  P('p7', 'Krutá', 'Daniela', '5562053365', 'daniela.kruta@example.com'),
+  P('p8', 'Nová', 'Pavla', '7354281748', 'pavla.nova@example.com'),
+  P('p9', 'Plyšová', 'Adéla', '8158112930', 'adela.plysova@example.com'),
+  P('p10', 'Šťastná', 'Lucie', '6852211586', 'lucie.stastna@example.com'),
 ]
 
 // Pořadí záznamů = pořadí odznaků v tabulce (nejnovější termín vlevo).

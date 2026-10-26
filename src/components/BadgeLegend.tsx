@@ -105,13 +105,12 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
                   <Row
                     sample={
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center gap-1">
-                        <span className="h-8 w-[3px] bg-red-600" />
-                        <span className="h-8 w-[3px] bg-blue-600" />
-                        <span className="h-8 w-[3px] bg-gray-200" />
+                        <span className="h-8 w-[9px] bg-red-600" />
+                        <span className="h-8 w-[9px] bg-gray-200" />
                       </span>
                     }
                   >
-                    Svislá čára na konci sloupce Pacient = nejhorší výsledek z aktuálních zdrojů (červená, modrá, žlutá, zelená; šedá = nic aktuálního).
+                    Barevný pruh vlevo u jména pacienta = nejhorší výsledek z aktuálních zdrojů (červená, modrá, žlutá, zelená; šedá = nic aktuálního).
                   </Row>
                 </>
               )}

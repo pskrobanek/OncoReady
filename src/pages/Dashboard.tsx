@@ -48,13 +48,13 @@ const loadMode = (): TimelineMode => {
   }
 }
 
-/** Barva svislé čáry na konci sloupce Pacient (3 px) podle nejhoršího aktuálního výsledku; šedá = žádný zdroj není aktuální. */
+/** Barevný pruh na levé straně sloupce Pacient (9 px) podle nejhoršího aktuálního výsledku; šedá = žádný zdroj není aktuální. */
 const WORST_BAR: Record<Band | 'none', string> = {
-  red: 'shadow-[inset_-3px_0_0_#dc2626]',
-  blue: 'shadow-[inset_-3px_0_0_#2563eb]',
-  yellow: 'shadow-[inset_-3px_0_0_#fbbf24]',
-  green: 'shadow-[inset_-3px_0_0_#10b981]',
-  none: 'shadow-[inset_-3px_0_0_#e5e7eb]',
+  red: 'shadow-[inset_9px_0_0_#dc2626]',
+  blue: 'shadow-[inset_9px_0_0_#2563eb]',
+  yellow: 'shadow-[inset_9px_0_0_#fbbf24]',
+  green: 'shadow-[inset_9px_0_0_#10b981]',
+  none: 'shadow-[inset_9px_0_0_#e5e7eb]',
 }
 
 /** Nástroje v pravém panelu (přepínají se záložkami). Další nástroje lze přidat sem. */
@@ -384,7 +384,7 @@ function PatientsBoard({
             <table className="w-full table-auto divide-y divide-gray-200 text-start">
               <thead className="whitespace-nowrap bg-gray-50/50">
                 <tr>
-                  <th className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 px-4 py-3 text-start text-sm font-semibold text-gray-950')}>Pacient</th>
+                  <th className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 py-3 pl-6 pr-4 text-start text-sm font-semibold text-gray-950')}>Pacient</th>
                   {/* Sloupec zdrojů je bez nadpisu */}
                   <th className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3')}>
                     <span className="sr-only">Zdroj</span>
@@ -415,18 +415,15 @@ function PatientsBoard({
                       return (
                         <tr key={line}>
                           {i === 0 && (
-                            // Svislá čára na konci sloupce Pacient = nejhorší výsledek z aktuálních zdrojů pacienta
+                            // Barevný pruh vlevo u jména = nejhorší výsledek z aktuálních zdrojů pacienta
                             <td
                               rowSpan={lines.length}
-                              className={cx(STICKY_PATIENT, 'z-[1] bg-white px-4 py-2.5 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
+                              className={cx(STICKY_PATIENT, 'z-[1] bg-white py-2.5 pl-6 pr-4 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
                             >
                               <Link to={`/kartoteka/${patient.id}/upravit`} className="font-semibold text-gray-950 hover:underline">
                                 {tableName(patient)}
                               </Link>
-                              <div className="tabular-nums text-gray-600">
-                                <span className="text-gray-400">RČ </span>
-                                {patient.rodneCislo}
-                              </div>
+                              <div className="tabular-nums text-gray-600">{patient.rodneCislo}</div>
                               {program && (
                                 <Link
                                   to={`/monitorace/${program.id}/upravit`}

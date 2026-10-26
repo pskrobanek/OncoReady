@@ -220,13 +220,19 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Po měsících** – „Sloupec = měsíc, všechny položky“;
   - **Po letech** – „Sloupec = rok, všechny položky“;
   - **Jen vyplněné** – „Bez prázdných období a bez nevyplněných dotazníků“.
-- Odkaz „Obnovit výchozí zobrazení“ se zobrazí jen při změně.
+- *Seskupit podle* (přepínač, NOVÉ 2026-10-26):
+  - **Neseskupovat** (výchozí) – „Jeden seznam pacientů“;
+  - **Závažnosti** – „Podle barvy pruhu u jména“: skupiny v pořadí Červené pásmo, Vyžádal kontrolu, Žluté pásmo, Nevyplněno (šedý pruh = nic aktuálního), Zelené pásmo; prázdné skupiny se nezobrazují;
+  - **Monitorace** – „Podle monitorace pacienta“: skupiny podle názvu monitorace abecedně, pacienti bez monitorace na konci („Bez monitorace“).
+  - Nadpis skupiny je řádek přes celou šířku tabulky (šedé pozadí, 14 px tučně, u závažnosti barevná tečka, za názvem šedě počet pacientů). Při vodorovném posunu zůstává vlevo.
+  - Uvnitř skupiny platí zvolené řazení. Pořadí skupin je pevné (nemění se směrem řazení).
+- Odkaz „Obnovit výchozí zobrazení“ (vrátí časovou osu i seskupení) se zobrazí jen při změně.
 - Poznámka: „Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.“ **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
 - Do záložky lze později přidat další volby zobrazení (např. výběr zdrojů).
 
 **Záložka Řazení**
 - *Řadit podle* (přepínač):
-  - **Naléhavosti** (výchozí): podle stavu posledního dotazníku po termínu, v pořadí červené → vyžádal kontrolu → žluté → N/A → zelené → jen budoucí termíny. Při shodě podle jména. **⚠️ OVĚŘIT**, zda nemá výchozí řazení vycházet ze Souhrnu.
+  - **Naléhavosti** (výchozí, od 2026-10-26): podle **barvy pruhu u jména** (nejhorší výsledek z aktuálních zdrojů) v pořadí červená → vyžádal kontrolu (modrá) → žlutá → nic aktuálního (šedá) → zelená. Při shodě podle jména. Dříve se řadilo podle posledního dotazníku po termínu.
   - **Jména**, **Rodného čísla**, **Posledního vyplnění**.
 - *Pořadí* (přepínač) s popisky podle zvoleného řazení:
   - Naléhavost: „Nejnaléhavější nahoře / dole“;
@@ -537,6 +543,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | Řazení podle naléhavosti podle barvy pruhu u jména. Záložka Zobrazení: nová volba „Seskupit podle“ – neseskupovat / závažnosti / monitorace. |
 | 2026-10-26 | Filtr Skóre (Dashboard i pohledy) filtruje podle barvy pruhu u jména – nejhoršího výsledku z aktuálních zdrojů; „Nevyplněno“ = žádný aktuální zdroj. Datum vyplnění se vyhodnocuje samostatně. |
 | 2026-10-26 | Dashboard: barevný pruh nejhoršího aktuálního výsledku přesunut na levou stranu buňky Pacient a zesílen na 9 px. Rodné číslo bez popisku „RČ“. Demo data: smyšlená platná rodná čísla a dopočítané datum narození (úložiště v6). |
 | 2026-10-26 | Dashboard: barevná čára přesunuta na konec sloupce Pacient; za sloupcem Aktuální šedá čára. Ve sloupci Aktuální je vedle čtverce stáří dat („dnes“, „včera“, „před 3 dny“; neaktuální červeně). |

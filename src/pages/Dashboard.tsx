@@ -1,7 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
-import { latestDue, QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
+import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
 import { ArrowsUpDownIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
@@ -10,7 +10,7 @@ import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, Pa
 import { DEFAULT_FILTERS } from '../data/programs'
 import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
 import { evalLab, monthName, periodsBack, readinessOf, sourceMeta, timelineOf, weekOf, worstCurrent, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
-import { BAND_META, type Band, type Status } from '../lib/scoring'
+import { BAND_META, type Band } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
 import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
 
@@ -48,6 +48,23 @@ const loadMode = (): TimelineMode => {
   }
 }
 
+/** Seskupení pacientů v tabulce (záložka Zobrazení). */
+type GroupBy = 'none' | 'severity' | 'program'
+const GROUP_BY: { key: GroupBy; label: string; hint: string }[] = [
+  { key: 'none', label: 'Neseskupovat', hint: 'Jeden seznam pacientů' },
+  { key: 'severity', label: 'Závažnosti', hint: 'Podle barvy pruhu u jména' },
+  { key: 'program', label: 'Monitorace', hint: 'Podle monitorace pacienta' },
+]
+const GROUP_KEY = 'oncoready-dashboard-seskupeni'
+const loadGroupBy = (): GroupBy => {
+  try {
+    const v = localStorage.getItem(GROUP_KEY)
+    return GROUP_BY.some((g) => g.key === v) ? (v as GroupBy) : 'none'
+  } catch {
+    return 'none'
+  }
+}
+
 /** Barevný pruh na levé straně sloupce Pacient (9 px) podle nejhoršího aktuálního výsledku; šedá = žádný zdroj není aktuální. */
 const WORST_BAR: Record<Band | 'none', string> = {
   red: 'shadow-[inset_9px_0_0_#dc2626]',
@@ -64,8 +81,11 @@ const TOOLS: { key: ToolKey; label: string; icon: React.ComponentType<{ classNam
   { key: 'sort', label: 'Řazení', icon: ArrowsUpDownIcon },
   { key: 'view', label: 'Zobrazení', icon: ViewColumnsIcon },
 ]
-/** Pořadí naléhavosti podle stavu nejnovějšího dotazníku, jehož termín už nastal. */
-const URGENCY: Record<Status, number> = { red: 0, blue: 1, yellow: 2, na: 3, green: 4, future: 5 }
+/**
+ * Pořadí naléhavosti = barva pruhu u jména (nejhorší výsledek z aktuálních zdrojů):
+ * červená → vyžádal kontrolu → žlutá → nic aktuálního (šedá) → zelená. Stejné pořadí mají skupiny podle závažnosti.
+ */
+const SEVERITY_ORDER: (Band | 'na')[] = ['red', 'blue', 'yellow', 'na', 'green']
 const DATE_FILTERS: { key: DateFilter; label: string; days: number | null }[] = [
   { key: 'all', label: 'Vše', days: null },
   { key: '7', label: 'Poslední týden', days: 7 },
@@ -290,6 +310,15 @@ function PatientsBoard({
       /* ignorovat */
     }
   }
+  const [groupBy, setGroupBy] = useState<GroupBy>(loadGroupBy)
+  const changeGroupBy = (g: GroupBy) => {
+    setGroupBy(g)
+    try {
+      localStorage.setItem(GROUP_KEY, g)
+    } catch {
+      /* ignorovat */
+    }
+  }
   // Pacient, jehož detail souhrnu je otevřený
   const [detail, setDetail] = useState<string | null>(null)
 
@@ -320,15 +349,16 @@ function PatientsBoard({
           return date >= since && date <= todayIso()
         })
       })
-      .map((r) => ({ ...r, ready: readinessOf(db, r.patient.id, today) }))
-      // Skóre (pásmo) = barva pruhu u jména: nejhorší výsledek z aktuálních zdrojů; „Nevyplněno“ = nic aktuálního (šedý pruh).
-      .filter((r) => scores.size === 0 || scores.has(worstCurrent(r.ready) ?? 'na'))
       .map((r) => {
-        const due = latestDue(r.qs)
+        const ready = readinessOf(db, r.patient.id, today)
+        return { ...r, ready, severity: worstCurrent(ready) ?? ('na' as const) }
+      })
+      // Skóre (pásmo) = barva pruhu u jména: nejhorší výsledek z aktuálních zdrojů; „Nevyplněno“ = nic aktuálního (šedý pruh).
+      .filter((r) => scores.size === 0 || scores.has(r.severity))
+      .map((r) => {
         const lastFilled = r.qs.reduce((m, q) => (q.filledAt && q.filledAt > m ? q.filledAt : m), '')
         return {
           ...r,
-          latest: due ? statusOf(due) : ('future' as Status),
           lastFilled,
           tl: timelineOf(db, r.patient.id, r.qs, mode, today),
         }
@@ -336,13 +366,26 @@ function PatientsBoard({
       .sort((a, b) => {
         const byName = tableName(a.patient).localeCompare(tableName(b.patient), 'cs')
         let c = 0
-        if (sort === 'urgency') c = URGENCY[a.latest] - URGENCY[b.latest]
+        if (sort === 'urgency') c = SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)
         else if (sort === 'rc') c = a.patient.rodneCislo.localeCompare(b.patient.rodneCislo, 'cs', { numeric: true })
         else if (sort === 'lastFilled') c = b.lastFilled.localeCompare(a.lastFilled) // nejnovější první
         else c = byName
         return (desc ? -c : c) || byName
       })
   }, [db, search, filters, sort, desc, mode, today])
+
+  // Skupiny pacientů (záložka Zobrazení); uvnitř skupiny platí zvolené řazení.
+  const shown = rows.slice(0, perPage)
+  const sections: { key: string; label: string | null; dot: string | null; rows: typeof rows }[] =
+    groupBy === 'severity'
+      ? SEVERITY_ORDER.map((sev) => ({ key: sev, label: BAND_META[sev].label, dot: BAND_META[sev].dot, rows: shown.filter((r) => r.severity === sev) })).filter(
+          (g) => g.rows.length > 0,
+        )
+      : groupBy === 'program'
+        ? [...new Set(shown.map((r) => r.program?.name ?? ''))]
+            .sort((a, b) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'cs')))
+            .map((name) => ({ key: name || '-', label: name || 'Bez monitorace', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
+        : [{ key: 'all', label: null, dot: null, rows: shown }]
 
   // Časová osa: období od aktuálního zpět po nejstarší data zobrazených pacientů.
   // Po týdnech začíná osa minulým týdnem – aktuální stav je ve čtverci ve sloupci Aktuální.
@@ -401,58 +444,76 @@ function PatientsBoard({
                   <th />
                 </tr>
               </thead>
-              {rows.slice(0, perPage).map(({ patient, program, ready, tl }) => {
-                // Řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
-                const lines = ready.sources.map((s) => s.source)
-                return (
-                  <tbody key={patient.id} className="group whitespace-nowrap">
-                    {lines.map((line, i) => {
-                      // Horní a dolní okraj bloku pacienta; mezi řádky zdrojů bez čar.
-                      const edge = cx(i === 0 && 'pt-2.5', i === lines.length - 1 && 'pb-2.5')
-                      return (
-                        <tr key={line}>
-                          {i === 0 && (
-                            // Barevný pruh vlevo u jména = nejhorší výsledek z aktuálních zdrojů pacienta
-                            <td
-                              rowSpan={lines.length}
-                              className={cx(STICKY_PATIENT, 'z-[1] bg-white py-2.5 pl-6 pr-4 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
-                            >
-                              <Link to={`/kartoteka/${patient.id}/upravit`} className="font-semibold text-gray-950 hover:underline">
-                                {tableName(patient)}
-                              </Link>
-                              <div className="tabular-nums text-gray-600">{patient.rodneCislo}</div>
-                              {program && (
-                                <Link
-                                  to={`/monitorace/${program.id}/upravit`}
-                                  title="Otevřít monitoraci"
-                                  className="mt-1.5 block truncate text-gray-600 underline decoration-gray-300 underline-offset-2 hover:text-primary-600"
+              {sections.map((sec) => (
+                <Fragment key={sec.key}>
+                  {/* Nadpis skupiny – zůstává vlevo i při vodorovném posunu */}
+                  {sec.label !== null && (
+                    <tbody>
+                      <tr>
+                        <td colSpan={periods.length + 4} className="bg-gray-50 py-2">
+                          <span className="sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold text-gray-950">
+                            {sec.dot && <span className={cx('h-2.5 w-2.5 rounded-full', sec.dot)} />}
+                            {sec.label}
+                            <span className="font-normal tabular-nums text-gray-500">{sec.rows.length}</span>
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  )}
+                  {sec.rows.map(({ patient, program, ready, tl }) => {
+                    // Řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
+                    const lines = ready.sources.map((s) => s.source)
+                    return (
+                      <tbody key={patient.id} className="group whitespace-nowrap">
+                        {lines.map((line, i) => {
+                          // Horní a dolní okraj bloku pacienta; mezi řádky zdrojů bez čar.
+                          const edge = cx(i === 0 && 'pt-2.5', i === lines.length - 1 && 'pb-2.5')
+                          return (
+                            <tr key={line}>
+                              {i === 0 && (
+                                // Barevný pruh vlevo u jména = nejhorší výsledek z aktuálních zdrojů pacienta
+                                <td
+                                  rowSpan={lines.length}
+                                  className={cx(STICKY_PATIENT, 'z-[1] bg-white py-2.5 pl-6 pr-4 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
                                 >
-                                  {program.name}
-                                </Link>
+                                  <Link to={`/kartoteka/${patient.id}/upravit`} className="font-semibold text-gray-950 hover:underline">
+                                    {tableName(patient)}
+                                  </Link>
+                                  <div className="tabular-nums text-gray-600">{patient.rodneCislo}</div>
+                                  {program && (
+                                    <Link
+                                      to={`/monitorace/${program.id}/upravit`}
+                                      title="Otevřít monitoraci"
+                                      className="mt-1.5 block truncate text-gray-600 underline decoration-gray-300 underline-offset-2 hover:text-primary-600"
+                                    >
+                                      {program.name}
+                                    </Link>
+                                  )}
+                                </td>
                               )}
-                            </td>
-                          )}
-                          <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-1 text-sm text-gray-600 group-hover:bg-gray-50', edge)}>
-                            <span className="inline-flex items-center gap-1.5">
-                              <SourceIcon source={line} className="h-4 w-4 text-gray-400" />
-                              {sourceMeta(line).label}
-                            </span>
-                          </td>
-                          <td className={cx('w-px border-r border-gray-200 px-3 py-1 align-middle group-hover:bg-gray-50', edge)}>
-                            <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
-                          </td>
-                          {periods.map((p, pi) => (
-                            <td key={p} className={cx('w-px py-1 pr-0.5 align-middle group-hover:bg-gray-50', groupStart(pi) ? (pi === 0 ? 'pl-3' : 'pl-5') : 'pl-0.5', edge)}>
-                              <PeriodCell line={line} period={p} mode={mode} tl={tl} onOpenReport={setReport} />
-                            </td>
-                          ))}
-                          <td className={cx('group-hover:bg-gray-50', edge)} />
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                )
-              })}
+                              <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-1 text-sm text-gray-600 group-hover:bg-gray-50', edge)}>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <SourceIcon source={line} className="h-4 w-4 text-gray-400" />
+                                  {sourceMeta(line).label}
+                                </span>
+                              </td>
+                              <td className={cx('w-px border-r border-gray-200 px-3 py-1 align-middle group-hover:bg-gray-50', edge)}>
+                                <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
+                              </td>
+                              {periods.map((p, pi) => (
+                                <td key={p} className={cx('w-px py-1 pr-0.5 align-middle group-hover:bg-gray-50', groupStart(pi) ? (pi === 0 ? 'pl-3' : 'pl-5') : 'pl-0.5', edge)}>
+                                  <PeriodCell line={line} period={p} mode={mode} tl={tl} onOpenReport={setReport} />
+                                </td>
+                              ))}
+                              <td className={cx('group-hover:bg-gray-50', edge)} />
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    )
+                  })}
+                </Fragment>
+              ))}
               {rows.length === 0 && (
                 <tbody>
                   <tr>
@@ -475,7 +536,7 @@ function PatientsBoard({
           <div className="flex border-b border-gray-200 px-3" role="tablist">
             {TOOLS.map(({ key, label, icon: Icon }) => {
               const active = tool === key
-              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week'
+              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none'
               return (
                 <button
                   key={key}
@@ -541,8 +602,30 @@ function PatientsBoard({
                   />
                 ))}
               </FilterGroup>
-              {mode !== 'week' && (
-                <button onClick={() => changeMode('week')} className="mt-6 self-start text-sm font-medium text-primary-600 hover:underline">
+              <FilterGroup title="Seskupit podle">
+                {GROUP_BY.map((g) => (
+                  <Radio
+                    key={g.key}
+                    name="groupBy"
+                    checked={groupBy === g.key}
+                    onChange={() => changeGroupBy(g.key)}
+                    label={
+                      <span>
+                        {g.label}
+                        <span className="block text-xs text-gray-500">{g.hint}</span>
+                      </span>
+                    }
+                  />
+                ))}
+              </FilterGroup>
+              {(mode !== 'week' || groupBy !== 'none') && (
+                <button
+                  onClick={() => {
+                    changeMode('week')
+                    changeGroupBy('none')
+                  }}
+                  className="mt-6 self-start text-sm font-medium text-primary-600 hover:underline"
+                >
                   Obnovit výchozí zobrazení
                 </button>
               )}

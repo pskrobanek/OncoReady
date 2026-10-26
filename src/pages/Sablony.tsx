@@ -6,8 +6,8 @@ import { Button, Card, ConfirmModal, LinkAction, PageHeader, PerPage, resultsLab
 import { diagnosisName, frequencyLabel } from '../data/programs'
 import { useStore } from '../lib/store'
 
-/** Seznam monitorací (programů sledování). */
-export function Monitorace() {
+/** Seznam šablon monitorace (programů sledování). */
+export function Sablony() {
   const { db, deleteProgram } = useStore()
   const navigate = useNavigate()
   const toast = useToast()
@@ -32,9 +32,9 @@ export function Monitorace() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title="Monitorace"
-        breadcrumbs={[{ label: 'Monitorace', to: '/monitorace' }, { label: 'Přehled' }]}
-        actions={<Button onClick={() => navigate('/monitorace/vytvorit')}>Vytvořit</Button>}
+        title="Šablony"
+        breadcrumbs={[{ label: 'Šablony', to: '/sablony' }, { label: 'Přehled' }]}
+        actions={<Button onClick={() => navigate('/sablony/vytvorit')}>Vytvořit</Button>}
       />
       <Card className="overflow-hidden">
         <div className="flex justify-end px-4 py-3 sm:px-6">
@@ -54,7 +54,7 @@ export function Monitorace() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {rows.slice(0, perPage).map((p) => (
-                <tr key={p.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/monitorace/${p.id}/upravit`)}>
+                <tr key={p.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/sablony/${p.id}/upravit`)}>
                   <td className="min-w-[12rem] px-6 py-4 text-sm font-medium text-gray-950">{p.name}</td>
                   <td className="min-w-[9rem] px-3 py-4">
                     <DiagnosisChips codes={p.diagnoses} />
@@ -67,10 +67,10 @@ export function Monitorace() {
                   <td className="whitespace-nowrap px-3 py-4">
                     <BandRanges bands={p.bands} />
                   </td>
-                  <td className="px-3 py-4 text-sm tabular-nums text-gray-950" title="Pacienti s aktivní monitorací">{activePatients(p.id)}</td>
+                  <td className="px-3 py-4 text-sm tabular-nums text-gray-950" title="Pacienti s aktivní monitorací podle této šablony">{activePatients(p.id)}</td>
                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-3 whitespace-nowrap">
-                      <LinkAction icon={PencilSquareIcon} onClick={() => navigate(`/monitorace/${p.id}/upravit`)}>
+                      <LinkAction icon={PencilSquareIcon} onClick={() => navigate(`/sablony/${p.id}/upravit`)}>
                         Upravit
                       </LinkAction>
                       <LinkAction icon={TrashIcon} color="danger" onClick={() => setDeleting(p.id)}>
@@ -83,7 +83,7 @@ export function Monitorace() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">
-                    Nenalezeny žádné monitorace
+                    Nenalezeny žádné šablony
                   </td>
                 </tr>
               )}
@@ -99,7 +99,7 @@ export function Monitorace() {
 
       <ConfirmModal
         open={!!deleting}
-        title="Smazat monitoraci"
+        title="Smazat šablonu"
         onCancel={() => setDeleting(null)}
         onConfirm={() => {
           deleteProgram(deleting!)

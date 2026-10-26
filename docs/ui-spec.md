@@ -9,7 +9,7 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
 - **Boční menu** (od šířky ≥ 1024 px), v tomto pořadí:
   - Dashboard (ikona domu);
   - pod ním odsazené **pohledy** uživatele a „+ Nový pohled“ (viz *Pohledy*);
-  - **Monitorace** (ikona schránky se seznamem);
+  - **Šablony** (ikona schránky se seznamem; do 2026-10-26 „Monitorace“);
   - Kartotéka (ikona složek);
   - Statistiky (ikona sloupcového grafu);
   - **e-Skill** (ikona kurzoru).
@@ -101,7 +101,7 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - Obsah má tři řádky:
     1. jméno `Příjmení Jméno` tučně (odkaz na úpravu pacienta, bez šipky);
     2. rodné číslo šedě, bez popisku „RČ“ (např. „7061233652“);
-    3. po malé mezeře **název monitorace podtržený** (odkaz na úpravu monitorace; dlouhý název se zkrátí „…“).
+    3. po malé mezeře **název šablony podtržený** (odkaz na úpravu šablony; dlouhý název se zkrátí „…“).
 - **Zdroj** (sloupec bez nadpisu): minimalistická ikona (16 px, šedá, obrys 1,5 px ve stylu Heroicons) a název šedým textem 14 px:
   - Dotazník – podložka s řádky;
   - Laboratoř – zkumavka;
@@ -147,7 +147,7 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
 
 **Pravidlo souhrnu** – `src/lib/readiness.ts`, **⚠️ OVĚŘIT** s klinikem.
 - Počítají se **jen zdroje, které pacient má** (stejné jako řádky v tabulce).
-- Pacient bez laboratoře nebo bez zařízení tedy kvůli nim není „Neúplné“. **⚠️ OVĚŘIT**, zda nemá být laboratoř pro chemoterapii vždy povinná (např. nastavením v monitoraci).
+- Pacient bez laboratoře nebo bez zařízení tedy kvůli nim není „Neúplné“. **⚠️ OVĚŘIT**, zda nemá být laboratoř pro chemoterapii vždy povinná (např. nastavením v šabloně).
 
 Pravidla se vyhodnocují v tomto pořadí:
 1. Kterýkoli aktuální zdroj je červený → **Nepřipraveno**.
@@ -180,7 +180,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 | Kroky: průměr 7 dní proti předchozím 14 dnům | % | pokles do 40 % | – (pokles o 40 % a víc je žlutý) |
 
 **Detail připravenosti** (modal – otevře se klikem na čtverec Laboratoř nebo Wearables ve sloupci Aktuální)
-- Hlavička: „Souhrn připravenosti — Jméno Příjmení“, pod tím „RČ 1 · monitorace · stav k 25.10.2026“ a zavírací křížek.
+- Hlavička: „Souhrn připravenosti — Jméno Příjmení“, pod tím „RČ 1 · šablona · stav k 25.10.2026“ a zavírací křížek.
 - Šedý box: velký barevný štítek připravenosti (16 px) a pod ním seznam hraničních hodnot (ikona zdroje + text, barva podle úrovně; nejdřív červené, pak žluté, pak neaktuální data). Vpravo je text pravidla a oken aktuálnosti.
 - Karty mají v záhlaví ikonu zdroje a název.
 - Karta **Dotazník**:
@@ -223,7 +223,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 - *Seskupit podle* (přepínač, NOVÉ 2026-10-26):
   - **Neseskupovat** (výchozí) – „Jeden seznam pacientů“;
   - **Závažnosti** – „Podle barvy pruhu u jména“: skupiny v pořadí Červené pásmo, Vyžádal kontrolu, Žluté pásmo, Nevyplněno (šedý pruh = nic aktuálního), Zelené pásmo; prázdné skupiny se nezobrazují;
-  - **Monitorace** – „Podle monitorace pacienta“: skupiny podle názvu monitorace abecedně, pacienti bez monitorace na konci („Bez monitorace“).
+  - **Šablony** – „Podle šablony monitorace pacienta“: skupiny podle názvu šablony abecedně, pacienti bez šablony na konci („Bez šablony“).
   - Nadpis skupiny je řádek přes celou šířku tabulky (šedé pozadí, 14 px tučně, u závažnosti barevná tečka, za názvem šedě počet pacientů). Při vodorovném posunu zůstává vlevo.
   - Uvnitř skupiny platí zvolené řazení. Pořadí skupin je pevné (nemění se směrem řazení).
 - Odkaz „Obnovit výchozí zobrazení“ (vrátí časovou osu i seskupení) se zobrazí jen při změně.
@@ -278,21 +278,24 @@ Pohled je **pojmenovaná kombinace filtrů Dashboardu**, kterou si uživatel ulo
 
 Pod původní skupiny Skóre a Datum vyplnění přibyla:
 
-- **Monitorace**: zaškrtávací pole pro každou monitoraci.
+- **Šablona** (dříve „Monitorace“): zaškrtávací pole pro každou šablonu.
 
-Filtry Klasifikace a Tag byly z panelu **odebrány** (2026-10-14). Klasifikace a tag zůstávají u monitorace jako údaje, jen se podle nich nefiltruje.
+Filtry Klasifikace a Tag byly z panelu **odebrány** (2026-10-14). Klasifikace a tag zůstávají u šablony jako údaje, jen se podle nich nefiltruje.
 
-Logika: uvnitř skupiny platí NEBO, mezi skupinami platí A ZÁROVEŇ. Prázdná skupina nefiltruje. Monitorace se bere z aktuální monitorace pacienta.
+Logika: uvnitř skupiny platí NEBO, mezi skupinami platí A ZÁROVEŇ. Prázdná skupina nefiltruje. Šablona se bere z aktuální monitorace pacienta.
 
-V tabulce pacientů je pod jménem šedě název monitorace pacienta. V hlavičce karty je počet pacientů („3 pacientů“). **Jde o novinku oproti produkci.**
+V tabulce pacientů je pod jménem název šablony monitorace pacienta. V hlavičce karty je počet pacientů („3 pacientů“). **Jde o novinku oproti produkci.**
 
-## Monitorace (programy sledování) – NOVÉ
+## Šablony (šablony monitorace) – NOVÉ
 
-Monitorace je **šablona sledování**: definuje, komu (diagnózy), jak často a s jakými hranicemi pásem se dotazníky posílají. Pacientovi se monitorace přiřazuje v Kartotéce (karta Monitorace pacienta → pole *Monitorace*, nebo rychlou akcí „+ Monitorace“ v seznamu).
+Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
+- **Šablona** = program sledování: definuje, komu (diagnózy), jak často a s jakými hranicemi pásem se dotazníky posílají.
+- **Monitorace** = konkrétní sledování pacienta podle šablony (start, konec, aktivní). Vytváří se v Kartotéce (karta Monitorace pacienta → pole *Šablona*, nebo rychlou akcí „+ Monitorace“ v seznamu). Tyto názvy zůstaly beze změny.
 
-### Přehled (`/monitorace`)
+### Přehled (`/sablony`)
 
-- Drobečková navigace Monitorace › Přehled, nadpis „Monitorace“, vpravo **Vytvořit**.
+- Drobečková navigace Šablony › Přehled, nadpis „Šablony“, vpravo **Vytvořit**.
+- Staré adresy `/monitorace…` přesměrují na `/sablony`.
 - Hledání (název, tag, klasifikace, kód nebo název diagnózy).
 - **Sloupce:**
 
@@ -304,15 +307,15 @@ Monitorace je **šablona sledování**: definuje, komu (diagnózy), jak často a
 | Klasifikace | barevný štítek: nonMD šedá, MD modrá, research fialová, other oranžová |
 | Frekvence | Denně / Každé 3 dny / Týdně / Každé 2 týdny / Měsíčně / Každé 3 měsíce / Každých N dní |
 | Pásma (body) | tři štítky s tečkou: zelené `0–7`, žluté `8–14`, červené `15+` |
-| Pacienti | počet pacientů s aktivní monitorací |
+| Pacienti | počet pacientů s aktivní monitorací podle této šablony (tooltip) |
 | akce | Upravit, Smazat (s potvrzením) |
 
 - Klik na řádek otevře úpravu.
-- Smazání monitorace **nemaže data pacientů**. Pacienti zůstanou bez monitorace a monitorace zmizí z filtrů pohledů.
+- Smazání šablony (potvrzení „Smazat šablonu“) **nemaže data pacientů**. Jejich monitorace zůstanou bez šablony a šablona zmizí z filtrů pohledů.
 
-### Vytvořit / upravit (`/monitorace/vytvorit`, `/monitorace/:id/upravit`)
+### Vytvořit / upravit (`/sablony/vytvorit`, `/sablony/:id/upravit`)
 
-Nadpis „Nová monitorace“ / „Upravit monitoraci“. Na úpravě je vpravo nahoře **Smazat**.
+Nadpis „Nová šablona“ / „Upravit šablonu“, drobečková navigace Šablony › Vytvořit / Upravit. Na úpravě je vpravo nahoře **Smazat**.
 
 **Karta 1 (dva sloupce):**
 - **Název\*** a **Tag**. Tag nabízí už použité tagy a má nápovědu „Krátký štítek pro filtrování…“ (⚠️ OVĚŘIT: filtr podle tagu byl z Dashboardu odebrán – upravit text nápovědy, nebo tag úplně zrušit?).
@@ -341,11 +344,11 @@ Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 
 ### Napojení na pacienta
 
-- Dialog *Nová monitorace / Upravit monitoraci* v Kartotéce má pole **Monitorace** (výběr, nebo „— bez monitorace —“).
-- Dotazníky se naplánují podle frekvence zvolené monitorace. Bez monitorace se posílají každých 7 dní.
-- Tabulka Monitorace pacienta má první sloupec **Monitorace**.
+- Dialog *Nová monitorace / Upravit monitoraci* v Kartotéce má pole **Šablona** (výběr, nebo „— bez šablony —“).
+- Dotazníky se naplánují podle frekvence zvolené šablony. Bez šablony se posílají každých 7 dní.
+- Tabulka Monitorace pacienta má první sloupec **Šablona**.
 
-**⚠️ OVĚŘIT – rozsahy pásem se zatím nepoužívají pro barvu odznaků.** Barva se stále počítá podle pravidla „nejvyšší body jedné odpovědi“ (viz *Pravidla pásma*). Je potřeba rozhodnout, jestli má pásmo určovat celkové skóre podle rozsahů monitorace, maximum jedné odpovědi, nebo obojí (horší z obou).
+**⚠️ OVĚŘIT – rozsahy pásem se zatím nepoužívají pro barvu odznaků.** Barva se stále počítá podle pravidla „nejvyšší body jedné odpovědi“ (viz *Pravidla pásma*). Je potřeba rozhodnout, jestli má pásmo určovat celkové skóre podle rozsahů šablony, maximum jedné odpovědi, nebo obojí (horší z obou).
 
 ## Klinický report (modal)
 
@@ -391,9 +394,9 @@ Otevírá se kliknutím na odznak „N/A“ nebo na budoucí termín. Je to **ce
 - Drobečková navigace: Kartotéka › Přehled. Nadpis „Kartotéka“, vpravo tlačítko **Vytvořit**.
 - V kartě je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`), Rodné číslo, **Aktivní plán**, **e-Skill** (NOVÉ) a rychlá akce. Celý řádek je klikací.
 - **e-Skill**: poslední výsledek testu (skóre barvou úrovně + štítek Nízká / Střední / Vysoká), jinak „—“.
-- **Rychlá akce „+ Monitorace“** (NOVÉ, modrý odkaz vpravo v řádku): otevře dialog *Nová monitorace — Příjmení Jméno* (stejný jako v kartě pacienta: kalendář, délka 1–6 týdnů, výběr monitorace). Po vytvoření se zobrazí notifikace „Monitorace vytvořena – Příjmení Jméno“ a sloupec Aktivní plán se aktualizuje. Kliknutí na odkaz neotevírá kartu pacienta.
+- **Rychlá akce „+ Monitorace“** (NOVÉ, modrý odkaz vpravo v řádku): otevře dialog *Nová monitorace — Příjmení Jméno* (stejný jako v kartě pacienta: kalendář, délka 1–6 týdnů, výběr šablony). Po vytvoření se zobrazí notifikace „Monitorace vytvořena – Příjmení Jméno“ a sloupec Aktivní plán se aktualizuje. Kliknutí na odkaz neotevírá kartu pacienta.
 - **Aktivní plán** ukazuje stav monitorace pacienta k dnešku:
-  - 🟢 **Aktivní** + název monitorace + „do 11.11.2026“: monitorace je označená jako aktivní a dnešek je mezi startem a koncem;
+  - 🟢 **Aktivní** + název šablony + „do 11.11.2026“: monitorace je označená jako aktivní a dnešek je mezi startem a koncem;
   - 🔵 **Naplánováno** + název + „od …“: aktivní monitorace se startem v budoucnu;
   - ⚪ **Ukončeno** + název + datum konce, celé šedě: poslední monitorace už skončila nebo je vypnutá;
   - šedé „Bez plánu“: pacient nemá žádnou monitoraci.
@@ -439,13 +442,13 @@ Otevírá se kliknutím na odznak „N/A“ nebo na budoucí termín. Je to **ce
     - když je vybraný jen Start, ukazuje se při najetí myší náhled období;
     - nápověda dole vpravo říká, co kliknout.
   - **Vpravo:**
-    - výběr **Monitorace**;
+    - výběr **Šablona**;
     - **Start\*** a **Konec\*** jako text (např. 7.10.2026);
     - **Délka od startu**: tlačítka 1 týden / 2 týdny / 3 týdny / 4 týdny / 5 týdnů / 6 týdnů, která nastaví Konec = Start + N týdnů. Aktivní volba je modrá i při ručním výběru, pokud délka odpovídá.
     - přepínač **Aktivní**;
-    - při vytváření informace „Naplánuje se N dotazníků (týdně)“ podle frekvence zvolené monitorace.
+    - při vytváření informace „Naplánuje se N dotazníků (týdně)“ podle frekvence zvolené šablony.
   - Výchozí Start je dnešek.
-  - Dotazníky se při vytvoření naplánují podle frekvence monitorace (bez ní každých 7 dní). **⚠️ OVĚŘIT** frekvenci a pravidla v produkci.
+  - Dotazníky se při vytvoření naplánují podle frekvence šablony (bez ní každých 7 dní). **⚠️ OVĚŘIT** frekvenci a pravidla v produkci.
   - Na úzkém displeji jsou měsíce i panel pod sebou.
 
 ## Statistiky
@@ -527,22 +530,23 @@ Klik na řádek otevře **detail výsledku**:
 
 ## Otevřené otázky pro produkci
 
-1. Má barvu pásma určovat rozsah skóre z monitorace, nebo současné pravidlo „max. body jedné odpovědi“, nebo obojí?
+1. Má barvu pásma určovat rozsah skóre ze šablony, nebo současné pravidlo „max. body jedné odpovědi“, nebo obojí?
 2. Jsou pohledy osobní, nebo sdílené pro pracoviště? Má si uživatel moci nastavit pohled jako svůj výchozí Dashboard?
 3. Úplný seznam otázek dotazníku, jejich bodování a zdroje (TheraData / PRO-CTCAE).
 4. Přesná pravidla pásem a priorita mezi modrým a červeným pásmem.
 5. Logika filtru na Dashboardu: filtruje se podle nejnovějšího dotazníku, nebo podle kteréhokoli?
-6. Frekvence plánovaných dotazníků v monitoraci.
+6. Frekvence plánovaných dotazníků v šabloně.
 7. Obsah stránky Statistiky.
 8. Některá jména jsou v produkčních datech zadaná obráceně (Příjmení „Anna“, Jméno „Malá“). Replika to přebírá. Doporučení: v UI zdůraznit pořadí polí.
 9. Meze laboratoře a wearables, okna aktuálnosti (vázat laboratoř na datum příštího cyklu léčby?) a pořadí v souhrnu (má „Neúplné“ přebíjet „K posouzení“?).
 10. Odkud přijdou data laboratoře (LIS / nemocniční systém) a wearables (které zařízení, jak často), a co má otevřít klik na jejich odznak.
-11. Které zdroje jsou pro připravenost povinné (např. laboratoř u chemoterapie)? Nastavovat to v monitoraci?
+11. Které zdroje jsou pro připravenost povinné (např. laboratoř u chemoterapie)? Nastavovat to v šabloně?
 
 ## Changelog
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | „Monitorace“ (program sledování) přejmenována na **Šablony**: menu, stránka a formulář (`/sablony`, staré adresy přesměrují), filtr „Šablona“, seskupení „Šablony“, pole a sloupec „Šablona“ v monitoraci pacienta, odkaz pod jménem pacienta. Monitorace pacienta (konkrétní sledování) a rychlá akce „+ Monitorace“ zůstávají. |
 | 2026-10-26 | Řazení podle naléhavosti podle barvy pruhu u jména. Záložka Zobrazení: nová volba „Seskupit podle“ – neseskupovat / závažnosti / monitorace. |
 | 2026-10-26 | Filtr Skóre (Dashboard i pohledy) filtruje podle barvy pruhu u jména – nejhoršího výsledku z aktuálních zdrojů; „Nevyplněno“ = žádný aktuální zdroj. Datum vyplnění se vyhodnocuje samostatně. |
 | 2026-10-26 | Dashboard: barevný pruh nejhoršího aktuálního výsledku přesunut na levou stranu buňky Pacient a zesílen na 9 px. Rodné číslo bez popisku „RČ“. Demo data: smyšlená platná rodná čísla a dopočítané datum narození (úložiště v6). |

@@ -1,4 +1,4 @@
-// Číselníky a demo data pro stránku „Monitorace“ a uživatelské pohledy.
+// Číselníky a demo data pro stránku „Šablony“ (šablony monitorace) a uživatelské pohledy.
 import type { Classification, DashboardFilters, DashboardView, MonitoringProgram } from '../lib/types'
 
 export const CLASSIFICATIONS: { value: Classification; label: string; hint: string; badge: string }[] = [

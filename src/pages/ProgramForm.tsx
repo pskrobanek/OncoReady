@@ -19,7 +19,7 @@ const EMPTY: Omit<MonitoringProgram, 'id'> = {
   bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
 }
 
-/** Vytvořit / upravit monitoraci (program sledování). */
+/** Vytvořit / upravit šablonu monitorace (program sledování). */
 export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
   const { id } = useParams()
   const store = useStore()
@@ -31,7 +31,7 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  if (mode === 'edit' && !existing) return <Navigate to="/monitorace" replace />
+  if (mode === 'edit' && !existing) return <Navigate to="/sablony" replace />
 
   // Pásma se zadávají dvěma hranicemi, takže se nepřekrývají a nemají mezery.
   const greenMax = form.bands.green.max ?? 0
@@ -63,7 +63,7 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
     } else {
       store.createProgram(data)
       toast('Vytvořeno')
-      navigate('/monitorace')
+      navigate('/sablony')
     }
   }
 
@@ -73,8 +73,8 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title={existing ? 'Upravit monitoraci' : 'Nová monitorace'}
-        breadcrumbs={[{ label: 'Monitorace', to: '/monitorace' }, { label: existing ? 'Upravit' : 'Vytvořit' }]}
+        title={existing ? 'Upravit šablonu' : 'Nová šablona'}
+        breadcrumbs={[{ label: 'Šablony', to: '/sablony' }, { label: existing ? 'Upravit' : 'Vytvořit' }]}
         actions={existing && <Button color="danger" onClick={() => setConfirmDelete(true)}>Smazat</Button>}
       />
 
@@ -223,7 +223,7 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
 
         <div className="flex gap-3">
           <Button type="submit">{existing ? 'Uložit' : 'Vytvořit'}</Button>
-          <Button color="gray" onClick={() => navigate('/monitorace')}>
+          <Button color="gray" onClick={() => navigate('/sablony')}>
             Zrušit
           </Button>
         </div>
@@ -231,12 +231,12 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
 
       <ConfirmModal
         open={confirmDelete}
-        title="Smazat monitoraci"
+        title="Smazat šablonu"
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           store.deleteProgram(existing!.id)
           toast('Smazáno')
-          navigate('/monitorace')
+          navigate('/sablony')
         }}
       />
     </div>

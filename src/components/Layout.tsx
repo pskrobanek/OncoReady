@@ -26,7 +26,7 @@ export function Logo() {
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: HomeIcon, end: true },
-  { to: '/monitorace', label: 'Monitorace', icon: ClipboardDocumentListIcon, end: false },
+  { to: '/sablony', label: 'Šablony', icon: ClipboardDocumentListIcon, end: false },
   { to: '/kartoteka', label: 'Kartotéka', icon: RectangleStackIcon, end: false },
   { to: '/statistiky', label: 'Statistiky', icon: ChartBarIcon, end: false },
   { to: '/e-skill', label: 'e-Skill', icon: CursorArrowRaysIcon, end: false },

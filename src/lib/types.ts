@@ -19,7 +19,7 @@ export interface ScoreRange {
   max: number | null
 }
 
-/** Monitorace = šablona/program sledování (stránka „Monitorace“). Pacientům se přiřazuje v kartotéce. */
+/** Šablona monitorace = program sledování (stránka „Šablony“). Pacientům se přiřazuje v kartotéce. */
 export interface MonitoringProgram {
   id: string
   name: string

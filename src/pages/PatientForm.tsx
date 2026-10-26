@@ -192,7 +192,7 @@ function MonitoringsTable({ patientId }: { patientId: string }) {
               <th className="w-12 px-6 py-3.5">
                 <Checkbox checked={allChecked} onChange={(v) => setSelected(v ? new Set(monitorings.map((m) => m.id)) : new Set())} />
               </th>
-              <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Monitorace</th>
+              <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Šablona</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Start</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Konec</th>
               <th className="px-3 py-3.5 text-start text-sm font-semibold text-gray-950">Aktivní</th>
@@ -357,13 +357,13 @@ export function MonitoringModal({
         </div>
 
         <div className="flex flex-col gap-5">
-          <Field label="Monitorace">
+          <Field label="Šablona">
             <select
               value={programId}
               onChange={(e) => setProgramId(e.target.value)}
               className="block w-full rounded-lg border-none bg-white px-3 py-1.5 text-sm leading-6 text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600"
             >
-              <option value="">— bez monitorace —</option>
+              <option value="">— bez šablony —</option>
               {db.programs.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}

@@ -3,7 +3,7 @@ import { Layout } from './components/Layout'
 import { ToastProvider } from './components/ui'
 import { StoreProvider } from './lib/store'
 import { Dashboard, ViewPage } from './pages/Dashboard'
-import { Monitorace } from './pages/Monitorace'
+import { Sablony } from './pages/Sablony'
 import { ProgramForm } from './pages/ProgramForm'
 import { FillQuestionnaire } from './pages/FillQuestionnaire'
 import { Kartoteka } from './pages/Kartoteka'
@@ -35,9 +35,11 @@ export function App() {
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="pohledy/:id" element={<ViewPage />} />
-              <Route path="monitorace" element={<Monitorace />} />
-              <Route path="monitorace/vytvorit" element={<ProgramForm key="new" mode="create" />} />
-              <Route path="monitorace/:id/upravit" element={<EditProgram />} />
+              <Route path="sablony" element={<Sablony />} />
+              <Route path="sablony/vytvorit" element={<ProgramForm key="new" mode="create" />} />
+              <Route path="sablony/:id/upravit" element={<EditProgram />} />
+              {/* Dřívější adresy stránky „Monitorace“ */}
+              <Route path="monitorace/*" element={<Navigate to="/sablony" replace />} />
               <Route path="kartoteka" element={<Kartoteka />} />
               <Route path="kartoteka/vytvorit" element={<PatientForm key="new" mode="create" />} />
               <Route path="kartoteka/:id/upravit" element={<EditPatient />} />

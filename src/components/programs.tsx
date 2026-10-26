@@ -1,4 +1,4 @@
-// Sdílené prvky pro monitorace (programy): odznaky klasifikace, diagnóz a pásem.
+// Sdílené prvky pro šablony monitorace (programy): odznaky klasifikace, diagnóz a pásem.
 import { classificationMeta, diagnosisName, MAX_SCORE } from '../data/programs'
 import type { Classification, MonitoringProgram, ScoreRange } from '../lib/types'
 import { cx } from './ui'

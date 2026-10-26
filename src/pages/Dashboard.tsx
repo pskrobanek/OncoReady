@@ -53,7 +53,7 @@ type GroupBy = 'none' | 'severity' | 'program'
 const GROUP_BY: { key: GroupBy; label: string; hint: string }[] = [
   { key: 'none', label: 'Neseskupovat', hint: 'Jeden seznam pacientů' },
   { key: 'severity', label: 'Závažnosti', hint: 'Podle barvy pruhu u jména' },
-  { key: 'program', label: 'Monitorace', hint: 'Podle monitorace pacienta' },
+  { key: 'program', label: 'Šablony', hint: 'Podle šablony monitorace pacienta' },
 ]
 const GROUP_KEY = 'oncoready-dashboard-seskupeni'
 const loadGroupBy = (): GroupBy => {
@@ -338,7 +338,7 @@ function PatientsBoard({
       })
       .filter((r) => r.mon && r.qs.length > 0)
       .filter((r) => !term || tableName(r.patient).toLowerCase().includes(term) || r.patient.rodneCislo.includes(term))
-      // Monitorace: pacient se zobrazí, pokud má některou ze zaškrtnutých monitorací.
+      // Šablona: pacient se zobrazí, pokud jeho monitorace vychází z některé ze zaškrtnutých šablon.
       .filter((r) => filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
       // Datum vyplnění: pacient má v časovém okně aspoň jeden dotazník (vyplněný, nebo nevyplněný po termínu).
       .filter((r) => {
@@ -384,7 +384,7 @@ function PatientsBoard({
       : groupBy === 'program'
         ? [...new Set(shown.map((r) => r.program?.name ?? ''))]
             .sort((a, b) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'cs')))
-            .map((name) => ({ key: name || '-', label: name || 'Bez monitorace', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
+            .map((name) => ({ key: name || '-', label: name || 'Bez šablony', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
         : [{ key: 'all', label: null, dot: null, rows: shown }]
 
   // Časová osa: období od aktuálního zpět po nejstarší data zobrazených pacientů.
@@ -482,8 +482,8 @@ function PatientsBoard({
                                   <div className="tabular-nums text-gray-600">{patient.rodneCislo}</div>
                                   {program && (
                                     <Link
-                                      to={`/monitorace/${program.id}/upravit`}
-                                      title="Otevřít monitoraci"
+                                      to={`/sablony/${program.id}/upravit`}
+                                      title="Otevřít šablonu"
                                       className="mt-1.5 block truncate text-gray-600 underline decoration-gray-300 underline-offset-2 hover:text-primary-600"
                                     >
                                       {program.name}
@@ -663,7 +663,7 @@ function PatientsBoard({
             ))}
           </FilterGroup>
 
-          <FilterGroup title="Monitorace">
+          <FilterGroup title="Šablona">
             {db.programs.map((p) => (
               <Checkbox
                 key={p.id}

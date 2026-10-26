@@ -110,7 +110,7 @@ function useDBState() {
             { id: uid('q'), monitoringId, scheduledFor: todayIso(), filledAt: null, answers: null },
           ],
         })),
-      // --- Monitorace (programy) ---
+      // --- Šablony monitorace (programy) ---
       createProgram: (data: Omit<MonitoringProgram, 'id'>) => {
         const p = { ...data, id: uid('pr') }
         setDb((s) => ({ ...s, programs: [...s.programs, p] }))

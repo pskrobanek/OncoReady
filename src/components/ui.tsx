@@ -1,6 +1,7 @@
 // Základní UI prvky ve stylu Filament (Laravel admin), který používá produkční aplikace.
-import { ChevronDownIcon, ChevronRightIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { createContext, useCallback, useContext, useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
+import { ChevronDownIcon, ChevronRightIcon, ChevronUpDownIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { CheckIcon } from '@heroicons/react/20/solid'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { CheckCircleIcon } from '@heroicons/react/24/outline'
 
@@ -185,6 +186,98 @@ export function Radio({ checked, onChange, label, name }: { checked: boolean; on
       />
       {label}
     </label>
+  )
+}
+
+/**
+ * Výběr více možností z rozbalovacího seznamu (Filament Select ->multiple()).
+ * Vybrané položky jsou štítky s křížkem; klik do pole otevře seznam, klik na položku ji přidá / odebere.
+ */
+export function MultiSelect({
+  options,
+  value,
+  onChange,
+  placeholder = 'Vyberte…',
+}: {
+  options: { value: string; label: string }[]
+  value: string[]
+  onChange: (v: string[]) => void
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+  const toggle = (v: string) => onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v])
+  const selected = options.filter((o) => value.includes(o.value))
+
+  return (
+    <div ref={ref} className="relative">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setOpen(!open)
+          }
+        }}
+        className="relative flex min-h-9 w-full cursor-pointer flex-wrap items-center gap-1 rounded-lg bg-white py-1.5 pl-2 pr-8 text-sm shadow-sm outline-none ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600"
+      >
+        {selected.length ? (
+          selected.map((o) => (
+            <span key={o.value} className="inline-flex items-center gap-1 rounded-md bg-primary-50 px-1.5 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/10">
+              {o.label}
+              <button
+                type="button"
+                aria-label={`Odebrat ${o.label}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggle(o.value)
+                }}
+                className="text-primary-400 hover:text-primary-700"
+              >
+                <XMarkIcon className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          ))
+        ) : (
+          <span className="px-1 text-gray-400">{placeholder}</span>
+        )}
+        <ChevronUpDownIcon className="pointer-events-none absolute right-2 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+      </div>
+      {open && (
+        <ul role="listbox" aria-multiselectable className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-gray-950/5">
+          {options.map((o) => {
+            const on = value.includes(o.value)
+            return (
+              <li
+                key={o.value}
+                role="option"
+                aria-selected={on}
+                onClick={() => toggle(o.value)}
+                className={cx('flex cursor-pointer items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50', on ? 'font-medium text-primary-600' : 'text-gray-950')}
+              >
+                {o.label}
+                {on && <CheckIcon className="h-4 w-4 shrink-0" />}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
   )
 }
 

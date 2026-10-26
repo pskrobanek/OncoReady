@@ -6,7 +6,7 @@ import { ArrowsUpDownIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
 import { ReportModal } from '../components/ReportModal'
-import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
+import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, MultiSelect, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
 import { DEFAULT_FILTERS } from '../data/programs'
 import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
 import { evalLab, monthName, periodsBack, readinessOf, sourceMeta, timelineOf, weekOf, worstCurrent, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
@@ -418,7 +418,7 @@ function PatientsBoard({
             <span className="text-sm text-gray-500 tabular-nums">{rows.length} pacientů</span>
           </div>
           <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
-            <SearchInput value={search} onChange={setSearch} className="w-full sm:max-w-xs" />
+            <SearchInput value={search} onChange={setSearch} className="w-full" />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full table-auto divide-y divide-gray-200 text-start">
@@ -664,14 +664,13 @@ function PatientsBoard({
           </FilterGroup>
 
           <FilterGroup title="Šablona">
-            {db.programs.map((p) => (
-              <Checkbox
-                key={p.id}
-                checked={filters.programIds.includes(p.id)}
-                onChange={(v) => onChange({ ...filters, programIds: toggleIn(filters.programIds, p.id, v) })}
-                label={p.name}
-              />
-            ))}
+            {/* Rozbalovací výběr více šablon; nic nevybráno = všechny */}
+            <MultiSelect
+              options={db.programs.map((p) => ({ value: p.id, label: p.name }))}
+              value={filters.programIds}
+              onChange={(programIds) => onChange({ ...filters, programIds })}
+              placeholder="Všechny šablony"
+            />
           </FilterGroup>
 
           </>

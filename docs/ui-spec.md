@@ -84,7 +84,7 @@ Celkové skóre je součet bodů všech odpovědí. Pravidla jsou na jednom mís
 Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patients Table“) s počtem pacientů vpravo v hlavičce, vpravo panel nástrojů se záložkami Filtr, Řazení a Zobrazení (šířka 288 px). Na menší obrazovce je panel pod tabulkou.
 
 **Tabulka** (rozložení podle náčrtu 2026-10-26; sloupec Souhrn odebrán)
-- Nad tabulkou vpravo je hledání (jméno a rodné číslo).
+- Pod nadpisem „Pacienti“ je hledání (jméno a rodné číslo) **přes celou šířku** části s tabulkou (od 2026-10-26; dříve úzké pole vpravo).
 - **Řazení** a **časová osa** se nastavují v pravém panelu (viz *Panel nástrojů*).
 - **Sloupce** (zleva): Pacient · zdroj (bez nadpisu) · Aktuální · časová osa · prázdná výplň. Hlavička má jeden řádek, všechny nadpisy jsou stejné (14 px, tučně).
 - **Řádky**: pacient má **řádek za každý zdroj, který má**, v pořadí Dotazník, Laboratoř, Wearables.
@@ -247,6 +247,11 @@ Pravidla se vyhodnocují v tomto pořadí:
 - *Skóre* (zaškrtávací pole s barevnou tečkou): Zelené pásmo, Žluté pásmo, Červené pásmo, Vyžádal kontrolu, Nevyplněno.
   - Výchozí stav: zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
+- *Šablona* (od 2026-10-26 **rozbalovací výběr více možností** místo zaškrtávacích polí, Filament Select multiple):
+  - prázdné pole ukazuje šedě „Všechny šablony“ a nefiltruje;
+  - klik do pole otevře seznam šablon; klik na šablonu ji přidá nebo odebere (vybraná je modře s ✓); seznam se zavře klikem mimo nebo klávesou Esc;
+  - vybrané šablony jsou v poli jako modré štítky s křížkem (křížek šablonu odebere), při nedostatku místa se zalamují;
+  - pacient se zobrazí, pokud jeho monitorace vychází z některé z vybraných šablon.
 - **Logika Skóre (od 2026-10-26): pásmo = barva pruhu vlevo u jména pacienta**, tj. nejhorší výsledek z aktuálních zdrojů (dotazník, laboratoř, wearables):
   - Zelené / Žluté / Červené pásmo / Vyžádal kontrolu = pruh v této barvě;
   - **Nevyplněno** = šedý pruh, tj. pacient nemá žádný aktuální zdroj.
@@ -278,7 +283,7 @@ Pohled je **pojmenovaná kombinace filtrů Dashboardu**, kterou si uživatel ulo
 
 Pod původní skupiny Skóre a Datum vyplnění přibyla:
 
-- **Šablona** (dříve „Monitorace“): zaškrtávací pole pro každou šablonu.
+- **Šablona** (dříve „Monitorace“): rozbalovací výběr více šablon (viz *Záložka Filtr* na Dashboardu).
 
 Filtry Klasifikace a Tag byly z panelu **odebrány** (2026-10-14). Klasifikace a tag zůstávají u šablony jako údaje, jen se podle nich nefiltruje.
 
@@ -546,6 +551,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-26 | Dashboard: hledání přes celou šířku části „Pacienti“. Filtr Šablona je rozbalovací výběr více možností se štítky (místo zaškrtávacích polí); nová komponenta `MultiSelect` v `ui.tsx`. |
 | 2026-10-26 | „Monitorace“ (program sledování) přejmenována na **Šablony**: menu, stránka a formulář (`/sablony`, staré adresy přesměrují), filtr „Šablona“, seskupení „Šablony“, pole a sloupec „Šablona“ v monitoraci pacienta, odkaz pod jménem pacienta. Monitorace pacienta (konkrétní sledování) a rychlá akce „+ Monitorace“ zůstávají. |
 | 2026-10-26 | Řazení podle naléhavosti podle barvy pruhu u jména. Záložka Zobrazení: nová volba „Seskupit podle“ – neseskupovat / závažnosti / monitorace. |
 | 2026-10-26 | Filtr Skóre (Dashboard i pohledy) filtruje podle barvy pruhu u jména – nejhoršího výsledku z aktuálních zdrojů; „Nevyplněno“ = žádný aktuální zdroj. Datum vyplnění se vyhodnocuje samostatně. |

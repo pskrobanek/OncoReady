@@ -5,6 +5,6 @@ React + Vite + Tailwind 3, bez backendu, data v localStorage.
 
 - UI piš česky a ve stylu Filament (viz `src/components/ui.tsx`), nepřidávej nové knihovny bez důvodu.
 - Každou změnu UI zapiš do `docs/ui-spec.md` (sekce obrazovky + Changelog). Předpoklady označ „⚠️ OVĚŘIT“.
-- Pravidla pásem: `src/lib/scoring.ts`; souhrn připravenosti (laboratoř, wearables, semafor): `src/lib/readiness.ts`; otázky: `src/data/questionnaire.ts`; demo data: `src/data/seed.ts`.
+- Pravidla pásem: `src/lib/scoring.ts`; souhrn připravenosti (laboratoř, wearables, výsledný stav): `src/lib/readiness.ts`; otázky: `src/data/questionnaire.ts`; demo data: `src/data/seed.ts`.
 - Před commitem: `npm run typecheck && npm run build`.
 - Žádná skutečná data pacientů.

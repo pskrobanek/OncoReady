@@ -16,7 +16,7 @@ import {
 import { answerColor, answerPoints, BAND_META, bandOf, bandReason, totalScore } from '../lib/scoring'
 import { currentMonitoring, useStore } from '../lib/store'
 import type { Questionnaire } from '../lib/types'
-import { FindingList, OVERALL_META, Semafor } from './Readiness'
+import { FindingList, ReadinessBadge } from './Readiness'
 import { answerText, severity } from './ReportModal'
 import { CloseButton, cx, Modal } from './ui'
 
@@ -40,7 +40,6 @@ export function ReadinessModal({
   const today = todayIso()
   const program = db.programs.find((p) => p.id === currentMonitoring(db, patient.id)?.programId)
   const r = readinessOf(db, patient.id, today)
-  const meta = OVERALL_META[r.overall]
   const src = (k: SourceState['source']) => r.sources.find((s) => s.source === k)!
   const days = db.wearables.filter((d) => d.patientId === patient.id).sort((a, b) => a.date.localeCompare(b.date))
 
@@ -60,13 +59,12 @@ export function ReadinessModal({
       <div className="flex flex-col gap-5 overflow-y-auto px-6 py-5">
         {/* Výsledek */}
         <div className="flex flex-wrap items-start gap-4 rounded-xl bg-gray-50 px-5 py-4 ring-1 ring-gray-950/5">
-          <Semafor level={r.overall} size="lg" />
           <div className="min-w-0 flex-1">
-            <div className={cx('text-lg font-semibold leading-6', meta.text)}>{meta.label}</div>
+            <ReadinessBadge level={r.overall} size="lg" />
             {r.findings.length ? (
-              <FindingList findings={r.findings} className="mt-1.5 text-sm leading-5" />
+              <FindingList findings={r.findings} className="mt-2.5 text-sm leading-5" />
             ) : (
-              <p className="mt-1 text-sm text-gray-600">Všechny tři zdroje jsou aktuální a v mezích.</p>
+              <p className="mt-2.5 text-sm text-gray-600">Všechny tři zdroje jsou aktuální a v mezích.</p>
             )}
           </div>
           <p className="w-full text-xs text-gray-500 sm:w-72">

@@ -1,4 +1,4 @@
-// Pravidla připravenosti k léčbě: laboratoř, wearables a souhrnný semafor ze všech tří zdrojů.
+// Pravidla připravenosti k léčbě: laboratoř, wearables a souhrnný stav ze všech tří zdrojů.
 // Meze a okna aktuálnosti jsou předpoklad pro prototyp – ⚠️ OVĚŘIT s klinikem.
 import { statusOf } from '../components/QuestionnaireBadges'
 import { addDays, agoText, daysBetween, num, signed, todayIso } from './format'
@@ -157,7 +157,7 @@ const staleFinding = (source: SourceKey, date: string | null, today: string): Fi
 })
 
 /**
- * Souhrn připravenosti pacienta k dnešku (pravidlo semaforu):
+ * Souhrn připravenosti pacienta k dnešku (pravidlo souhrnu):
  * červená = kterýkoli aktuální zdroj červený; šedá = některý zdroj chybí nebo je neaktuální;
  * žlutá = kterýkoli zdroj žlutý (nebo dotazník modrý); zelená = všechny tři zdroje aktuální a zelené.
  */

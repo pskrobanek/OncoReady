@@ -1,10 +1,10 @@
-// Ikona ⓘ s legendou: semafor souhrnu, odznaky dotazníku, laboratoře a wearables (otevírá se kliknutím i najetím myší).
+// Ikona ⓘ s legendou: štítek souhrnu, odznaky dotazníku, laboratoře a wearables (otevírá se kliknutím i najetím myší).
 import { CheckIcon, XMarkIcon } from '@heroicons/react/20/solid'
 import { ClockIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { BAND_META, type Status } from '../lib/scoring'
 import type { Overall } from '../lib/readiness'
-import { OVERALL_META, Semafor } from './Readiness'
+import { OVERALL_META, ReadinessBadge } from './Readiness'
 import { cx } from './ui'
 
 const QUESTIONNAIRE: { status: Status; sample: ReactNode; text: string }[] = [
@@ -17,10 +17,10 @@ const QUESTIONNAIRE: { status: Status; sample: ReactNode; text: string }[] = [
 ]
 
 const SUMMARY: { level: Overall; text: string }[] = [
-  { level: 'green', text: 'všechny 3 zdroje aktuální a v mezích' },
-  { level: 'red', text: 'kterýkoli aktuální zdroj červený' },
-  { level: 'gray', text: 'některý zdroj chybí nebo je neaktuální' },
-  { level: 'yellow', text: 'kterýkoli zdroj žlutý (dotazník i modrý)' },
+  { level: 'green', text: 'Všechny 3 zdroje aktuální a v mezích.' },
+  { level: 'red', text: 'Kterýkoli aktuální zdroj je červený.' },
+  { level: 'gray', text: 'Některý zdroj chybí nebo je neaktuální.' },
+  { level: 'yellow', text: 'Kterýkoli zdroj je žlutý (dotazník i modrý).' },
 ]
 
 const Box = ({ tone, children }: { tone: string; children: ReactNode }) => (
@@ -38,7 +38,7 @@ const Heading = ({ children }: { children: ReactNode }) => (
   </span>
 )
 
-/** `dashboard` = celá legenda (semafor, laboratoř, wearables); jinak jen odznaky dotazníku (karta pacienta). */
+/** `dashboard` = celá legenda (souhrn, laboratoř, wearables); jinak jen odznaky dotazníku (karta pacienta). */
 export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
   const ref = useRef<HTMLSpanElement>(null)
@@ -71,10 +71,10 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
             <span className="flex flex-col gap-2.5 whitespace-normal">
               {dashboard && (
                 <>
-                  <Heading>Souhrn (semafor)</Heading>
+                  <Heading>Souhrn připravenosti</Heading>
                   {SUMMARY.map((s) => (
-                    <Row key={s.level} sample={<Semafor level={s.level} />}>
-                      <span className={cx('font-semibold', OVERALL_META[s.level].text)}>{OVERALL_META[s.level].label}</span> – {s.text}
+                    <Row key={s.level} sample={<ReadinessBadge level={s.level} />}>
+                      {s.text}
                     </Row>
                   ))}
                   <span className="text-xs text-gray-500">Pořadí: červená, šedá, žlutá, zelená. Proužek u řádku má barvu souhrnu. Klik na souhrn otevře detail.</span>

@@ -1,4 +1,4 @@
-// Prvky připravenosti k léčbě: semafor souhrnu a odznaky laboratoře, wearables a souhrnu týdne.
+// Prvky připravenosti k léčbě: barevný štítek souhrnu a odznaky laboratoře, wearables a souhrnu týdne.
 import { CheckIcon, XMarkIcon } from '@heroicons/react/20/solid'
 import type { ReactNode } from 'react'
 import { shortDate, todayIso } from '../lib/format'
@@ -16,19 +16,26 @@ export const OVERALL_META: Record<Overall, { label: string; text: string; box: s
 /** Barva textu nálezu podle úrovně. */
 export const FINDING_TEXT: Record<Overall, string> = { red: 'text-red-600', yellow: 'text-amber-600', gray: 'text-gray-500', green: 'text-gray-600' }
 
-/** Semafor: tři světla, svítí to podle souhrnu; u „neúplné“ nesvítí žádné. */
-export function Semafor({ level, size = 'sm' }: { level: Overall; size?: 'sm' | 'lg' }) {
-  const lamp = (l: Overall, on: string) => (
-    <span className={cx('rounded-full', size === 'lg' ? 'h-3.5 w-3.5' : 'h-2 w-2', level === l ? on : 'bg-gray-600')} />
-  )
+/** Barevný štítek připravenosti (plné barvy jako odznaky): ✓ Připraveno, ! K posouzení, ✕ Nepřipraveno, ? Neúplné. */
+export function ReadinessBadge({ level, size = 'sm' }: { level: Overall; size?: 'sm' | 'lg' }) {
+  const lg = size === 'lg'
+  const icon = cx('shrink-0', lg ? 'h-5 w-5' : 'h-4 w-4')
   return (
     <span
-      aria-hidden
-      className={cx('inline-flex shrink-0 items-center rounded-full bg-gray-800', size === 'lg' ? 'gap-1.5 px-2.5 py-1.5' : 'gap-[3px] px-1.5 py-1')}
+      className={cx(
+        'inline-flex items-center gap-1 whitespace-nowrap rounded-md font-semibold',
+        lg ? 'px-3 py-1.5 text-base' : 'px-2 py-1 text-sm',
+        OVERALL_META[level].box,
+      )}
     >
-      {lamp('red', 'bg-red-500 shadow-[0_0_6px_#ef4444]')}
-      {lamp('yellow', 'bg-amber-400 shadow-[0_0_6px_#fbbf24]')}
-      {lamp('green', 'bg-emerald-400 shadow-[0_0_6px_#34d399]')}
+      {level === 'green' ? (
+        <CheckIcon className={icon} />
+      ) : level === 'red' ? (
+        <XMarkIcon className={icon} />
+      ) : (
+        <span className={cx(icon, 'text-center leading-none')}>{level === 'yellow' ? '!' : '?'}</span>
+      )}
+      {OVERALL_META[level].label}
     </span>
   )
 }

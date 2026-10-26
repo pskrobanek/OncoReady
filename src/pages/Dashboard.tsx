@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { BadgeRow, latestDue, statusOf } from '../components/QuestionnaireBadges'
 import { ArrowsUpDownIcon, Bars2Icon, Bars4Icon, FunnelIcon } from '@heroicons/react/24/outline'
-import { CombinedTile, EmptyWeek, FindingList, LabTile, MissingTile, OVERALL_META, Semafor, WearTile } from '../components/Readiness'
+import { CombinedTile, EmptyWeek, FindingList, LabTile, MissingTile, OVERALL_META, ReadinessBadge, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
 import { ReportModal } from '../components/ReportModal'
 import { Button, Card, Checkbox, CloseButton, ConfirmModal, cx, Field, Modal, PageHeader, PerPage, Radio, SearchInput, TextInput, useToast } from '../components/ui'
@@ -462,7 +462,7 @@ function PatientsBoard({
                       <tr key={line}>
                         {i === 0 && (
                           <>
-                            {/* Souhrn: semafor (v podrobném zobrazení i hraniční hodnoty); klik otevře detail. Proužek = barva souhrnu. */}
+                            {/* Souhrn: barevný štítek připravenosti (v podrobném zobrazení i hraniční hodnoty); klik otevře detail. Proužek = barva souhrnu. */}
                             <td
                               rowSpan={lines.length}
                               className={cx('px-4 py-3 group-hover:bg-gray-50', detailed ? 'align-top' : 'align-middle', OVERALL_META[ready.overall].stripe)}
@@ -473,10 +473,7 @@ function PatientsBoard({
                                 title="Zobrazit detail: aktuální dotazník, laboratoř a wearables"
                                 className="flex flex-col items-start gap-1.5 rounded text-start hover:opacity-80"
                               >
-                                <span className="flex items-center gap-2">
-                                  <Semafor level={ready.overall} />
-                                  <span className={cx('text-sm font-semibold', OVERALL_META[ready.overall].text)}>{OVERALL_META[ready.overall].label}</span>
-                                </span>
+                                <ReadinessBadge level={ready.overall} />
                                 {detailed && <FindingList findings={ready.findings} />}
                               </button>
                             </td>

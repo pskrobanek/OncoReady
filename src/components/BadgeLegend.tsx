@@ -111,7 +111,7 @@ export function BadgeLegend({ dashboard = false }: { dashboard?: boolean }) {
                       </span>
                     }
                   >
-                    Svislá čára za sloupcem Aktuální = nejhorší výsledek z aktuálních zdrojů (červená, modrá, žlutá, zelená; šedá = nic aktuálního).
+                    Svislá čára na konci sloupce Pacient = nejhorší výsledek z aktuálních zdrojů (červená, modrá, žlutá, zelená; šedá = nic aktuálního).
                   </Row>
                 </>
               )}

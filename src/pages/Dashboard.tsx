@@ -48,7 +48,7 @@ const loadMode = (): TimelineMode => {
   }
 }
 
-/** Barva svislé čáry za sloupcem Aktuální (3 px) podle nejhoršího aktuálního výsledku; šedá = žádný zdroj není aktuální. */
+/** Barva svislé čáry na konci sloupce Pacient (3 px) podle nejhoršího aktuálního výsledku; šedá = žádný zdroj není aktuální. */
 const WORST_BAR: Record<Band | 'none', string> = {
   red: 'shadow-[inset_-3px_0_0_#dc2626]',
   blue: 'shadow-[inset_-3px_0_0_#2563eb]',
@@ -415,7 +415,11 @@ function PatientsBoard({
                       return (
                         <tr key={line}>
                           {i === 0 && (
-                            <td rowSpan={lines.length} className={cx(STICKY_PATIENT, 'z-[1] bg-white px-4 py-2.5 align-top text-sm group-hover:bg-gray-50')}>
+                            // Svislá čára na konci sloupce Pacient = nejhorší výsledek z aktuálních zdrojů pacienta
+                            <td
+                              rowSpan={lines.length}
+                              className={cx(STICKY_PATIENT, 'z-[1] bg-white px-4 py-2.5 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
+                            >
                               <Link to={`/kartoteka/${patient.id}/upravit`} className="font-semibold text-gray-950 hover:underline">
                                 {tableName(patient)}
                               </Link>
@@ -440,8 +444,7 @@ function PatientsBoard({
                               {sourceMeta(line).label}
                             </span>
                           </td>
-                          {/* Svislá čára na konci sloupce = nejhorší výsledek z aktuálních zdrojů pacienta; odděluje Aktuální od měsíců */}
-                          <td className={cx('w-px py-1 pl-3 pr-4 align-middle group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'], edge)}>
+                          <td className={cx('w-px border-r border-gray-200 px-3 py-1 align-middle group-hover:bg-gray-50', edge)}>
                             <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
                           </td>
                           {periods.map((p, pi) => (
@@ -631,17 +634,26 @@ function CurrentCell({
   onOpenDetail: () => void
 }) {
   const s = ready.sources.find((x) => x.source === line)!
-  if (s.state !== 'ok') {
-    return (
+  const tile =
+    s.state !== 'ok' ? (
       <MissingTile
         stale={s.state === 'stale'}
         title={s.date ? `${sourceMeta(line).label}: poslední data ${shortDate(s.date)} (${agoText(s.date)}) – neaktuální` : `${sourceMeta(line).label}: bez dat`}
       />
+    ) : line === 'questionnaire' ? (
+      <QuestionnaireTile q={s.questionnaire!} shape="square" onOpenReport={onOpenReport} />
+    ) : line === 'lab' ? (
+      <LabTile lab={s.lab!} shape="square" onClick={onOpenDetail} hint="klik pro detail" />
+    ) : (
+      <WearTile week={{ level: s.level as Level, day: s.day!, findings: s.findings }} shape="square" onClick={onOpenDetail} hint="klik pro detail" />
     )
-  }
-  if (line === 'questionnaire') return <QuestionnaireTile q={s.questionnaire!} shape="square" onOpenReport={onOpenReport} />
-  if (line === 'lab') return <LabTile lab={s.lab!} shape="square" onClick={onOpenDetail} hint="klik pro detail" />
-  return <WearTile week={{ level: s.level as Level, day: s.day!, findings: s.findings }} shape="square" onClick={onOpenDetail} hint="klik pro detail" />
+  return (
+    <div className="flex items-center gap-2">
+      {tile}
+      {/* Před kolika dny byla data (vyplnění, odběr, měření); neaktuální červeně */}
+      <span className={cx('whitespace-nowrap text-xs', s.state === 'stale' ? 'text-red-500' : 'text-gray-500')}>{s.date ? agoText(s.date) : 'bez dat'}</span>
+    </div>
+  )
 }
 
 const LEVEL_RANK: Record<Level, number> = { red: 2, yellow: 1, green: 0 }

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { seedDB } from '../data/seed'
+import { DEFAULT_ACTIONS } from '../data/programs'
 import type { Answers, DashboardView, DB, ESkillResult, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
 import { addDays, todayIso } from './format'
 
@@ -25,6 +26,8 @@ function migrate(db: Partial<DB>): DB {
     eskillResults: db.eskillResults ?? seed.eskillResults,
     labs: db.labs ?? seed.labs,
     wearables: db.wearables ?? seed.wearables,
+    // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
+    programs: (db.programs ?? seed.programs).map((p) => ({ ...p, actions: p.actions ?? DEFAULT_ACTIONS() })),
   } as DB
 }
 
@@ -92,6 +95,9 @@ function useDBState() {
           }
           return { ...s, monitorings: [...s.monitorings, m], questionnaires: [...s.questionnaires, ...qs] }
         }),
+      /** Zvolit (nebo zrušit) další postup u monitorace pacienta. */
+      setNextStep: (monitoringId: string, step: Monitoring['nextStep']) =>
+        setDb((s) => ({ ...s, monitorings: s.monitorings.map((m) => (m.id === monitoringId ? { ...m, nextStep: step } : m)) })),
       updateMonitoring: (m: Monitoring) =>
         setDb((s) => ({ ...s, monitorings: s.monitorings.map((x) => (x.id === m.id ? m : x)) })),
       deleteMonitorings: (ids: string[]) =>

@@ -1,9 +1,10 @@
-import { XMarkIcon } from '@heroicons/react/20/solid'
+import { PlusIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { TrashIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BandBar } from '../components/programs'
 import { Button, Card, ConfirmModal, cx, Field, PageHeader, TextInput, useToast } from '../components/ui'
-import { CLASSIFICATIONS, DIAGNOSES, diagnosisName, FREQUENCIES, MAX_SCORE } from '../data/programs'
+import { CLASSIFICATIONS, DEFAULT_ACTIONS, DIAGNOSES, diagnosisName, FREQUENCIES, MAX_SCORE } from '../data/programs'
 import { useStore } from '../lib/store'
 import type { Classification, MonitoringProgram } from '../lib/types'
 
@@ -17,7 +18,10 @@ const EMPTY: Omit<MonitoringProgram, 'id'> = {
   classification: 'nonMD',
   frequencyDays: 7,
   bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
+  actions: DEFAULT_ACTIONS(),
 }
+
+const actionId = () => `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 /** Vytvořit / upravit šablonu monitorace (program sledování). */
 export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
@@ -50,13 +54,14 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
     if (greenMax < 0) e.bands = 'Zelené pásmo musí končit na 0 nebo více bodech.'
     else if (yellowMax <= greenMax) e.bands = 'Žluté pásmo musí končit výš než zelené.'
     else if (yellowMax >= MAX_SCORE) e.bands = `Žluté pásmo musí končit pod maximem dotazníku (${MAX_SCORE} b).`
+    if (form.actions.some((a) => !a.label.trim())) e.actions = 'Vyplňte název tlačítka, nebo ho odeberte.'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   const save = () => {
     if (!validate()) return
-    const data = { ...form, name: form.name.trim(), tag: form.tag.trim() }
+    const data = { ...form, name: form.name.trim(), tag: form.tag.trim(), actions: form.actions.map((a) => ({ ...a, label: a.label.trim() })) }
     if (existing) {
       store.updateProgram({ ...data, id: existing.id })
       toast('Uloženo')
@@ -219,6 +224,56 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
           <p className="mt-4 text-xs text-gray-400">
             ⚠️ Modré pásmo („Vyžádal kontrolu“) nezávisí na skóre – nastaví ho odpověď pacienta.
           </p>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-base font-semibold text-gray-950">Další postup</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup. Personál jimi zvolí, co bude s pacientem dál.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            {form.actions.map((a, i) => (
+              <div key={a.id} className="flex items-center gap-3">
+                <span className="w-5 shrink-0 text-right text-sm tabular-nums text-gray-400">{i + 1}.</span>
+                <TextInput
+                  value={a.label}
+                  placeholder="Název tlačítka, např. Ke kontrole sestrou"
+                  invalid={!!errors.actions && !a.label.trim()}
+                  onChange={(e) => setForm({ ...form, actions: form.actions.map((x) => (x.id === a.id ? { ...x, label: e.target.value } : x)) })}
+                />
+                <button
+                  type="button"
+                  title="Odebrat tlačítko"
+                  onClick={() => setForm({ ...form, actions: form.actions.filter((x) => x.id !== a.id) })}
+                  className="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-red-600"
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+              </div>
+            ))}
+            {form.actions.length === 0 && <p className="text-sm text-gray-500">Šablona nemá žádná tlačítka – sloupec Další postup bude u jejích pacientů prázdný.</p>}
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, actions: [...form.actions, { id: actionId(), label: '' }] })}
+              className="inline-flex items-center gap-1 self-start text-sm font-semibold text-primary-600 hover:underline"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Přidat tlačítko
+            </button>
+          </div>
+          {errors.actions && <p className="mt-3 text-sm text-red-600">{errors.actions}</p>}
+          {form.actions.some((a) => a.label.trim()) && (
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
+              <span className="text-sm text-gray-500">Náhled:</span>
+              {form.actions
+                .filter((a) => a.label.trim())
+                .map((a) => (
+                  <span key={a.id} className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10">
+                    {a.label}
+                  </span>
+                ))}
+            </div>
+          )}
         </Card>
 
         <div className="flex gap-3">

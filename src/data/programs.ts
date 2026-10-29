@@ -1,5 +1,5 @@
 // Číselníky a demo data pro stránku „Šablony“ (šablony monitorace) a uživatelské pohledy.
-import type { Classification, DashboardFilters, DashboardView, MonitoringProgram } from '../lib/types'
+import type { Classification, DashboardFilters, DashboardView, MonitoringProgram, NextStepAction } from '../lib/types'
 
 export const CLASSIFICATIONS: { value: Classification; label: string; hint: string; badge: string }[] = [
   { value: 'nonMD', label: 'nonMD', hint: 'Mimo zdravotnický prostředek', badge: 'bg-gray-50 text-gray-700 ring-gray-600/20' },
@@ -42,6 +42,12 @@ export const diagnosisName = (code: string) => DIAGNOSES.find((d) => d.code === 
 
 export const MAX_SCORE = 40 // 10 bodovaných otázek × 4 body
 
+/** Výchozí tlačítka „Další postup“ pro nové i ukázkové šablony. */
+export const DEFAULT_ACTIONS = (): NextStepAction[] => [
+  { id: 'a-sestra', label: 'Ke kontrole sestrou' },
+  { id: 'a-lekar', label: 'Ke kontrole lékařem' },
+]
+
 export const seedPrograms = (): MonitoringProgram[] => [
   {
     id: 'pr1',
@@ -51,6 +57,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     classification: 'MD',
     frequencyDays: 7,
     bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
+    actions: DEFAULT_ACTIONS(),
   },
   {
     id: 'pr2',
@@ -60,6 +67,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     classification: 'nonMD',
     frequencyDays: 14,
     bands: { green: { min: 0, max: 9 }, yellow: { min: 10, max: 16 }, red: { min: 17, max: null } },
+    actions: DEFAULT_ACTIONS(),
   },
   {
     id: 'pr3',
@@ -69,6 +77,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     classification: 'MD',
     frequencyDays: 7,
     bands: { green: { min: 0, max: 6 }, yellow: { min: 7, max: 12 }, red: { min: 13, max: null } },
+    actions: DEFAULT_ACTIONS(),
   },
   {
     id: 'pr4',
@@ -78,6 +87,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     classification: 'research',
     frequencyDays: 14,
     bands: { green: { min: 0, max: 8 }, yellow: { min: 9, max: 15 }, red: { min: 16, max: null } },
+    actions: DEFAULT_ACTIONS(),
   },
   {
     id: 'pr5',
@@ -87,6 +97,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     classification: 'other',
     frequencyDays: 3,
     bands: { green: { min: 0, max: 10 }, yellow: { min: 11, max: 18 }, red: { min: 19, max: null } },
+    actions: DEFAULT_ACTIONS(),
   },
 ]
 

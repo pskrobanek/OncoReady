@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
 import { ArrowsUpDownIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { CheckIcon } from '@heroicons/react/20/solid'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
 import { ReportModal } from '../components/ReportModal'
@@ -12,7 +13,7 @@ import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
 import { evalLab, monthName, periodsBack, readinessOf, sourceMeta, timelineOf, weekOf, worstCurrent, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
 import { BAND_META, type Band } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
-import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
+import type { DashboardFilters, DateFilter, Monitoring, NextStepAction, Questionnaire } from '../lib/types'
 
 const SCORE_FILTERS: DashboardFilters['scores'] = ['green', 'yellow', 'red', 'blue', 'na']
 
@@ -294,7 +295,8 @@ function PatientsBoard({
   resetLabel?: string
   panelFooter?: ReactNode
 }) {
-  const { db } = useStore()
+  const { db, setNextStep } = useStore()
+  const toast = useToast()
   const [search, setSearch] = useState('')
   const [perPage, setPerPage] = useState(500)
   const [report, setReport] = useState<Questionnaire | null>(null)
@@ -435,6 +437,7 @@ function PatientsBoard({
                       <BadgeLegend dashboard />
                     </span>
                   </th>
+                  <th className="w-px border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">Další postup</th>
                   {groups.map((g, gi) => (
                     <th key={g.key} colSpan={g.count} className={cx('py-3 pr-0.5 text-start text-sm font-semibold text-gray-950', gi === 0 ? 'pl-3' : 'pl-5')}>
                       {g.label}
@@ -450,7 +453,7 @@ function PatientsBoard({
                   {sec.label !== null && (
                     <tbody>
                       <tr>
-                        <td colSpan={periods.length + 4} className="bg-gray-50 py-2">
+                        <td colSpan={periods.length + 5} className="bg-gray-50 py-2">
                           <span className="sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold text-gray-950">
                             {sec.dot && <span className={cx('h-2.5 w-2.5 rounded-full', sec.dot)} />}
                             {sec.label}
@@ -460,7 +463,7 @@ function PatientsBoard({
                       </tr>
                     </tbody>
                   )}
-                  {sec.rows.map(({ patient, program, ready, tl }) => {
+                  {sec.rows.map(({ patient, mon, program, ready, tl }) => {
                     // Řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
                     const lines = ready.sources.map((s) => s.source)
                     return (
@@ -500,6 +503,21 @@ function PatientsBoard({
                               <td className={cx('w-px border-r border-gray-200 px-3 py-1 align-middle group-hover:bg-gray-50', edge)}>
                                 <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
                               </td>
+                              {i === 0 && (
+                                // Další postup: tlačítka ze šablony pacienta; zvolené je modré s časem volby
+                                <td rowSpan={lines.length} className="w-px border-r border-gray-200 px-3 py-2.5 align-top group-hover:bg-gray-50">
+                                  <NextStepCell
+                                    actions={program?.actions ?? []}
+                                    chosen={mon?.nextStep ?? null}
+                                    onChoose={(a) => {
+                                      if (!mon) return
+                                      const same = mon.nextStep?.actionId === a.id
+                                      setNextStep(mon.id, same ? null : { actionId: a.id, label: a.label, at: new Date().toISOString() })
+                                      toast(same ? `Volba zrušena – ${tableName(patient)}` : `Další postup: ${a.label} – ${tableName(patient)}`)
+                                    }}
+                                  />
+                                </td>
+                              )}
                               {periods.map((p, pi) => (
                                 <td key={p} className={cx('w-px py-1 pr-0.5 align-middle group-hover:bg-gray-50', groupStart(pi) ? (pi === 0 ? 'pl-3' : 'pl-5') : 'pl-0.5', edge)}>
                                   <PeriodCell line={line} period={p} mode={mode} tl={tl} onOpenReport={setReport} />
@@ -517,7 +535,7 @@ function PatientsBoard({
               {rows.length === 0 && (
                 <tbody>
                   <tr>
-                    <td colSpan={periods.length + 4} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={periods.length + 5} className="px-6 py-12 text-center text-sm text-gray-500">
                       Žádní pacienti neodpovídají filtru
                     </td>
                   </tr>
@@ -692,6 +710,53 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
     <div className="mt-6">
       <h3 className="mb-3 text-sm font-medium text-gray-950">{title}</h3>
       <div className="flex flex-col gap-3">{children}</div>
+    </div>
+  )
+}
+
+/**
+ * Buňka Další postup: tlačítka ze šablony pacienta. Klik zvolí další postup (tlačítko zmodrá, pod ním čas volby),
+ * opakovaný klik volbu zruší. Volba se ukládá k monitoraci pacienta.
+ */
+function NextStepCell({
+  actions,
+  chosen,
+  onChoose,
+}: {
+  actions: NextStepAction[]
+  chosen: Monitoring['nextStep'] | null
+  onChoose: (a: NextStepAction) => void
+}) {
+  // Zvolené tlačítko mohlo být mezitím ze šablony odebráno – volba zůstane vidět jako text.
+  const orphan = chosen && !actions.some((a) => a.id === chosen.actionId)
+  if (!actions.length && !chosen) return <span className="text-sm text-gray-300" title="Šablona nemá tlačítka Další postup">—</span>
+  return (
+    <div className="flex flex-col items-stretch gap-1.5">
+      {actions.map((a) => {
+        const on = chosen?.actionId === a.id
+        return (
+          <button
+            key={a.id}
+            type="button"
+            aria-pressed={on}
+            title={on ? 'Zrušit volbu' : `Zvolit: ${a.label}`}
+            onClick={() => onChoose(a)}
+            className={cx(
+              'inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition',
+              on ? 'bg-primary-600 text-white hover:bg-primary-500' : 'bg-white text-gray-950 ring-1 ring-gray-950/10 hover:bg-gray-50',
+            )}
+          >
+            {on && <CheckIcon className="h-4 w-4" />}
+            {a.label}
+          </button>
+        )
+      })}
+      {orphan && <span className="text-xs font-medium text-gray-700">Zvoleno: {chosen.label}</span>}
+      {chosen && (
+        <span className="text-xs text-gray-500">
+          Zvoleno {shortDate(chosen.at)} {new Date(chosen.at).toLocaleTimeString('cs-CZ', { hour: 'numeric', minute: '2-digit' })}
+        </span>
+      )}
     </div>
   )
 }

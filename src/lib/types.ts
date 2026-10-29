@@ -19,6 +19,12 @@ export interface ScoreRange {
   max: number | null
 }
 
+/** Tlačítko ve sloupci „Další postup“ na Dashboardu – nastavuje se v šabloně. */
+export interface NextStepAction {
+  id: string
+  label: string
+}
+
 /** Šablona monitorace = program sledování (stránka „Šablony“). Pacientům se přiřazuje v kartotéce. */
 export interface MonitoringProgram {
   id: string
@@ -28,6 +34,8 @@ export interface MonitoringProgram {
   classification: Classification
   frequencyDays: number // jak často se pacientovi odesílá dotazník
   bands: { green: ScoreRange; yellow: ScoreRange; red: ScoreRange }
+  /** Tlačítka „Další postup“ (v pořadí zobrazení). */
+  actions: NextStepAction[]
 }
 
 export type DateFilter = 'all' | '7' | '10' | '14'
@@ -53,6 +61,8 @@ export interface Monitoring {
   start: string // YYYY-MM-DD
   end: string // YYYY-MM-DD
   active: boolean
+  /** Zvolený další postup (tlačítko ze šablony); popisek se ukládá, aby zůstal i po změně šablony. */
+  nextStep?: { actionId: string; label: string; at: string } | null
 }
 
 export interface Questionnaire {

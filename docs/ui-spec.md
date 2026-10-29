@@ -86,7 +86,7 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
 **Tabulka** (rozložení podle náčrtu 2026-10-26; sloupec Souhrn odebrán)
 - Pod nadpisem „Pacienti“ je hledání (jméno a rodné číslo) **přes celou šířku** části s tabulkou (od 2026-10-26; dříve úzké pole vpravo).
 - **Řazení** a **časová osa** se nastavují v pravém panelu (viz *Panel nástrojů*).
-- **Sloupce** (zleva): Pacient · zdroj (bez nadpisu) · Aktuální · časová osa · prázdná výplň. Hlavička má jeden řádek, všechny nadpisy jsou stejné (14 px, tučně).
+- **Sloupce** (zleva): Pacient · zdroj (bez nadpisu) · Aktuální · **Další postup** · časová osa · prázdná výplň. Hlavička má jeden řádek, všechny nadpisy jsou stejné (14 px, tučně).
 - **Řádky**: pacient má **řádek za každý zdroj, který má**, v pořadí Dotazník, Laboratoř, Wearables.
   - Dotazník má každý pacient na Dashboardu (má monitoraci).
   - Laboratoř jen když má aspoň jeden výsledek, wearables jen když má aspoň jeden den dat z připojeného zařízení.
@@ -116,7 +116,15 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - Neaktuální data: čárkovaný červený čtverec s „—“; tooltip „Laboratoř: poslední data 2.10. (před 24 dny) – neaktuální“.
   - Žádný vyplněný dotazník: šedý čárkovaný čtverec s „—“.
   - Vpravo od čtverce je **stáří dat** (12 px): „dnes“, „včera“, „před 3 dny“ – kdy byl dotazník vyplněn, odběr proveden nebo měření pořízeno. U neaktuálních dat červeně („před 24 dny“), bez vyplněného dotazníku „bez dat“.
-  - Sloupec Aktuální odděluje od měsíců šedá svislá čára 1 px (v hlavičce i v řádcích).
+  - Sloupec Aktuální odděluje od dalšího sloupce šedá svislá čára 1 px (v hlavičce i v řádcích).
+- **Další postup** (NOVÉ 2026-10-29; sloupec hned za Aktuální, oddělený šedou čarou i od měsíců):
+  - jedna buňka přes všechny řádky pacienta, zarovnaná nahoru;
+  - pod sebou **tlačítka ze šablony pacienta** (nastavují se při tvorbě / úpravě šablony, viz *Šablony*), výchozí: **Ke kontrole sestrou**, **Ke kontrole lékařem**;
+  - nezvolené tlačítko je bílé s šedým rámečkem (12 px tučně), **zvolené je modré s ✓** a pod tlačítky je šedě „Zvoleno 26.10. 15:42“;
+  - klik na tlačítko zvolí další postup (notifikace „Další postup: Ke kontrole sestrou – Příjmení Jméno“), klik na zvolené tlačítko volbu zruší („Volba zrušena – …“); zvolit jde vždy jen jedno;
+  - volba se ukládá k monitoraci pacienta (tlačítko, popisek, čas); když tlačítko ze šablony později zmizí, zůstane pod tlačítky text „Zvoleno: …“;
+  - pacient, jehož šablona nemá žádná tlačítka, má v buňce šedou pomlčku;
+  - **⚠️ OVĚŘIT**: co má volba dál spustit (úkol, zobrazení sestře, platnost jen pro termín) – zatím se jen zaznamená.
 - **Časová osa** – **úzké dlaždice 22 × 36 px**, mezi dlaždicemi 4 px, **mezi skupinami (měsíci) malá mezera** 20 px, bez svislých čar. Nejnovější je vlevo. Členění se volí na záložce *Zobrazení*:
   - **Po týdnech** (výchozí):
     - jedna úzká dlaždice = jeden týden (pondělí–neděle);
@@ -345,6 +353,14 @@ Nadpis „Nová šablona“ / „Upravit šablonu“, drobečková navigace Šab
   - žluté musí končit pod maximem dotazníku (40 b).
 - Poznámka: modré pásmo nezávisí na skóre.
 
+**Karta 3 – Další postup** (NOVÉ 2026-10-29):
+- Popis: „Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup.“
+- Seznam tlačítek: pořadové číslo, textové pole s názvem a ikona koše (Odebrat). Pod seznamem odkaz **+ Přidat tlačítko** (přidá prázdné pole).
+- Nová šablona má předvyplněná tlačítka „Ke kontrole sestrou“ a „Ke kontrole lékařem“.
+- Validace: prázdný název → „Vyplňte název tlačítka, nebo ho odeberte.“
+- Pod seznamem **Náhled** tlačítek tak, jak se zobrazí na Dashboardu. Bez tlačítek: „Šablona nemá žádná tlačítka – sloupec Další postup bude u jejích pacientů prázdný.“
+- Změna se na Dashboardu projeví hned po uložení.
+
 Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 
 ### Napojení na pacienta
@@ -551,6 +567,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-29 | Dashboard: nový sloupec **Další postup** za sloupcem Aktuální s tlačítky ze šablony pacienta (výchozí „Ke kontrole sestrou“, „Ke kontrole lékařem“); volba se ukládá k monitoraci. Šablona: nová karta „Další postup“ pro nastavení tlačítek. |
 | 2026-10-26 | Dashboard: hledání přes celou šířku části „Pacienti“. Filtr Šablona je rozbalovací výběr více možností se štítky (místo zaškrtávacích polí); nová komponenta `MultiSelect` v `ui.tsx`. |
 | 2026-10-26 | „Monitorace“ (program sledování) přejmenována na **Šablony**: menu, stránka a formulář (`/sablony`, staré adresy přesměrují), filtr „Šablona“, seskupení „Šablony“, pole a sloupec „Šablona“ v monitoraci pacienta, odkaz pod jménem pacienta. Monitorace pacienta (konkrétní sledování) a rychlá akce „+ Monitorace“ zůstávají. |
 | 2026-10-26 | Řazení podle naléhavosti podle barvy pruhu u jména. Záložka Zobrazení: nová volba „Seskupit podle“ – neseskupovat / závažnosti / monitorace. |

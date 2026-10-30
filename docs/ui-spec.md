@@ -521,7 +521,10 @@ Modul je převzatý z repozitáře `pskrobanek/digital_literacy` (Django aplikac
    Nahoře je pokyn, číslo úkolu a odpočet (posledních 30 s červeně), dole ukazatel průběhu. Správný klik se zvýrazní zeleně, chybný červeně a měří se vzdálenost chybného kliknutí od cíle. Po 2 minutách se test ukončí a nedokončené úkoly se počítají jako chybné.
 5. **Výsledek**: velké skóre 0–100 barvou úrovně, štítek úrovně, „Děkujeme, test je dokončen.“ a 6 dlaždic (motorika, správné úkoly, rychlost, vzdálenost chybných kliknutí, čas psaní, přesnost psaní).
    - **U pacienta**: výsledek se uloží automaticky. Zobrazí se „Výsledek uložen do karty pacienta X“ a tlačítko **Zavřít**, které zavře okno.
-   - **Bez registrace**: zobrazí se „Výsledek zatím není nikde uložen“ a tlačítka **Zavřít bez uložení** a **Přiřadit pacientovi**. Přiřazení otevře výběr pacienta z Kartotéky s hledáním; po kliknutí na pacienta se výsledek uloží.
+   - **Bez registrace**: zobrazí se „Test bez registrace – výsledek zatím není nikde uložen.“ a tři tlačítka (2026-10-30):
+     - **Neukládat** (šedé): zavře okno, výsledek se zahodí (dříve „Zavřít bez uložení“);
+     - **Nový pacient** (šedé): v kartě se otevře formulář „Nový pacient“ – Příjmení\*, Jméno\*, Rodné číslo\* (měkká kontrola jako v Kartotéce, uložit lze i s varováním), E-mailová adresa\*, Telefonní číslo. Tlačítka **Založit a uložit výsledek** a **Zpět**. Chyba u pole zmizí, jakmile ho uživatel opraví. Po uložení se pacient založí v Kartotéce, výsledek se uloží do jeho karty a zobrazí se „Nový pacient Příjmení Jméno byl založen v Kartotéce a výsledek je uložen v jeho kartě.“ + **Zavřít**;
+     - **Přiřadit stávajícímu** (modré, primární): výběr pacienta z Kartotéky s hledáním („Přiřadit výsledek stávajícímu pacientovi“); po kliknutí na pacienta se výsledek uloží (dříve „Přiřadit pacientovi“).
 
 Hlavní okno se po uložení aktualizuje samo, bez obnovení stránky.
 
@@ -567,6 +570,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-10-30 | e-Skill, test bez registrace: na konci tlačítka **Neukládat**, **Nový pacient** (založí pacienta přímo z výsledku) a **Přiřadit stávajícímu**. |
 | 2026-10-29 | Dashboard: nový sloupec **Další postup** za sloupcem Aktuální s tlačítky ze šablony pacienta (výchozí „Ke kontrole sestrou“, „Ke kontrole lékařem“); volba se ukládá k monitoraci. Šablona: nová karta „Další postup“ pro nastavení tlačítek. |
 | 2026-10-26 | Dashboard: hledání přes celou šířku části „Pacienti“. Filtr Šablona je rozbalovací výběr více možností se štítky (místo zaškrtávacích polí); nová komponenta `MultiSelect` v `ui.tsx`. |
 | 2026-10-26 | „Monitorace“ (program sledování) přejmenována na **Šablony**: menu, stránka a formulář (`/sablony`, staré adresy přesměrují), filtr „Šablona“, seskupení „Šablony“, pole a sloupec „Šablona“ v monitoraci pacienta, odkaz pod jménem pacienta. Monitorace pacienta (konkrétní sledování) a rychlá akce „+ Monitorace“ zůstávají. |

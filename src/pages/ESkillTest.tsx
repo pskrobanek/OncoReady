@@ -1,13 +1,15 @@
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TierBadge } from '../components/eskill'
 import { Logo } from '../components/Layout'
-import { Button, cx, SearchInput, useToast } from '../components/ui'
+import { Button, cx, Field, SearchInput, TextInput, useToast } from '../components/ui'
 import { formatTargetDate, literacyScore, motorScore, randomTargetDate, SURVEY, TEST_TIME_LIMIT_MS, TEXT, TIER_META, tierFor, type Lang, type SurveyAnswers, type TestMetrics } from '../data/eskill'
 import { tableName } from '../lib/format'
 import { sortPatients, useStore } from '../lib/store'
-import type { ESkillResult } from '../lib/types'
+import type { ESkillResult, Patient } from '../lib/types'
+import { rodneCisloWarning } from '../lib/rodneCislo'
 
 type Phase = 'intro' | 'survey' | 'testIntro' | 'test' | 'results'
 
@@ -511,7 +513,7 @@ function Results({
   outcome: { metrics: TestMetrics; timedOut: boolean }
   lang: Lang
 }) {
-  const { db, addEskillResult } = useStore()
+  const { db, addEskillResult, createPatient } = useStore()
   const toast = useToast()
   const close = useCloseWindow()
   const t = TEXT[lang]
@@ -519,7 +521,9 @@ function Results({
   const score = literacyScore(motor, survey)
   const tier = tierFor(score)
   const [savedTo, setSavedTo] = useState<string | null>(null)
-  const [assigning, setAssigning] = useState(false)
+  // Test bez registrace: volba Neukládat / Nový pacient / Přiřadit stávajícímu
+  const [mode, setMode] = useState<'choose' | 'assign' | 'create'>('choose')
+  const [createdNew, setCreatedNew] = useState(false)
   const savedOnce = useRef(false)
 
   const result: Omit<ESkillResult, 'id' | 'patientId'> = useMemo(
@@ -576,29 +580,44 @@ function Results({
             <div className="flex items-center gap-3">
               <CheckCircleIcon className="h-6 w-6 text-emerald-500" />
               <span className="text-sm text-gray-700">
-                Výsledek uložen do karty pacienta <strong className="text-gray-950">{tableName(savedPatient)}</strong>.
+                {createdNew ? 'Nový pacient ' : 'Výsledek uložen do karty pacienta '}
+                <strong className="text-gray-950">{tableName(savedPatient)}</strong>
+                {createdNew ? ' byl založen v Kartotéce a výsledek je uložen v jeho kartě.' : '.'}
               </span>
             </div>
             <Button onClick={close}>Zavřít</Button>
           </div>
-        ) : assigning ? (
+        ) : mode === 'assign' ? (
           <AssignPicker
-            onCancel={() => setAssigning(false)}
+            onCancel={() => setMode('choose')}
             onPick={(pid) => {
               addEskillResult({ ...result, patientId: pid })
               setSavedTo(pid)
-              setAssigning(false)
               toast('Výsledek přiřazen pacientovi')
+            }}
+          />
+        ) : mode === 'create' ? (
+          <NewPatientForm
+            onCancel={() => setMode('choose')}
+            onCreate={(data) => {
+              const p = createPatient(data)
+              addEskillResult({ ...result, patientId: p.id })
+              setCreatedNew(true)
+              setSavedTo(p.id)
+              toast('Pacient založen a výsledek uložen')
             }}
           />
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <span className="text-sm text-gray-600">Test bez registrace – výsledek zatím není nikde uložen.</span>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button color="gray" onClick={close}>
-                Zavřít bez uložení
+                Neukládat
               </Button>
-              <Button onClick={() => setAssigning(true)}>Přiřadit pacientovi</Button>
+              <Button color="gray" onClick={() => setMode('create')}>
+                Nový pacient
+              </Button>
+              <Button onClick={() => setMode('assign')}>Přiřadit stávajícímu</Button>
             </div>
           </div>
         )}
@@ -616,7 +635,7 @@ function AssignPicker({ onPick, onCancel }: { onPick: (patientId: string) => voi
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-gray-950">Přiřadit výsledek pacientovi</h3>
+        <h3 className="text-base font-semibold text-gray-950">Přiřadit výsledek stávajícímu pacientovi</h3>
         <SearchInput value={search} onChange={setSearch} className="w-full sm:max-w-xs" />
       </div>
       <ul className="mt-4 max-h-72 divide-y divide-gray-200 overflow-y-auto rounded-lg ring-1 ring-gray-950/10">
@@ -636,5 +655,78 @@ function AssignPicker({ onPick, onCancel }: { onPick: (patientId: string) => voi
         </Button>
       </div>
     </div>
+  )
+}
+
+/** Založení nového pacienta přímo z výsledku testu (stejná povinná pole a kontroly jako v Kartotéce). */
+function NewPatientForm({ onCreate, onCancel }: { onCreate: (p: Omit<Patient, 'id'>) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<Omit<Patient, 'id'>>({ prijmeni: '', jmeno: '', rodneCislo: '', datumNarozeni: '', telefon: '', email: '' })
+  const [errors, setErrors] = useState<Partial<Record<keyof Patient, string>>>({})
+  const [rcTouched, setRcTouched] = useState(false)
+  const rcWarning = rcTouched ? rodneCisloWarning(form.rodneCislo) : null
+  const set = (k: keyof Omit<Patient, 'id'>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [k]: e.target.value })
+    if (errors[k]) setErrors({ ...errors, [k]: undefined }) // chyba pole zmizí, jakmile ho uživatel opraví
+  }
+
+  const submit = () => {
+    const e: Partial<Record<keyof Patient, string>> = {}
+    const req = 'Toto pole je povinné.'
+    if (!form.prijmeni.trim()) e.prijmeni = req
+    if (!form.jmeno.trim()) e.jmeno = req
+    if (!form.rodneCislo.trim()) e.rodneCislo = req
+    if (!form.email.trim()) e.email = req
+    else if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = 'Zadejte platnou e-mailovou adresu.'
+    if (form.telefon && !/^\d{12}$/.test(form.telefon)) e.telefon = 'Číslo musí být ve formátu 420777888999.'
+    setErrors(e)
+    if (Object.keys(e).length) return
+    onCreate({ ...form, prijmeni: form.prijmeni.trim(), jmeno: form.jmeno.trim(), rodneCislo: form.rodneCislo.trim(), email: form.email.trim() })
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        submit()
+      }}
+    >
+      <h3 className="text-base font-semibold text-gray-950">Nový pacient</h3>
+      <p className="mt-1 text-sm text-gray-500">Pacient se založí v Kartotéce a výsledek testu se uloží do jeho karty.</p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Field label="Příjmení" required error={errors.prijmeni}>
+          <TextInput autoFocus value={form.prijmeni} onChange={set('prijmeni')} invalid={!!errors.prijmeni} />
+        </Field>
+        <Field label="Jméno" required error={errors.jmeno}>
+          <TextInput value={form.jmeno} onChange={set('jmeno')} invalid={!!errors.jmeno} />
+        </Field>
+        <Field label="Rodné číslo" required error={errors.rodneCislo}>
+          <TextInput
+            value={form.rodneCislo}
+            onChange={set('rodneCislo')}
+            onBlur={() => setRcTouched(true)}
+            invalid={!!errors.rodneCislo}
+            className={rcWarning && !errors.rodneCislo ? '!ring-amber-400' : undefined}
+          />
+          {rcWarning && !errors.rodneCislo && (
+            <p className="flex items-start gap-1.5 text-sm text-amber-700">
+              <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <span>{rcWarning} Uložit lze i tak.</span>
+            </p>
+          )}
+        </Field>
+        <Field label="E-mailová adresa" required error={errors.email}>
+          <TextInput type="email" value={form.email} onChange={set('email')} invalid={!!errors.email} />
+        </Field>
+        <Field label="Telefonní číslo" error={errors.telefon}>
+          <TextInput value={form.telefon} onChange={set('telefon')} inputMode="numeric" placeholder="420777888999" invalid={!!errors.telefon} />
+        </Field>
+      </div>
+      <div className="mt-5 flex gap-3">
+        <Button type="submit">Založit a uložit výsledek</Button>
+        <Button color="gray" onClick={onCancel}>
+          Zpět
+        </Button>
+      </div>
+    </form>
   )
 }

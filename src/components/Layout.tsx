@@ -5,6 +5,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
 import { cx, useToast } from './ui'
 import { NameModal } from '../pages/Dashboard'
+import { FeedbackMobile, FeedbackSidebar } from './Feedback'
 import { DEFAULT_FILTERS } from '../data/programs'
 
 export function Logo() {
@@ -136,7 +137,7 @@ export function Layout() {
         <UserMenu />
       </header>
       <div className="flex">
-        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 overflow-y-auto px-3 py-8 lg:block">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 flex-col gap-6 overflow-y-auto px-3 pb-4 pt-8 lg:flex">
           <nav className="flex flex-col gap-y-1">
             {NAV.map(({ to, label, icon: Icon, end }) => (
               <div key={to} className="flex flex-col gap-y-1">
@@ -161,6 +162,8 @@ export function Layout() {
               </div>
             ))}
           </nav>
+          {/* Zpětná vazba – vždy viditelná dole v menu */}
+          <FeedbackSidebar />
         </aside>
         <main className="min-w-0 flex-1 px-4 py-8 md:px-6 lg:px-8">
           {/* Mobilní navigace */}
@@ -180,6 +183,7 @@ export function Layout() {
           </nav>
           <Outlet />
         </main>
+        <FeedbackMobile />
       </div>
     </div>
   )

@@ -224,6 +224,7 @@ export const seedDB = (): DB =>
       eskillResults: seedEskill(),
       labs: seedLabs(SEED_TODAY),
       wearables: seedWearables(SEED_TODAY),
+      feedback: [],
     },
     daysBetween(SEED_TODAY, todayIso()),
   )

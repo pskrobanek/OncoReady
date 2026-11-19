@@ -114,6 +114,18 @@ export interface WearableDay {
   steps: number // počet kroků za den
 }
 
+/** Připomínka odeslaná přes okno Zpětná vazba v levém menu. */
+export interface Feedback {
+  id: string
+  text: string
+  /** Stránka aplikace, ze které byla připomínka odeslána (cesta, např. „/kartoteka“). */
+  page: string
+  createdAt: string // ISO
+  author: string
+  /** Snímek obrazovky jako data URL (JPEG), nebo null. */
+  screenshot: string | null
+}
+
 export interface DB {
   patients: Patient[]
   monitorings: Monitoring[]
@@ -123,4 +135,5 @@ export interface DB {
   eskillResults: ESkillResult[]
   labs: LabResult[]
   wearables: WearableDay[]
+  feedback: Feedback[]
 }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { seedDB } from '../data/seed'
 import { DEFAULT_ACTIONS } from '../data/programs'
-import type { Answers, DashboardView, DB, ESkillResult, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
+import type { Answers, DashboardView, DB, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
 import { addDays, todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
@@ -26,6 +26,7 @@ function migrate(db: Partial<DB>): DB {
     eskillResults: db.eskillResults ?? seed.eskillResults,
     labs: db.labs ?? seed.labs,
     wearables: db.wearables ?? seed.wearables,
+    feedback: db.feedback ?? [],
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
     programs: (db.programs ?? seed.programs).map((p) => ({ ...p, actions: p.actions ?? DEFAULT_ACTIONS() })),
   } as DB
@@ -148,6 +149,9 @@ function useDBState() {
         return full
       },
       deleteEskillResult: (id: string) => setDb((s) => ({ ...s, eskillResults: s.eskillResults.filter((r) => r.id !== id) })),
+
+      // --- Zpětná vazba ---
+      addFeedback: (f: Omit<Feedback, 'id'>) => setDb((s) => ({ ...s, feedback: [...s.feedback, { ...f, id: uid('fb') }] })),
 
       submitQuestionnaire: (id: string, answers: Answers) =>
         setDb((s) => ({

@@ -18,6 +18,23 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
 - **Obsah**: šedé pozadí (`gray-50`), bílé karty se zaoblením 12 px a jemným rámečkem.
 - **Nadpis stránky**: 30 px, tučný. Nad ním drobečková navigace (šedá, oddělovač `›`).
 
+### Zpětná vazba (NOVÉ 2026-11-19)
+
+Okno pro připomínky testerů, dostupné na každé stránce s menu.
+- **Počítač (≥ 1024 px)**: bílá karta **pevně dole v levém menu** (zaoblení 12 px, jemný rámeček). Je vidět bez klikání a bez posouvání.
+  - Nadpis „Zpětná vazba“ s modrou ikonou bubliny (14 px, tučně).
+  - **Textové pole** (5 řádků, roztahovatelné), zástupný text „Co nefunguje, chybí nebo by šlo udělat lépe?“.
+  - Šedé tlačítko přes celou šířku **Pořídit snímek obrazovky** (ikona fotoaparátu).
+    - Klik vyfotí aktuální stránku bez okna zpětné vazby (během focení text „Pořizuji snímek…“).
+    - Místo tlačítka se pak ukáže příloha: náhled snímku, text „Snímek obrazovky · Dashboard“ (název stránky) a křížek na odebrání.
+  - Modré tlačítko přes celou šířku **Odeslat** (ikona papírového letadla). Bez textu je neaktivní. Odeslat jde i zkratkou Ctrl+Enter (v okně se nezobrazuje).
+  - Po odeslání: zelená ikona ✓, „Děkujeme, připomínka odeslána.“ a tlačítko **Napsat další**.
+- **Mobil a tablet (< 1024 px)**: vpravo dole plovoucí modré tlačítko **Zpětná vazba**. Otevře stejný formulář v panelu zespodu (s ztmaveným pozadím a křížkem Zavřít).
+- K připomínce se automaticky ukládá stránka (cesta), čas, autor (přihlášený uživatel) a snímek (JPEG, šířka nejvýš 1200 px).
+- Typ připomínky (Chyba / Nápad / …) ani pomocné texty se nezobrazují – formulář je záměrně co nejjednodušší.
+- **⚠️ OVĚŘIT**: kam mají připomínky v produkci chodit (e-mail, databáze, nástroj na úkoly). Replika je ukládá jen v prohlížeči (`feedback` v localStorage) a zatím je nikde nezobrazuje.
+- Snímek pořizuje knihovna `html-to-image` (vykreslí stránku do obrázku bez dotazu na sdílení obrazovky). V produkci může IT zvolit jiné řešení.
+
 ### Barvy
 
 | Token | Hodnota | Použití |
@@ -570,6 +587,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-19 | Nové okno **Zpětná vazba**: karta dole v levém menu (na mobilu plovoucí tlačítko a panel zespodu) s textovým polem, tlačítkem „Pořídit snímek obrazovky“ a „Odeslat“. Nová závislost `html-to-image` pro snímek obrazovky. |
 | 2026-10-30 | e-Skill, test bez registrace: na konci tlačítka **Neukládat**, **Nový pacient** (založí pacienta přímo z výsledku) a **Přiřadit stávajícímu**. |
 | 2026-10-29 | Dashboard: nový sloupec **Další postup** za sloupcem Aktuální s tlačítky ze šablony pacienta (výchozí „Ke kontrole sestrou“, „Ke kontrole lékařem“); volba se ukládá k monitoraci. Šablona: nová karta „Další postup“ pro nastavení tlačítek. |
 | 2026-10-26 | Dashboard: hledání přes celou šířku části „Pacienti“. Filtr Šablona je rozbalovací výběr více možností se štítky (místo zaškrtávacích polí); nová komponenta `MultiSelect` v `ui.tsx`. |

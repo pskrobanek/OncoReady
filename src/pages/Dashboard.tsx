@@ -1,8 +1,8 @@
-import { Fragment, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useMemo, useRef, useState, type ReactNode, type UIEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
-import { ArrowRightCircleIcon, ArrowsUpDownIcon, ClockIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { ArrowRightCircleIcon, ArrowsUpDownIcon, ClockIcon, FunnelIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
 import { activeStep, NextStepButtons } from '../components/NextStep'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
@@ -322,6 +322,8 @@ function PatientsBoard({
   }
   // Pacient, jehož detail souhrnu je otevřený
   const [detail, setDetail] = useState<string | null>(null)
+  // Posuvné oblasti tabulek jednotlivých boxů (kvůli společnému vodorovnému posunu)
+  const scrollers = useRef<Record<string, HTMLDivElement | null>>({})
 
 
   const today = todayIso()
@@ -355,11 +357,10 @@ function PatientsBoard({
       })
 
     return {
-      // Pacienti s dnešní značkou: vždy nahoře ve skupině své značky, nezávisle na filtrech (hledání platí);
+      // Pacienti s dnešní značkou: vždy nahoře v boxu své značky, nezávisle na filtrech (hledání platí);
       // řazeno podle času označení.
       tagged: base.filter((r) => r.step).sort((a, b) => a.step!.at.localeCompare(b.step!.at)),
       rows: base
-        .filter((r) => !r.step)
         // Hledání prohledává všechny pacienty – filtry se při něm nepoužijí (sestra musí najít i zeleného pacienta).
         // Šablona: pacient se zobrazí, pokud jeho monitorace vychází z některé ze zaškrtnutých šablon.
         .filter((r) => !!term || filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
@@ -386,29 +387,39 @@ function PatientsBoard({
     }
   }, [db, search, filters, sort, desc, mode, today])
 
-  // Sekce tabulky: nahoře vždy Čekárna, pod ní ostatní pacienti (případně ve skupinách ze záložky Zobrazení).
-  // Uvnitř skupiny platí zvolené řazení.
+  // Pacienti jsou ve třech samostatných boxech pod sebou: Čekárna, další značky ze šablon (K aplikaci…) a Všichni pacienti.
+  // Boxy značek jsou vidět vždy (i prázdné). Všichni pacienti = celý seznam podle filtrů, včetně pacientů se značkou.
   const shown = rows.slice(0, perPage)
-  type Section = { key: string; label: string; dot: string | null; rows: typeof rows; kind?: 'waiting' | 'tag' }
-  const patientGroups: Section[] =
+  type Part = { key: string; label: string | null; dot: string | null; rows: typeof rows }
+  type Box = { key: string; label: string; kind: 'waiting' | 'tag' | 'all'; count: number; parts: Part[] }
+  const single = (list: typeof rows): Part[] => [{ key: 'vse', label: null, dot: null, rows: list }]
+  // Podskupiny ze záložky Zobrazení (závažnost / šablony) se zobrazí uvnitř boxu Všichni pacienti.
+  const subGroups: Part[] =
     groupBy === 'severity'
       ? SEVERITY_ORDER.map((sev) => ({ key: sev, label: BAND_META[sev].label, dot: BAND_META[sev].dot, rows: shown.filter((r) => r.severity === sev) }))
       : groupBy === 'program'
         ? [...new Set(shown.map((r) => r.program?.name ?? ''))]
             .sort((a, b) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'cs')))
             .map((name) => ({ key: name || '-', label: name || 'Bez šablony', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
-        : [{ key: 'all', label: 'Ostatní pacienti', dot: null, rows: shown }]
-  // Skupiny značek: Čekárna je vidět vždy (i prázdná), ostatní značky (např. K aplikaci) jen když v nich někdo je.
-  // Pořadí ostatních značek = pořadí tlačítek v šablonách.
-  const tagOrder = [...new Set(db.programs.flatMap((p) => p.actions.filter((a) => !a.waiting).map((a) => a.label)))]
-  const tagLabels = [...new Set(tagged.filter((r) => !r.inWaitingRoom).map((r) => r.step!.label))].sort(
-    (a, b) => (tagOrder.indexOf(a) + 1 || 999) - (tagOrder.indexOf(b) + 1 || 999),
-  )
-  const sections: Section[] = [
-    { key: 'tag:cekarna', label: 'Čekárna', dot: null, kind: 'waiting', rows: tagged.filter((r) => r.inWaitingRoom) },
-    ...tagLabels.map((label) => ({ key: `tag:${label}`, label, dot: null, kind: 'tag' as const, rows: tagged.filter((r) => !r.inWaitingRoom && r.step!.label === label) })),
-    ...patientGroups.filter((g) => g.rows.length > 0),
+        : []
+  // Značky mimo čekárnu: všechna tlačítka ze šablon (v jejich pořadí) + značky, jejichž tlačítko už v šabloně není.
+  const tagLabels = [
+    ...new Set([...db.programs.flatMap((p) => p.actions.filter((a) => !a.waiting).map((a) => a.label)), ...tagged.filter((r) => !r.inWaitingRoom).map((r) => r.step!.label)]),
   ]
+  const waiting = tagged.filter((r) => r.inWaitingRoom)
+  const boxes: Box[] = [
+    { key: 'tag:cekarna', label: 'Čekárna', kind: 'waiting', count: waiting.length, parts: single(waiting) },
+    ...tagLabels.map((label) => {
+      const list = tagged.filter((r) => !r.inWaitingRoom && r.step!.label === label)
+      return { key: `tag:${label}`, label, kind: 'tag' as const, count: list.length, parts: single(list) }
+    }),
+    { key: 'all', label: 'Všichni pacienti', kind: 'all', count: rows.length, parts: subGroups.length ? subGroups.filter((g) => g.rows.length > 0) : single(shown) },
+  ]
+  // Boxy mají vlastní tabulky – vodorovný posun časové osy se mezi nimi drží společný.
+  const syncScroll = (e: UIEvent<HTMLDivElement>) => {
+    const x = e.currentTarget.scrollLeft
+    for (const el of Object.values(scrollers.current)) if (el && el !== e.currentTarget && el.scrollLeft !== x) el.scrollLeft = x
+  }
 
   // Časová osa: období od aktuálního zpět po nejstarší data zobrazených pacientů.
   // Po týdnech začíná osa minulým týdnem – aktuální stav je ve čtverci ve sloupci Aktuální.
@@ -429,167 +440,173 @@ function PatientsBoard({
   // Mezi skupinami (měsíci) je malá mezera.
   const groupStart = (i: number) => i === 0 || groupOf(periods[i]) !== groupOf(periods[i - 1])
 
+  // Hlavička tabulky – stejná v každém boxu (sloupce mají pevné nejmenší šířky, aby boxy lícovaly pod sebou).
+  const head = (
+    <thead className="whitespace-nowrap bg-gray-50/50">
+      <tr>
+        <th className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 py-3 pl-6 pr-4 text-start text-sm font-semibold text-gray-950')}>Pacient</th>
+        {/* Sloupec zdrojů je bez nadpisu */}
+        <th className={cx(STICKY_SOURCE, 'z-10 min-w-[7.5rem] bg-gray-50 px-3 py-3')}>
+          <span className="sr-only">Zdroj</span>
+        </th>
+        <th className="w-px min-w-[9.5rem] border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">
+          <span className="inline-flex items-center gap-1.5">
+            Aktuální
+            <BadgeLegend dashboard />
+          </span>
+        </th>
+        <th className="w-px min-w-[7.75rem] border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">Další postup</th>
+        {groups.map((g, gi) => (
+          <th key={g.key} colSpan={g.count} className={cx('py-3 pr-0.5 text-start text-sm font-semibold text-gray-950', gi === 0 ? 'pl-3' : 'pl-5')}>
+            {g.label}
+          </th>
+        ))}
+        {/* Výplň – sloupce jsou jen tak široké, jak potřebují */}
+        <th />
+      </tr>
+    </thead>
+  )
+  // Blok pacienta: řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
+  const patientBody = ({ patient, program, ready, tl }: (typeof rows)[number]) => {
+  // Řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
+  const lines = ready.sources.map((s) => s.source)
+  return (
+    <tbody key={patient.id} className="group whitespace-nowrap">
+      {lines.map((line, i) => {
+        // Horní a dolní okraj bloku pacienta; mezi řádky zdrojů bez čar.
+        const edge = cx(i === 0 && 'pt-2.5', i === lines.length - 1 && 'pb-2.5')
+        return (
+          <tr key={line}>
+            {i === 0 && (
+              // Barevný pruh vlevo u jména = nejhorší výsledek z aktuálních zdrojů pacienta
+              <td
+                rowSpan={lines.length}
+                className={cx(STICKY_PATIENT, 'z-[1] bg-white py-2.5 pl-6 pr-4 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
+              >
+                {/* Klik na pacienta otevře souhrnný prescoring (dotazník, laboratoř, wearables) */}
+                <button
+                  type="button"
+                  onClick={() => setDetail(patient.id)}
+                  title="Otevřít souhrnný prescoring"
+                  className="text-left font-semibold text-gray-950 hover:underline"
+                >
+                  {tableName(patient)}
+                </button>
+                <div className="tabular-nums text-gray-600">{patient.rodneCislo}</div>
+                {program && (
+                  <Link
+                    to={`/sablony/${program.id}/upravit`}
+                    title="Otevřít šablonu"
+                    className="mt-1.5 block truncate text-gray-600 underline decoration-gray-300 underline-offset-2 hover:text-primary-600"
+                  >
+                    {program.name}
+                  </Link>
+                )}
+              </td>
+            )}
+            <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-1 text-sm text-gray-600 group-hover:bg-gray-50', edge)}>
+              <span className="inline-flex items-center gap-1.5">
+                <SourceIcon source={line} className="h-4 w-4 text-gray-400" />
+                {sourceMeta(line).label}
+              </span>
+            </td>
+            <td className={cx('w-px border-r border-gray-200 px-3 py-1 align-middle group-hover:bg-gray-50', edge)}>
+              <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
+            </td>
+            {i === 0 && (
+              // Další postup: tlačítka ze šablony pacienta nastaví jeho dnešní značku (např. Čekárna, K aplikaci)
+              <td rowSpan={lines.length} className="w-px border-r border-gray-200 px-3 py-2.5 align-top group-hover:bg-gray-50">
+                <NextStepButtons patientId={patient.id} />
+              </td>
+            )}
+            {periods.map((p, pi) => (
+              <td key={p} className={cx('w-px py-1 pr-0.5 align-middle group-hover:bg-gray-50', groupStart(pi) ? (pi === 0 ? 'pl-3' : 'pl-5') : 'pl-0.5', edge)}>
+                <PeriodCell line={line} period={p} mode={mode} tl={tl} onOpenReport={setReport} />
+              </td>
+            ))}
+            <td className={cx('group-hover:bg-gray-50', edge)} />
+          </tr>
+        )
+      })}
+    </tbody>
+  )
+}
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title={title} breadcrumbs={breadcrumbs} actions={headerActions} />
 
-      <Card className="flex flex-col overflow-hidden xl:flex-row">
-        {/* Tabulka pacientů */}
-        <div className="min-w-0 flex-1 xl:border-r xl:border-gray-200">
-          <div className="flex items-center justify-between px-6 py-4">
-            <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
-            <span className="text-sm text-gray-500 tabular-nums">{rows.length + tagged.length} pacientů</span>
-          </div>
-          <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
-            <SearchInput value={search} onChange={setSearch} className="w-full" />
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto divide-y divide-gray-200 text-start">
-              <thead className="whitespace-nowrap bg-gray-50/50">
-                <tr>
-                  <th className={cx(STICKY_PATIENT, 'z-10 bg-gray-50 py-3 pl-6 pr-4 text-start text-sm font-semibold text-gray-950')}>Pacient</th>
-                  {/* Sloupec zdrojů je bez nadpisu */}
-                  <th className={cx(STICKY_SOURCE, 'z-10 bg-gray-50 px-3 py-3')}>
-                    <span className="sr-only">Zdroj</span>
-                  </th>
-                  <th className="w-px border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">
-                    <span className="inline-flex items-center gap-1.5">
-                      Aktuální
-                      <BadgeLegend dashboard />
-                    </span>
-                  </th>
-                  <th className="w-px border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">Další postup</th>
-                  {groups.map((g, gi) => (
-                    <th key={g.key} colSpan={g.count} className={cx('py-3 pr-0.5 text-start text-sm font-semibold text-gray-950', gi === 0 ? 'pl-3' : 'pl-5')}>
-                      {g.label}
-                    </th>
-                  ))}
-                  {/* Výplň – sloupce jsou jen tak široké, jak potřebují */}
-                  <th />
-                </tr>
-              </thead>
-              {sections.map((sec) => (
-                <Fragment key={sec.key}>
-                  {/* Nadpis skupiny – zůstává vlevo i při vodorovném posunu.
-                      Skupiny značek mají výrazný barevný pruh: Čekárna modrý, ostatní značky (K aplikaci…) tmavě šedý. */}
-                  <tbody>
-                    <tr>
-                      <td
-                        colSpan={periods.length + 5}
-                        className={cx(sec.kind === 'waiting' ? 'bg-primary-600 py-2.5' : sec.kind === 'tag' ? 'bg-gray-700 py-2.5' : 'bg-gray-50 py-2')}
-                      >
-                        <span className={cx('sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold', sec.kind ? 'text-white' : 'text-gray-950')}>
-                          {sec.kind === 'waiting' && <ClockIcon className="h-5 w-5" />}
-                          {sec.kind === 'tag' && <ArrowRightCircleIcon className="h-5 w-5" />}
-                          {sec.dot && <span className={cx('h-2.5 w-2.5 rounded-full', sec.dot)} />}
-                          {sec.label}
-                          <span className={cx('rounded-full px-2 text-xs font-semibold tabular-nums leading-5', sec.kind ? 'bg-white/20 text-white' : 'font-normal text-gray-500')}>
-                            {sec.rows.length}
-                          </span>
-                        </span>
-                      </td>
-                    </tr>
-                    {/* Prázdná čekárna zůstává vidět, aby bylo jasné, že nikdo nečeká */}
-                    {sec.kind === 'waiting' && sec.rows.length === 0 && (
-                      <tr>
-                        <td colSpan={periods.length + 5} className="py-3">
-                          <span className="sticky left-0 pl-6 text-sm text-gray-500">V čekárně teď nikdo není.</span>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                  {sec.rows.map(({ patient, program, ready, tl }) => {
-                    // Řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
-                    const lines = ready.sources.map((s) => s.source)
-                    return (
-                      <tbody key={patient.id} className="group whitespace-nowrap">
-                        {lines.map((line, i) => {
-                          // Horní a dolní okraj bloku pacienta; mezi řádky zdrojů bez čar.
-                          const edge = cx(i === 0 && 'pt-2.5', i === lines.length - 1 && 'pb-2.5')
-                          return (
-                            <tr key={line}>
-                              {i === 0 && (
-                                // Barevný pruh vlevo u jména = nejhorší výsledek z aktuálních zdrojů pacienta
-                                <td
-                                  rowSpan={lines.length}
-                                  className={cx(STICKY_PATIENT, 'z-[1] bg-white py-2.5 pl-6 pr-4 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
-                                >
-                                  {/* Klik na pacienta otevře souhrnný prescoring (dotazník, laboratoř, wearables) */}
-                                  <button
-                                    type="button"
-                                    onClick={() => setDetail(patient.id)}
-                                    title="Otevřít souhrnný prescoring"
-                                    className="text-left font-semibold text-gray-950 hover:underline"
-                                  >
-                                    {tableName(patient)}
-                                  </button>
-                                  <div className="tabular-nums text-gray-600">{patient.rodneCislo}</div>
-                                  {program && (
-                                    <Link
-                                      to={`/sablony/${program.id}/upravit`}
-                                      title="Otevřít šablonu"
-                                      className="mt-1.5 block truncate text-gray-600 underline decoration-gray-300 underline-offset-2 hover:text-primary-600"
-                                    >
-                                      {program.name}
-                                    </Link>
-                                  )}
-                                </td>
-                              )}
-                              <td className={cx(STICKY_SOURCE, 'z-[1] bg-white px-3 py-1 text-sm text-gray-600 group-hover:bg-gray-50', edge)}>
-                                <span className="inline-flex items-center gap-1.5">
-                                  <SourceIcon source={line} className="h-4 w-4 text-gray-400" />
-                                  {sourceMeta(line).label}
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
+          {/* Vyhledávání */}
+          <Card>
+            <div className="flex items-center justify-between px-6 py-4">
+              <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
+              <span className="text-sm text-gray-500 tabular-nums">{new Set([...rows, ...tagged].map((r) => r.patient.id)).size} pacientů</span>
+            </div>
+            <div className="border-t border-gray-200 px-4 py-3 sm:px-6">
+              <SearchInput value={search} onChange={setSearch} className="w-full" />
+            </div>
+          </Card>
+
+          {/* Boxy skupin: Čekárna, K aplikaci (a další značky ze šablon), Všichni pacienti */}
+          {boxes.map((box) => (
+            <Card key={box.key} className="overflow-hidden">
+              <div className="flex items-center gap-2 px-6 py-4">
+                {box.kind === 'waiting' && <ClockIcon className="h-5 w-5 text-gray-400" />}
+                {box.kind === 'tag' && <ArrowRightCircleIcon className="h-5 w-5 text-gray-400" />}
+                {box.kind === 'all' && <UsersIcon className="h-5 w-5 text-gray-400" />}
+                <h3 className="text-base font-semibold leading-6 text-gray-950">{box.label}</h3>
+                <span className="text-sm tabular-nums text-gray-500">{box.count}</span>
+              </div>
+              {box.count === 0 ? (
+                // Prázdný box značky zůstává vidět, aby bylo jasné, že v něm nikdo není
+                <p className="border-t border-gray-200 px-6 py-4 text-sm text-gray-500">
+                  {box.kind === 'waiting' ? 'V čekárně teď nikdo není.' : box.kind === 'tag' ? 'Zatím nikdo.' : 'Žádní pacienti neodpovídají filtru'}
+                </p>
+              ) : (
+                <div
+                  ref={(el) => {
+                    scrollers.current[box.key] = el
+                  }}
+                  onScroll={syncScroll}
+                  className="overflow-x-auto border-t border-gray-200"
+                >
+                  <table className="w-full table-auto divide-y divide-gray-200 text-start">
+                    {head}
+                    {box.parts.map((part) => (
+                      <Fragment key={part.key}>
+                        {/* Nadpis podskupiny (seskupení podle závažnosti / šablon) – zůstává vlevo i při vodorovném posunu */}
+                        {part.label && (
+                          <tbody>
+                            <tr>
+                              <td colSpan={periods.length + 5} className="bg-gray-50 py-2">
+                                <span className="sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold text-gray-950">
+                                  {part.dot && <span className={cx('h-2.5 w-2.5 rounded-full', part.dot)} />}
+                                  {part.label}
+                                  <span className="font-normal tabular-nums text-gray-500">{part.rows.length}</span>
                                 </span>
                               </td>
-                              <td className={cx('w-px border-r border-gray-200 px-3 py-1 align-middle group-hover:bg-gray-50', edge)}>
-                                <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
-                              </td>
-                              {i === 0 && (
-                                // Další postup: tlačítka ze šablony pacienta nastaví jeho dnešní značku (např. Čekárna, K aplikaci)
-                                <td rowSpan={lines.length} className="w-px border-r border-gray-200 px-3 py-2.5 align-top group-hover:bg-gray-50">
-                                  <NextStepButtons patientId={patient.id} />
-                                </td>
-                              )}
-                              {periods.map((p, pi) => (
-                                <td key={p} className={cx('w-px py-1 pr-0.5 align-middle group-hover:bg-gray-50', groupStart(pi) ? (pi === 0 ? 'pl-3' : 'pl-5') : 'pl-0.5', edge)}>
-                                  <PeriodCell line={line} period={p} mode={mode} tl={tl} onOpenReport={setReport} />
-                                </td>
-                              ))}
-                              <td className={cx('group-hover:bg-gray-50', edge)} />
                             </tr>
-                          )
-                        })}
-                      </tbody>
-                    )
-                  })}
-                  {/* Mezera za skupinou značky – opticky ji oddělí od další skupiny */}
-                  {sec.kind && (
-                    <tbody aria-hidden>
-                      <tr>
-                        <td colSpan={periods.length + 5} className="h-4 bg-gray-100" />
-                      </tr>
-                    </tbody>
-                  )}
-                </Fragment>
-              ))}
-              {rows.length === 0 && (
-                <tbody>
-                  <tr>
-                    <td colSpan={periods.length + 5} className="px-6 py-12 text-center text-sm text-gray-500">
-                      Žádní pacienti neodpovídají filtru
-                    </td>
-                  </tr>
-                </tbody>
+                          </tbody>
+                        )}
+                        {part.rows.map(patientBody)}
+                      </Fragment>
+                    ))}
+                  </table>
+                </div>
               )}
-            </table>
-          </div>
-          <div className="flex justify-center border-t border-gray-200 px-6 py-3">
-            <PerPage value={perPage} onChange={setPerPage} />
-          </div>
+              {box.kind === 'all' && (
+                <div className="flex justify-center border-t border-gray-200 px-6 py-3">
+                  <PerPage value={perPage} onChange={setPerPage} />
+                </div>
+              )}
+            </Card>
+          ))}
         </div>
 
         {/* Filtr */}
-        <aside className="flex w-full shrink-0 flex-col border-t border-gray-200 xl:w-72 xl:border-t-0">
+        <aside className="flex w-full shrink-0 flex-col rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 xl:w-72">
           {/* Nástroje panelu – přepínací záložky. Další nástroj = nová položka v TOOLS. */}
           <div className="flex border-b border-gray-200 px-3" role="tablist">
             {TOOLS.map(({ key, label, icon: Icon }) => {
@@ -737,7 +754,7 @@ function PatientsBoard({
           {panelFooter && <div className="mt-8 border-t border-gray-200 pt-4">{panelFooter}</div>}
           </div>
         </aside>
-      </Card>
+      </div>
 
       <ReportModal questionnaire={report} onClose={() => setReport(null)} />
       <ReadinessModal patientId={detail} onClose={() => setDetail(null)} onOpenReport={setReport} />

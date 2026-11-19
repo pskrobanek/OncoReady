@@ -104,14 +104,20 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
 - Pod nadpisem „Pacienti“ je hledání (jméno a rodné číslo) **přes celou šířku** části s tabulkou (od 2026-10-26; dříve úzké pole vpravo).
   - **Hledání prohledává všechny pacienty** – při zadaném textu se filtry (Skóre, Datum vyplnění, Šablona) nepoužijí (od 2026-11-19). Sestra tak najde i zeleného pacienta, kterého výchozí filtr skrývá.
 - **Čekárna** (NOVÉ 2026-11-19) – první sekce tabulky, hned pod hledáním:
-  - nadpisový řádek přes celou šířku: modrá ikona hodin, „Čekárna“ a počet pacientů;
+  - nadpisový řádek přes celou šířku je **výrazný modrý pruh** (primární modrá, bílý text 14 px tučně): ikona hodin, „Čekárna“ a počet pacientů v průsvitném oválu;
   - obsahuje pacienty, kteří mají **dnešní značku z tlačítka označeného v šabloně jako Čekárna** (viz *Další postup*);
   - **řádek pacienta vypadá úplně stejně jako v přehledu** (pruh, zdroje, Aktuální, tlačítka, časová osa);
   - pacienti jsou seřazeni podle času, kdy do čekárny přišli (nejdéle čekající nahoře);
   - čekárna je vidět vždy, **nezávisle na filtrech**; hledání ji zužuje;
   - prázdná čekárna ukazuje „V čekárně teď nikdo není.“;
   - pacient z čekárny zmizí, když dostane jinou značku (např. K aplikaci), když se značka zruší, nebo další den;
-  - pod čekárnou je sekce **Ostatní pacienti** s počtem (při seskupení podle závažnosti nebo šablon místo ní jednotlivé skupiny). Pacient v čekárně se v ní už neopakuje.
+  - za skupinou je šedá mezera 16 px, která ji oddělí od další skupiny.
+- **Skupiny ostatních značek** (NOVÉ 2026-11-19), např. **K aplikaci** – hned pod Čekárnou:
+  - každá dnešní značka, která není čekárna, má vlastní skupinu pojmenovanou podle tlačítka;
+  - nadpis je **tmavě šedý pruh** (bílý text, ikona šipky v kroužku, počet v oválu), za skupinou je stejná šedá mezera;
+  - skupina se zobrazí, jen když v ní někdo je; pořadí skupin odpovídá pořadí tlačítek v šablonách;
+  - pacienti jsou seřazeni podle času označení, zobrazují se nezávisle na filtrech a řádek vypadá stejně jako v přehledu.
+- Pod skupinami značek je sekce **Ostatní pacienti** s počtem a světle šedým nadpisem (při seskupení podle závažnosti nebo šablon místo ní jednotlivé skupiny). Pacient se značkou se v ní už neopakuje.
 - **Řazení** a **časová osa** se nastavují v pravém panelu (viz *Panel nástrojů*).
 - **Sloupce** (zleva): Pacient · zdroj (bez nadpisu) · Aktuální · **Další postup** · časová osa · prázdná výplň. Hlavička má jeden řádek, všechny nadpisy jsou stejné (14 px, tučně).
 - **Řádky**: pacient má **řádek za každý zdroj, který má**, v pořadí Dotazník, Laboratoř, Wearables.
@@ -600,6 +606,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-19 | Dashboard: skupina Čekárna má výrazný modrý nadpisový pruh; nová skupina **K aplikaci** (a obecně skupina pro každou dnešní značku) s tmavě šedým pruhem; mezi skupinami šedá mezera. |
 | 2026-11-19 | Dashboard: sekce **Čekárna** nahoře v tabulce Pacienti; tlačítka ze šablony nastavují značku pacienta platnou jen daný den (výchozí **Čekárna** a **K aplikaci**); v šabloně volba „Čekárna“ u tlačítka. Klik na jméno pacienta otevře **Souhrnný prescoring** (s tlačítky značky a odkazem na kartu pacienta). Hledání prohledává všechny pacienty bez ohledu na filtry. |
 | 2026-11-19 | Nové okno **Zpětná vazba**: karta dole v levém menu (na mobilu plovoucí tlačítko a panel zespodu) s textovým polem, tlačítkem „Pořídit snímek obrazovky“ a „Odeslat“. Nová závislost `html-to-image` pro snímek obrazovky. |
 | 2026-10-30 | e-Skill, test bez registrace: na konci tlačítka **Neukládat**, **Nový pacient** (založí pacienta přímo z výsledku) a **Přiřadit stávajícímu**. |

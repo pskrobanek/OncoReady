@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
-import { ArrowsUpDownIcon, ClockIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { ArrowRightCircleIcon, ArrowsUpDownIcon, ClockIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
 import { activeStep, NextStepButtons } from '../components/NextStep'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
@@ -325,7 +325,7 @@ function PatientsBoard({
 
 
   const today = todayIso()
-  const { rows, waiting } = useMemo(() => {
+  const { rows, tagged } = useMemo(() => {
     const days = DATE_FILTERS.find((d) => d.key === filters.date)!.days
     const since = days ? addDays(todayIso(), -days) : null
     const term = search.trim().toLowerCase()
@@ -346,18 +346,20 @@ function PatientsBoard({
           ...r,
           ready,
           severity: worstCurrent(ready) ?? ('na' as const),
-          // Čekárna: pacient má dnešní značku z tlačítka, které šablona označuje jako čekárnu
-          waitingSince: step && r.program?.actions.find((a) => a.id === step.actionId)?.waiting ? step.at : null,
+          // Dnešní značka pacienta (tlačítko ze šablony); čekárna = tlačítko, které šablona označuje jako čekárnu
+          step,
+          inWaitingRoom: !!step && !!r.program?.actions.find((a) => a.id === step.actionId)?.waiting,
           lastFilled: r.qs.reduce((m, q) => (q.filledAt && q.filledAt > m ? q.filledAt : m), ''),
           tl: timelineOf(db, r.patient.id, r.qs, mode, today),
         }
       })
 
     return {
-      // Čekárna: vždy nahoře, nezávisle na filtrech (hledání platí); řazeno podle času příchodu.
-      waiting: base.filter((r) => r.waitingSince).sort((a, b) => a.waitingSince!.localeCompare(b.waitingSince!)),
+      // Pacienti s dnešní značkou: vždy nahoře ve skupině své značky, nezávisle na filtrech (hledání platí);
+      // řazeno podle času označení.
+      tagged: base.filter((r) => r.step).sort((a, b) => a.step!.at.localeCompare(b.step!.at)),
       rows: base
-        .filter((r) => !r.waitingSince)
+        .filter((r) => !r.step)
         // Hledání prohledává všechny pacienty – filtry se při něm nepoužijí (sestra musí najít i zeleného pacienta).
         // Šablona: pacient se zobrazí, pokud jeho monitorace vychází z některé ze zaškrtnutých šablon.
         .filter((r) => !!term || filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
@@ -387,7 +389,7 @@ function PatientsBoard({
   // Sekce tabulky: nahoře vždy Čekárna, pod ní ostatní pacienti (případně ve skupinách ze záložky Zobrazení).
   // Uvnitř skupiny platí zvolené řazení.
   const shown = rows.slice(0, perPage)
-  type Section = { key: string; label: string; dot: string | null; rows: typeof rows }
+  type Section = { key: string; label: string; dot: string | null; rows: typeof rows; kind?: 'waiting' | 'tag' }
   const patientGroups: Section[] =
     groupBy === 'severity'
       ? SEVERITY_ORDER.map((sev) => ({ key: sev, label: BAND_META[sev].label, dot: BAND_META[sev].dot, rows: shown.filter((r) => r.severity === sev) }))
@@ -396,16 +398,26 @@ function PatientsBoard({
             .sort((a, b) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'cs')))
             .map((name) => ({ key: name || '-', label: name || 'Bez šablony', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
         : [{ key: 'all', label: 'Ostatní pacienti', dot: null, rows: shown }]
-  const sections: Section[] = [{ key: 'cekarna', label: 'Čekárna', dot: null, rows: waiting }, ...patientGroups.filter((g) => g.rows.length > 0)]
+  // Skupiny značek: Čekárna je vidět vždy (i prázdná), ostatní značky (např. K aplikaci) jen když v nich někdo je.
+  // Pořadí ostatních značek = pořadí tlačítek v šablonách.
+  const tagOrder = [...new Set(db.programs.flatMap((p) => p.actions.filter((a) => !a.waiting).map((a) => a.label)))]
+  const tagLabels = [...new Set(tagged.filter((r) => !r.inWaitingRoom).map((r) => r.step!.label))].sort(
+    (a, b) => (tagOrder.indexOf(a) + 1 || 999) - (tagOrder.indexOf(b) + 1 || 999),
+  )
+  const sections: Section[] = [
+    { key: 'tag:cekarna', label: 'Čekárna', dot: null, kind: 'waiting', rows: tagged.filter((r) => r.inWaitingRoom) },
+    ...tagLabels.map((label) => ({ key: `tag:${label}`, label, dot: null, kind: 'tag' as const, rows: tagged.filter((r) => !r.inWaitingRoom && r.step!.label === label) })),
+    ...patientGroups.filter((g) => g.rows.length > 0),
+  ]
 
   // Časová osa: období od aktuálního zpět po nejstarší data zobrazených pacientů.
   // Po týdnech začíná osa minulým týdnem – aktuální stav je ve čtverci ve sloupci Aktuální.
   const periods = useMemo(() => {
-    const earliest = [...waiting, ...rows].map((r) => r.tl.earliest).filter((d): d is string => !!d).sort()[0]
+    const earliest = [...tagged, ...rows].map((r) => r.tl.earliest).filter((d): d is string => !!d).sort()[0]
     if (!earliest) return []
     const all = periodsBack(mode, earliest, today)
     return mode === 'week' ? all.filter((w) => w !== weekOf(today)) : all
-  }, [rows, waiting, mode, today])
+  }, [rows, tagged, mode, today])
   // Skupiny v hlavičce: týdny po měsících („Říjen 2026“); měsíc, rok i „Jen vyplněné“ = jeden sloupec na skupinu.
   const groupOf = (p: string) => (mode === 'week' ? p.slice(0, 7) : p)
   const groups: { key: string; label: string; count: number }[] = []
@@ -426,7 +438,7 @@ function PatientsBoard({
         <div className="min-w-0 flex-1 xl:border-r xl:border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
-            <span className="text-sm text-gray-500 tabular-nums">{rows.length + waiting.length} pacientů</span>
+            <span className="text-sm text-gray-500 tabular-nums">{rows.length + tagged.length} pacientů</span>
           </div>
           <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
             <SearchInput value={search} onChange={setSearch} className="w-full" />
@@ -458,20 +470,27 @@ function PatientsBoard({
               </thead>
               {sections.map((sec) => (
                 <Fragment key={sec.key}>
-                  {/* Nadpis skupiny – zůstává vlevo i při vodorovném posunu */}
+                  {/* Nadpis skupiny – zůstává vlevo i při vodorovném posunu.
+                      Skupiny značek mají výrazný barevný pruh: Čekárna modrý, ostatní značky (K aplikaci…) tmavě šedý. */}
                   <tbody>
                     <tr>
-                      <td colSpan={periods.length + 5} className="bg-gray-50 py-2">
-                        <span className="sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold text-gray-950">
-                          {sec.key === 'cekarna' && <ClockIcon className="h-5 w-5 text-primary-600" />}
+                      <td
+                        colSpan={periods.length + 5}
+                        className={cx(sec.kind === 'waiting' ? 'bg-primary-600 py-2.5' : sec.kind === 'tag' ? 'bg-gray-700 py-2.5' : 'bg-gray-50 py-2')}
+                      >
+                        <span className={cx('sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold', sec.kind ? 'text-white' : 'text-gray-950')}>
+                          {sec.kind === 'waiting' && <ClockIcon className="h-5 w-5" />}
+                          {sec.kind === 'tag' && <ArrowRightCircleIcon className="h-5 w-5" />}
                           {sec.dot && <span className={cx('h-2.5 w-2.5 rounded-full', sec.dot)} />}
                           {sec.label}
-                          <span className="font-normal tabular-nums text-gray-500">{sec.rows.length}</span>
+                          <span className={cx('rounded-full px-2 text-xs font-semibold tabular-nums leading-5', sec.kind ? 'bg-white/20 text-white' : 'font-normal text-gray-500')}>
+                            {sec.rows.length}
+                          </span>
                         </span>
                       </td>
                     </tr>
                     {/* Prázdná čekárna zůstává vidět, aby bylo jasné, že nikdo nečeká */}
-                    {sec.key === 'cekarna' && sec.rows.length === 0 && (
+                    {sec.kind === 'waiting' && sec.rows.length === 0 && (
                       <tr>
                         <td colSpan={periods.length + 5} className="py-3">
                           <span className="sticky left-0 pl-6 text-sm text-gray-500">V čekárně teď nikdo není.</span>
@@ -543,6 +562,14 @@ function PatientsBoard({
                       </tbody>
                     )
                   })}
+                  {/* Mezera za skupinou značky – opticky ji oddělí od další skupiny */}
+                  {sec.kind && (
+                    <tbody aria-hidden>
+                      <tr>
+                        <td colSpan={periods.length + 5} className="h-4 bg-gray-100" />
+                      </tr>
+                    </tbody>
+                  )}
                 </Fragment>
               ))}
               {rows.length === 0 && (

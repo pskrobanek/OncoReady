@@ -138,4 +138,6 @@ export interface DB {
   labs: LabResult[]
   wearables: WearableDay[]
   feedback: Feedback[]
+  /** Demo pacienti přidaní později, kteří už byli do uložených dat doplněni (aby se smazaní nevraceli). */
+  demoAdded?: string[]
 }

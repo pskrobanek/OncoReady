@@ -37,6 +37,11 @@ const LABS: LabSpec[] = [
   // Starší monitorace
   ['p1', '2026-03-20'], ['p1', '2026-04-10', { hb: 97 }],
   ['p7', '2026-03-05'], ['p7', '2026-03-26', { krea: 118 }], ['p7', '2026-04-16', { krea: 162 }],
+  // Zelení pacienti – čerstvý odběr v mezích
+  ['p11', 1], ['p11', 22], ['p11', 43],
+  ['p12', 2], ['p12', 30],
+  ['p13', 1], ['p13', 8], ['p13', 15],
+  ['p14', 3], ['p14', 24],
 ]
 
 export function seedLabs(today: string): LabResult[] {
@@ -59,6 +64,9 @@ const WEARABLES: Record<string, (daysAgo: number) => Partial<WearableDay>> = {
   // Dlouhá – posledních 12 dní výrazně méně kroků
   p2: (n) => (n <= 11 ? { steps: 2400 + ((n * 137) % 400) } : {}),
   p4: () => ({}),
+  // Zelení pacienti – bez odchylek
+  p11: () => ({}),
+  p14: () => ({}),
 }
 const WEAR_DAYS = 56
 

@@ -120,7 +120,15 @@ const patients: Patient[] = [
   P('p8', 'Nová', 'Pavla', '7354281748', 'pavla.nova@example.com'),
   P('p9', 'Plyšová', 'Adéla', '8158112930', 'adela.plysova@example.com'),
   P('p10', 'Šťastná', 'Lucie', '6852211586', 'lucie.stastna@example.com'),
+  // Zelení pacienti – všechny aktuální zdroje v pořádku, mohou k aplikaci (přidáno 2026-11-19)
+  P('p11', 'Horáková', 'Jana', '6457141240', 'jana.horakova@example.com'),
+  P('p12', 'Veselý', 'Tomáš', '5803221237', 'tomas.vesely@example.com'),
+  P('p13', 'Marková', 'Ivana', '7161091234', 'ivana.markova@example.com'),
+  P('p14', 'Bartoš', 'Jiří', '5511301235', 'jiri.bartos@example.com'),
 ]
+
+/** Demo pacienti přidaní později – doplní se jednou i do dat uložených v prohlížeči (viz migrate ve store). */
+export const LATER_DEMO_PATIENTS = ['p11', 'p12', 'p13', 'p14']
 
 // Pořadí záznamů = pořadí odznaků v tabulce (nejnovější termín vlevo).
 const mons = [
@@ -192,6 +200,23 @@ const mons = [
   // Kokošková Ema – nově zahájená monitorace, jedno upozornění v posledním měsíci
   monitoring('p4', 'm4', 'pr1', '2026-08-20', '2026-12-03', true,
     series('2026-08-20', '2026-12-03', 7, [[4, 'green'], [6, 'green'], 'na', [7, 'green'], [9, 'yellow'], [5, 'green'], [16, 'red'], [8, 'blue'], [6, 'green']]),
+  ),
+  // Zelení pacienti – poslední dotazník dnes nebo včera v zeleném pásmu
+  // Horáková Jana – týdně, vše zelené, poslední dotazník dnes
+  monitoring('p11', 'm11', 'pr1', '2026-09-02', '2026-11-25', true,
+    series('2026-09-02', '2026-11-25', 7, [[3, 'green'], [5, 'green'], [4, 'green'], [2, 'green']]),
+  ),
+  // Veselý Tomáš – po 14 dnech, poslední dotazník včera
+  monitoring('p12', 'm12', 'pr2', '2026-08-04', '2026-12-15', true,
+    series('2026-08-04', '2026-12-15', 14, [[4, 'green'], [6, 'green'], [3, 'green']]),
+  ),
+  // Marková Ivana – týdně, jednou žlutá, poslední dotazník včera zelený
+  monitoring('p13', 'm13', 'pr3', '2026-08-25', '2026-11-24', true,
+    series('2026-08-25', '2026-11-24', 7, [[3, 'green'], [5, 'green'], [8, 'yellow'], [4, 'green'], [2, 'green'], [5, 'green'], [3, 'green'], [4, 'green']]),
+  ),
+  // Bartoš Jiří – po 3 dnech, jednou nevyplněno, poslední dotazník dnes
+  monitoring('p14', 'm14', 'pr5', '2026-09-20', '2026-11-30', true,
+    series('2026-09-20', '2026-11-30', 3, [[4, 'green'], [6, 'green'], 'na', [3, 'green'], [5, 'green']]),
   ),
 ]
 

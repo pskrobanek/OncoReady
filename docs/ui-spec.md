@@ -246,9 +246,11 @@ Pravidla se vyhodnocují v tomto pořadí:
 - Laboratoř a wearables jsou smyšlené (`src/data/readinessSeed.ts`).
 - Všechna demo data se při vytvoření posunou tak, aby „dnešek“ dema odpovídal skutečnému dni. Data jsou tak vždy aktuální.
 - Verze úložiště je v6, takže starší lokální data se nahradí demem.
+- Demo pacienti přidaní později (zatím Horáková, Veselý, Marková, Bartoš) se **jednou doplní i do dat uložených v prohlížeči**, včetně dotazníků, laboratoře a wearables. Kdo je smaže, tomu se už nevrátí.
 - Rodná čísla pacientů jsou **smyšlená, ale formálně platná** (ženy: měsíc +50, platné datum, 10 číslic dělitelných 11), např. Dvořáková 7061233652. Datum narození v kartě pacienta je dopočítané z rodného čísla.
 - Stavy v demu:
   - Šťastná = Připraveno;
+  - **Horáková, Veselý, Marková, Bartoš = Připraveno** (NOVÉ 2026-11-19) – zelení pacienti, kteří mohou k aplikaci: dotazník dnes / včera v zeleném pásmu, čerstvá laboratoř v mezích, u Horákové a Bartoše i wearables bez odchylek. Šablony Prs, Prostata, Hlava a krk, Plíce. Na Dashboardu jsou vidět po zaškrtnutí „Zelené pásmo“ ve filtru nebo hledáním;
   - Dlouhá = K posouzení (pokles kroků);
   - Krokerová = Nepřipraveno (neutrofily, horečka);
   - Dvořáková = Nepřipraveno (trombocyty);
@@ -610,6 +612,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-19 | Demo data: 4 noví zelení pacienti (Horáková, Veselý, Marková, Bartoš) – všechny aktuální zdroje v pořádku, mohou k aplikaci; doplní se i do uložených dat. |
 | 2026-11-19 | Zrušena tlačítka a boxy **Ke kontrole sestrou** a **Ke kontrole lékařem** – odeberou se i ze šablon a značek uložených v prohlížeči (šablona bez tlačítek dostane výchozí Čekárna / K aplikaci). |
 | 2026-11-19 | Dashboard: skupiny pacientů jsou **samostatné boxy s odstupem** – Pacienti (hledání), Čekárna, K aplikaci, Všichni pacienti; barevné nadpisové pruhy zrušeny. Boxy značek jsou vidět i prázdné, „Všichni pacienti“ obsahuje i pacienty se značkou. Panel nástrojů je samostatná karta vpravo. |
 | 2026-11-19 | Dashboard: skupina Čekárna má výrazný modrý nadpisový pruh; nová skupina **K aplikaci** (a obecně skupina pro každou dnešní značku) s tmavě šedým pruhem; mezi skupinami šedá mezera. |

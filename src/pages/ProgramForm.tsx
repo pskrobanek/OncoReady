@@ -229,7 +229,8 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
         <Card className="p-6">
           <h2 className="text-base font-semibold text-gray-950">Další postup</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup. Personál jimi zvolí, co bude s pacientem dál.
+            Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup. Klik pacientovi nastaví značku pro dnešní den.
+            Tlačítko se zaškrtnutou volbou Čekárna zařadí pacienta nahoru do čekárny.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             {form.actions.map((a, i) => (
@@ -237,10 +238,19 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
                 <span className="w-5 shrink-0 text-right text-sm tabular-nums text-gray-400">{i + 1}.</span>
                 <TextInput
                   value={a.label}
-                  placeholder="Název tlačítka, např. Ke kontrole sestrou"
+                  placeholder="Název tlačítka, např. K aplikaci"
                   invalid={!!errors.actions && !a.label.trim()}
                   onChange={(e) => setForm({ ...form, actions: form.actions.map((x) => (x.id === a.id ? { ...x, label: e.target.value } : x)) })}
                 />
+                <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-gray-700" title="Pacient s touto značkou se zobrazí nahoře v čekárně">
+                  <input
+                    type="checkbox"
+                    checked={!!a.waiting}
+                    onChange={(e) => setForm({ ...form, actions: form.actions.map((x) => (x.id === a.id ? { ...x, waiting: e.target.checked } : x)) })}
+                    className="h-4 w-4 rounded accent-primary-600"
+                  />
+                  Čekárna
+                </label>
                 <button
                   type="button"
                   title="Odebrat tlačítko"

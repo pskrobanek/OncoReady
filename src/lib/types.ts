@@ -23,6 +23,8 @@ export interface ScoreRange {
 export interface NextStepAction {
   id: string
   label: string
+  /** Pacient s touto značkou se zobrazí nahoře v čekárně. */
+  waiting?: boolean
 }
 
 /** Šablona monitorace = program sledování (stránka „Šablony“). Pacientům se přiřazuje v kartotéce. */
@@ -61,7 +63,7 @@ export interface Monitoring {
   start: string // YYYY-MM-DD
   end: string // YYYY-MM-DD
   active: boolean
-  /** Zvolený další postup (tlačítko ze šablony); popisek se ukládá, aby zůstal i po změně šablony. */
+  /** Značka pacienta zvolená tlačítkem ze šablony; platí jen v den volby. Popisek se ukládá, aby zůstal i po změně šablony. */
   nextStep?: { actionId: string; label: string; at: string } | null
 }
 

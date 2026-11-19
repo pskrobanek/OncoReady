@@ -1,4 +1,4 @@
-// Detail souhrnu připravenosti – otevírá se kliknutím na buňku Souhrn na Dashboardu.
+// Souhrnný prescoring pacienta (dotazník, laboratoř, wearables) – otevírá se kliknutím na jméno pacienta na Dashboardu.
 import type { ReactNode } from 'react'
 import { QUESTIONS } from '../data/questionnaire'
 import { agoText, fullDate, num, reportName, shortDate, signed, todayIso } from '../lib/format'
@@ -16,6 +16,8 @@ import {
 import { answerColor, answerPoints, BAND_META, bandOf, bandReason, totalScore } from '../lib/scoring'
 import { currentMonitoring, useStore } from '../lib/store'
 import type { Questionnaire } from '../lib/types'
+import { Link } from 'react-router-dom'
+import { NextStepButtons } from './NextStep'
 import { FindingList, ReadinessBadge, SourceIcon } from './Readiness'
 import { answerText, severity } from './ReportModal'
 import { CloseButton, cx, Modal } from './ui'
@@ -49,12 +51,17 @@ export function ReadinessModal({
     <Modal open onClose={onClose} width="max-w-4xl">
       <div className="flex items-start gap-4 border-b border-gray-200 px-6 py-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-semibold text-gray-950">Souhrn připravenosti — {reportName(patient)}</h2>
+          <h2 className="text-base font-semibold text-gray-950">Souhrnný prescoring k chemoterapii — {reportName(patient)}</h2>
           <p className="mt-0.5 text-sm text-gray-500">
             RČ {patient.rodneCislo}
-            {program && ` · ${program.name}`} · stav k {fullDate(today)}
+            {program && ` · ${program.name}`} · stav k {fullDate(today)} ·{' '}
+            <Link to={`/kartoteka/${patient.id}/upravit`} onClick={onClose} className="font-medium text-primary-600 hover:underline">
+              Karta pacienta →
+            </Link>
           </p>
         </div>
+        {/* Značka pacienta (Čekárna, K aplikaci…) jde nastavit i odsud */}
+        <NextStepButtons patientId={patient.id} row />
         <CloseButton onClick={onClose} />
       </div>
 

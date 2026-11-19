@@ -44,8 +44,8 @@ export const MAX_SCORE = 40 // 10 bodovaných otázek × 4 body
 
 /** Výchozí tlačítka „Další postup“ pro nové i ukázkové šablony. */
 export const DEFAULT_ACTIONS = (): NextStepAction[] => [
-  { id: 'a-sestra', label: 'Ke kontrole sestrou' },
-  { id: 'a-lekar', label: 'Ke kontrole lékařem' },
+  { id: 'a-cekarna', label: 'Čekárna', waiting: true },
+  { id: 'a-aplikace', label: 'K aplikaci' },
 ]
 
 export const seedPrograms = (): MonitoringProgram[] => [

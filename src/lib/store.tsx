@@ -28,7 +28,11 @@ function migrate(db: Partial<DB>): DB {
     wearables: db.wearables ?? seed.wearables,
     feedback: db.feedback ?? [],
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
-    programs: (db.programs ?? seed.programs).map((p) => ({ ...p, actions: p.actions ?? DEFAULT_ACTIONS() })),
+    // Dřívější výchozí tlačítka (Ke kontrole sestrou / lékařem) se nahradí novými (Čekárna / K aplikaci).
+    programs: (db.programs ?? seed.programs).map((p) => ({
+      ...p,
+      actions: !p.actions || (p.actions.length === 2 && p.actions.every((a) => a.id === 'a-sestra' || a.id === 'a-lekar')) ? DEFAULT_ACTIONS() : p.actions,
+    })),
   } as DB
 }
 
@@ -96,7 +100,7 @@ function useDBState() {
           }
           return { ...s, monitorings: [...s.monitorings, m], questionnaires: [...s.questionnaires, ...qs] }
         }),
-      /** Zvolit (nebo zrušit) další postup u monitorace pacienta. */
+      /** Nastavit (nebo zrušit) značku pacienta u jeho monitorace. */
       setNextStep: (monitoringId: string, step: Monitoring['nextStep']) =>
         setDb((s) => ({ ...s, monitorings: s.monitorings.map((m) => (m.id === monitoringId ? { ...m, nextStep: step } : m)) })),
       updateMonitoring: (m: Monitoring) =>

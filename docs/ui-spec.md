@@ -102,6 +102,16 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
 
 **Tabulka** (rozložení podle náčrtu 2026-10-26; sloupec Souhrn odebrán)
 - Pod nadpisem „Pacienti“ je hledání (jméno a rodné číslo) **přes celou šířku** části s tabulkou (od 2026-10-26; dříve úzké pole vpravo).
+  - **Hledání prohledává všechny pacienty** – při zadaném textu se filtry (Skóre, Datum vyplnění, Šablona) nepoužijí (od 2026-11-19). Sestra tak najde i zeleného pacienta, kterého výchozí filtr skrývá.
+- **Čekárna** (NOVÉ 2026-11-19) – první sekce tabulky, hned pod hledáním:
+  - nadpisový řádek přes celou šířku: modrá ikona hodin, „Čekárna“ a počet pacientů;
+  - obsahuje pacienty, kteří mají **dnešní značku z tlačítka označeného v šabloně jako Čekárna** (viz *Další postup*);
+  - **řádek pacienta vypadá úplně stejně jako v přehledu** (pruh, zdroje, Aktuální, tlačítka, časová osa);
+  - pacienti jsou seřazeni podle času, kdy do čekárny přišli (nejdéle čekající nahoře);
+  - čekárna je vidět vždy, **nezávisle na filtrech**; hledání ji zužuje;
+  - prázdná čekárna ukazuje „V čekárně teď nikdo není.“;
+  - pacient z čekárny zmizí, když dostane jinou značku (např. K aplikaci), když se značka zruší, nebo další den;
+  - pod čekárnou je sekce **Ostatní pacienti** s počtem (při seskupení podle závažnosti nebo šablon místo ní jednotlivé skupiny). Pacient v čekárně se v ní už neopakuje.
 - **Řazení** a **časová osa** se nastavují v pravém panelu (viz *Panel nástrojů*).
 - **Sloupce** (zleva): Pacient · zdroj (bez nadpisu) · Aktuální · **Další postup** · časová osa · prázdná výplň. Hlavička má jeden řádek, všechny nadpisy jsou stejné (14 px, tučně).
 - **Řádky**: pacient má **řádek za každý zdroj, který má**, v pořadí Dotazník, Laboratoř, Wearables.
@@ -116,7 +126,7 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
     - neaktuální zdroje se nepočítají; když není aktuální žádný zdroj, je čára světle šedá;
     - **⚠️ OVĚŘIT**, jestli mají neaktuální zdroje čáru ovlivnit (např. šedě jako „Neúplné“).
   - Obsah má tři řádky:
-    1. jméno `Příjmení Jméno` tučně (odkaz na úpravu pacienta, bez šipky);
+    1. jméno `Příjmení Jméno` tučně; **klik otevře *Souhrnný prescoring*** (od 2026-11-19; dříve odkaz na úpravu pacienta – ta je teď dostupná odkazem „Karta pacienta →“ v prescoringu);
     2. rodné číslo šedě, bez popisku „RČ“ (např. „7061233652“);
     3. po malé mezeře **název šablony podtržený** (odkaz na úpravu šablony; dlouhý název se zkrátí „…“).
 - **Zdroj** (sloupec bez nadpisu): minimalistická ikona (16 px, šedá, obrys 1,5 px ve stylu Heroicons) a název šedým textem 14 px:
@@ -134,14 +144,17 @@ Jedna karta má dvě části: vlevo tabulka **„Pacienti“** (dříve „Patie
   - Žádný vyplněný dotazník: šedý čárkovaný čtverec s „—“.
   - Vpravo od čtverce je **stáří dat** (12 px): „dnes“, „včera“, „před 3 dny“ – kdy byl dotazník vyplněn, odběr proveden nebo měření pořízeno. U neaktuálních dat červeně („před 24 dny“), bez vyplněného dotazníku „bez dat“.
   - Sloupec Aktuální odděluje od dalšího sloupce šedá svislá čára 1 px (v hlavičce i v řádcích).
-- **Další postup** (NOVÉ 2026-10-29; sloupec hned za Aktuální, oddělený šedou čarou i od měsíců):
+- **Další postup** (sloupec hned za Aktuální, oddělený šedou čarou i od měsíců) – tlačítka nastavují **značku pacienta**:
   - jedna buňka přes všechny řádky pacienta, zarovnaná nahoru;
-  - pod sebou **tlačítka ze šablony pacienta** (nastavují se při tvorbě / úpravě šablony, viz *Šablony*), výchozí: **Ke kontrole sestrou**, **Ke kontrole lékařem**;
-  - nezvolené tlačítko je bílé s šedým rámečkem (12 px tučně), **zvolené je modré s ✓** a pod tlačítky je šedě „Zvoleno 26.10. 15:42“;
-  - klik na tlačítko zvolí další postup (notifikace „Další postup: Ke kontrole sestrou – Příjmení Jméno“), klik na zvolené tlačítko volbu zruší („Volba zrušena – …“); zvolit jde vždy jen jedno;
-  - volba se ukládá k monitoraci pacienta (tlačítko, popisek, čas); když tlačítko ze šablony později zmizí, zůstane pod tlačítky text „Zvoleno: …“;
+  - pod sebou **tlačítka ze šablony pacienta** (nastavují se při tvorbě / úpravě šablony, viz *Šablony*), výchozí: **Čekárna** a **K aplikaci** (od 2026-11-19; dříve „Ke kontrole sestrou / lékařem“);
+  - **Čekárna**: zmáčkne sestra, pacient se přesune nahoru do sekce Čekárna, kde ho lékař hned najde;
+  - **K aplikaci**: označí sestra nebo lékař; pacient tím z čekárny odejde;
+  - nezvolené tlačítko je bílé s šedým rámečkem (12 px tučně), **zvolené je modré s ✓** a pod tlačítky je šedě čas „od 8:34“;
+  - pacient má vždy nejvýš jednu značku: klik na jiné tlačítko ji změní, klik na zvolené ji zruší; notifikace „Čekárna – Příjmení Jméno“ / „Značka zrušena – …“;
+  - **značka platí jen v den, kdy byla nastavena** – další den je pacient zase bez značky;
+  - značka se ukládá k monitoraci pacienta (tlačítko, popisek, čas); když tlačítko ze šablony později zmizí, zůstane u času jeho popisek;
   - pacient, jehož šablona nemá žádná tlačítka, má v buňce šedou pomlčku;
-  - **⚠️ OVĚŘIT**: co má volba dál spustit (úkol, zobrazení sestře, platnost jen pro termín) – zatím se jen zaznamená.
+  - **⚠️ OVĚŘIT**: kdo smí kterou značku nastavit (role sestra / lékař) – replika role nerozlišuje.
 - **Časová osa** – **úzké dlaždice 22 × 36 px**, mezi dlaždicemi 4 px, **mezi skupinami (měsíci) malá mezera** 20 px, bez svislých čar. Nejnovější je vlevo. Členění se volí na záložce *Zobrazení*:
   - **Po týdnech** (výchozí):
     - jedna úzká dlaždice = jeden týden (pondělí–neděle);
@@ -204,8 +217,8 @@ Pravidla se vyhodnocují v tomto pořadí:
 | Klidový tep | /min | < 100 | ≥ 120 |
 | Kroky: průměr 7 dní proti předchozím 14 dnům | % | pokles do 40 % | – (pokles o 40 % a víc je žlutý) |
 
-**Detail připravenosti** (modal – otevře se klikem na čtverec Laboratoř nebo Wearables ve sloupci Aktuální)
-- Hlavička: „Souhrn připravenosti — Jméno Příjmení“, pod tím „RČ 1 · šablona · stav k 25.10.2026“ a zavírací křížek.
+**Souhrnný prescoring** (modal – otevře se **klikem na jméno pacienta**, případně na čtverec Laboratoř nebo Wearables ve sloupci Aktuální; dříve „Detail připravenosti“)
+- Hlavička: „Souhrnný prescoring k chemoterapii — Jméno Příjmení“, pod tím „RČ 1 · šablona · stav k 19.11.2026 · **Karta pacienta →**“ (odkaz na úpravu pacienta). Vpravo jsou **tlačítka značky** ze šablony (Čekárna, K aplikaci) – lékař tak může pacienta označit přímo z prescoringu – a zavírací křížek.
 - Šedý box: velký barevný štítek připravenosti (16 px) a pod ním seznam hraničních hodnot (ikona zdroje + text, barva podle úrovně; nejdřív červené, pak žluté, pak neaktuální data). Vpravo je text pravidla a oken aktuálnosti.
 - Karty mají v záhlaví ikonu zdroje a název.
 - Karta **Dotazník**:
@@ -370,10 +383,10 @@ Nadpis „Nová šablona“ / „Upravit šablonu“, drobečková navigace Šab
   - žluté musí končit pod maximem dotazníku (40 b).
 - Poznámka: modré pásmo nezávisí na skóre.
 
-**Karta 3 – Další postup** (NOVÉ 2026-10-29):
-- Popis: „Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup.“
-- Seznam tlačítek: pořadové číslo, textové pole s názvem a ikona koše (Odebrat). Pod seznamem odkaz **+ Přidat tlačítko** (přidá prázdné pole).
-- Nová šablona má předvyplněná tlačítka „Ke kontrole sestrou“ a „Ke kontrole lékařem“.
+**Karta 3 – Další postup**:
+- Popis: „Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup. Klik pacientovi nastaví značku pro dnešní den. Tlačítko se zaškrtnutou volbou Čekárna zařadí pacienta nahoru do čekárny.“
+- Seznam tlačítek: pořadové číslo, textové pole s názvem, zaškrtávací pole **Čekárna** (pacient s touto značkou se zobrazí v sekci Čekárna) a ikona koše (Odebrat). Pod seznamem odkaz **+ Přidat tlačítko**.
+- Nová šablona má předvyplněná tlačítka **Čekárna** (se zaškrtnutou volbou Čekárna) a **K aplikaci**.
 - Validace: prázdný název → „Vyplňte název tlačítka, nebo ho odeberte.“
 - Pod seznamem **Náhled** tlačítek tak, jak se zobrazí na Dashboardu. Bez tlačítek: „Šablona nemá žádná tlačítka – sloupec Další postup bude u jejích pacientů prázdný.“
 - Změna se na Dashboardu projeví hned po uložení.
@@ -587,6 +600,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-19 | Dashboard: sekce **Čekárna** nahoře v tabulce Pacienti; tlačítka ze šablony nastavují značku pacienta platnou jen daný den (výchozí **Čekárna** a **K aplikaci**); v šabloně volba „Čekárna“ u tlačítka. Klik na jméno pacienta otevře **Souhrnný prescoring** (s tlačítky značky a odkazem na kartu pacienta). Hledání prohledává všechny pacienty bez ohledu na filtry. |
 | 2026-11-19 | Nové okno **Zpětná vazba**: karta dole v levém menu (na mobilu plovoucí tlačítko a panel zespodu) s textovým polem, tlačítkem „Pořídit snímek obrazovky“ a „Odeslat“. Nová závislost `html-to-image` pro snímek obrazovky. |
 | 2026-10-30 | e-Skill, test bez registrace: na konci tlačítka **Neukládat**, **Nový pacient** (založí pacienta přímo z výsledku) a **Přiřadit stávajícímu**. |
 | 2026-10-29 | Dashboard: nový sloupec **Další postup** za sloupcem Aktuální s tlačítky ze šablony pacienta (výchozí „Ke kontrole sestrou“, „Ke kontrole lékařem“); volba se ukládá k monitoraci. Šablona: nová karta „Další postup“ pro nastavení tlačítek. |

@@ -2,8 +2,8 @@ import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
-import { ArrowsUpDownIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
-import { CheckIcon } from '@heroicons/react/20/solid'
+import { ArrowsUpDownIcon, ClockIcon, FunnelIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { activeStep, NextStepButtons } from '../components/NextStep'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
 import { ReportModal } from '../components/ReportModal'
@@ -13,7 +13,7 @@ import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
 import { evalLab, monthName, periodsBack, readinessOf, sourceMeta, timelineOf, weekOf, worstCurrent, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
 import { BAND_META, type Band } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
-import type { DashboardFilters, DateFilter, Monitoring, NextStepAction, Questionnaire } from '../lib/types'
+import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
 
 const SCORE_FILTERS: DashboardFilters['scores'] = ['green', 'yellow', 'red', 'blue', 'na']
 
@@ -295,8 +295,7 @@ function PatientsBoard({
   resetLabel?: string
   panelFooter?: ReactNode
 }) {
-  const { db, setNextStep } = useStore()
-  const toast = useToast()
+  const { db } = useStore()
   const [search, setSearch] = useState('')
   const [perPage, setPerPage] = useState(500)
   const [report, setReport] = useState<Questionnaire | null>(null)
@@ -326,13 +325,13 @@ function PatientsBoard({
 
 
   const today = todayIso()
-  const rows = useMemo(() => {
+  const { rows, waiting } = useMemo(() => {
     const days = DATE_FILTERS.find((d) => d.key === filters.date)!.days
     const since = days ? addDays(todayIso(), -days) : null
     const term = search.trim().toLowerCase()
     const scores = new Set(filters.scores)
 
-    return sortPatients(db.patients)
+    const base = sortPatients(db.patients)
       .map((patient) => {
         const mon = currentMonitoring(db, patient.id)
         const program = db.programs.find((p) => p.id === mon?.programId)
@@ -340,63 +339,73 @@ function PatientsBoard({
       })
       .filter((r) => r.mon && r.qs.length > 0)
       .filter((r) => !term || tableName(r.patient).toLowerCase().includes(term) || r.patient.rodneCislo.includes(term))
-      // Šablona: pacient se zobrazí, pokud jeho monitorace vychází z některé ze zaškrtnutých šablon.
-      .filter((r) => filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
-      // Datum vyplnění: pacient má v časovém okně aspoň jeden dotazník (vyplněný, nebo nevyplněný po termínu).
-      .filter((r) => {
-        if (!since) return true
-        return r.qs.some((q) => {
-          if (statusOf(q) === 'future') return false // budoucí termíny se do filtru nepočítají
-          const date = q.filledAt ? q.filledAt.slice(0, 10) : q.scheduledFor
-          return date >= since && date <= todayIso()
-        })
-      })
       .map((r) => {
         const ready = readinessOf(db, r.patient.id, today)
-        return { ...r, ready, severity: worstCurrent(ready) ?? ('na' as const) }
-      })
-      // Skóre (pásmo) = barva pruhu u jména: nejhorší výsledek z aktuálních zdrojů; „Nevyplněno“ = nic aktuálního (šedý pruh).
-      .filter((r) => scores.size === 0 || scores.has(r.severity))
-      .map((r) => {
-        const lastFilled = r.qs.reduce((m, q) => (q.filledAt && q.filledAt > m ? q.filledAt : m), '')
+        const step = activeStep(r.mon)
         return {
           ...r,
-          lastFilled,
+          ready,
+          severity: worstCurrent(ready) ?? ('na' as const),
+          // Čekárna: pacient má dnešní značku z tlačítka, které šablona označuje jako čekárnu
+          waitingSince: step && r.program?.actions.find((a) => a.id === step.actionId)?.waiting ? step.at : null,
+          lastFilled: r.qs.reduce((m, q) => (q.filledAt && q.filledAt > m ? q.filledAt : m), ''),
           tl: timelineOf(db, r.patient.id, r.qs, mode, today),
         }
       })
-      .sort((a, b) => {
-        const byName = tableName(a.patient).localeCompare(tableName(b.patient), 'cs')
-        let c = 0
-        if (sort === 'urgency') c = SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)
-        else if (sort === 'rc') c = a.patient.rodneCislo.localeCompare(b.patient.rodneCislo, 'cs', { numeric: true })
-        else if (sort === 'lastFilled') c = b.lastFilled.localeCompare(a.lastFilled) // nejnovější první
-        else c = byName
-        return (desc ? -c : c) || byName
-      })
+
+    return {
+      // Čekárna: vždy nahoře, nezávisle na filtrech (hledání platí); řazeno podle času příchodu.
+      waiting: base.filter((r) => r.waitingSince).sort((a, b) => a.waitingSince!.localeCompare(b.waitingSince!)),
+      rows: base
+        .filter((r) => !r.waitingSince)
+        // Hledání prohledává všechny pacienty – filtry se při něm nepoužijí (sestra musí najít i zeleného pacienta).
+        // Šablona: pacient se zobrazí, pokud jeho monitorace vychází z některé ze zaškrtnutých šablon.
+        .filter((r) => !!term || filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
+        // Datum vyplnění: pacient má v časovém okně aspoň jeden dotazník (vyplněný, nebo nevyplněný po termínu).
+        .filter((r) => {
+          if (!since || term) return true
+          return r.qs.some((q) => {
+            if (statusOf(q) === 'future') return false // budoucí termíny se do filtru nepočítají
+            const date = q.filledAt ? q.filledAt.slice(0, 10) : q.scheduledFor
+            return date >= since && date <= todayIso()
+          })
+        })
+        // Skóre (pásmo) = barva pruhu u jména: nejhorší výsledek z aktuálních zdrojů; „Nevyplněno“ = nic aktuálního (šedý pruh).
+        .filter((r) => !!term || scores.size === 0 || scores.has(r.severity))
+        .sort((a, b) => {
+          const byName = tableName(a.patient).localeCompare(tableName(b.patient), 'cs')
+          let c = 0
+          if (sort === 'urgency') c = SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)
+          else if (sort === 'rc') c = a.patient.rodneCislo.localeCompare(b.patient.rodneCislo, 'cs', { numeric: true })
+          else if (sort === 'lastFilled') c = b.lastFilled.localeCompare(a.lastFilled) // nejnovější první
+          else c = byName
+          return (desc ? -c : c) || byName
+        }),
+    }
   }, [db, search, filters, sort, desc, mode, today])
 
-  // Skupiny pacientů (záložka Zobrazení); uvnitř skupiny platí zvolené řazení.
+  // Sekce tabulky: nahoře vždy Čekárna, pod ní ostatní pacienti (případně ve skupinách ze záložky Zobrazení).
+  // Uvnitř skupiny platí zvolené řazení.
   const shown = rows.slice(0, perPage)
-  const sections: { key: string; label: string | null; dot: string | null; rows: typeof rows }[] =
+  type Section = { key: string; label: string; dot: string | null; rows: typeof rows }
+  const patientGroups: Section[] =
     groupBy === 'severity'
-      ? SEVERITY_ORDER.map((sev) => ({ key: sev, label: BAND_META[sev].label, dot: BAND_META[sev].dot, rows: shown.filter((r) => r.severity === sev) })).filter(
-          (g) => g.rows.length > 0,
-        )
+      ? SEVERITY_ORDER.map((sev) => ({ key: sev, label: BAND_META[sev].label, dot: BAND_META[sev].dot, rows: shown.filter((r) => r.severity === sev) }))
       : groupBy === 'program'
         ? [...new Set(shown.map((r) => r.program?.name ?? ''))]
             .sort((a, b) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'cs')))
             .map((name) => ({ key: name || '-', label: name || 'Bez šablony', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
-        : [{ key: 'all', label: null, dot: null, rows: shown }]
+        : [{ key: 'all', label: 'Ostatní pacienti', dot: null, rows: shown }]
+  const sections: Section[] = [{ key: 'cekarna', label: 'Čekárna', dot: null, rows: waiting }, ...patientGroups.filter((g) => g.rows.length > 0)]
 
   // Časová osa: období od aktuálního zpět po nejstarší data zobrazených pacientů.
   // Po týdnech začíná osa minulým týdnem – aktuální stav je ve čtverci ve sloupci Aktuální.
   const periods = useMemo(() => {
-    const earliest = rows.map((r) => r.tl.earliest).filter((d): d is string => !!d).sort()[0]
+    const earliest = [...waiting, ...rows].map((r) => r.tl.earliest).filter((d): d is string => !!d).sort()[0]
     if (!earliest) return []
     const all = periodsBack(mode, earliest, today)
     return mode === 'week' ? all.filter((w) => w !== weekOf(today)) : all
-  }, [rows, mode, today])
+  }, [rows, waiting, mode, today])
   // Skupiny v hlavičce: týdny po měsících („Říjen 2026“); měsíc, rok i „Jen vyplněné“ = jeden sloupec na skupinu.
   const groupOf = (p: string) => (mode === 'week' ? p.slice(0, 7) : p)
   const groups: { key: string; label: string; count: number }[] = []
@@ -417,7 +426,7 @@ function PatientsBoard({
         <div className="min-w-0 flex-1 xl:border-r xl:border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
-            <span className="text-sm text-gray-500 tabular-nums">{rows.length} pacientů</span>
+            <span className="text-sm text-gray-500 tabular-nums">{rows.length + waiting.length} pacientů</span>
           </div>
           <div className="flex justify-end border-t border-gray-200 px-4 py-3 sm:px-6">
             <SearchInput value={search} onChange={setSearch} className="w-full" />
@@ -450,20 +459,27 @@ function PatientsBoard({
               {sections.map((sec) => (
                 <Fragment key={sec.key}>
                   {/* Nadpis skupiny – zůstává vlevo i při vodorovném posunu */}
-                  {sec.label !== null && (
-                    <tbody>
+                  <tbody>
+                    <tr>
+                      <td colSpan={periods.length + 5} className="bg-gray-50 py-2">
+                        <span className="sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold text-gray-950">
+                          {sec.key === 'cekarna' && <ClockIcon className="h-5 w-5 text-primary-600" />}
+                          {sec.dot && <span className={cx('h-2.5 w-2.5 rounded-full', sec.dot)} />}
+                          {sec.label}
+                          <span className="font-normal tabular-nums text-gray-500">{sec.rows.length}</span>
+                        </span>
+                      </td>
+                    </tr>
+                    {/* Prázdná čekárna zůstává vidět, aby bylo jasné, že nikdo nečeká */}
+                    {sec.key === 'cekarna' && sec.rows.length === 0 && (
                       <tr>
-                        <td colSpan={periods.length + 5} className="bg-gray-50 py-2">
-                          <span className="sticky left-0 inline-flex items-center gap-2 pl-6 text-sm font-semibold text-gray-950">
-                            {sec.dot && <span className={cx('h-2.5 w-2.5 rounded-full', sec.dot)} />}
-                            {sec.label}
-                            <span className="font-normal tabular-nums text-gray-500">{sec.rows.length}</span>
-                          </span>
+                        <td colSpan={periods.length + 5} className="py-3">
+                          <span className="sticky left-0 pl-6 text-sm text-gray-500">V čekárně teď nikdo není.</span>
                         </td>
                       </tr>
-                    </tbody>
-                  )}
-                  {sec.rows.map(({ patient, mon, program, ready, tl }) => {
+                    )}
+                  </tbody>
+                  {sec.rows.map(({ patient, program, ready, tl }) => {
                     // Řádek za každý zdroj, který pacient má (dotazník, případně laboratoř a wearables).
                     const lines = ready.sources.map((s) => s.source)
                     return (
@@ -479,9 +495,15 @@ function PatientsBoard({
                                   rowSpan={lines.length}
                                   className={cx(STICKY_PATIENT, 'z-[1] bg-white py-2.5 pl-6 pr-4 align-top text-sm group-hover:bg-gray-50', WORST_BAR[worstCurrent(ready) ?? 'none'])}
                                 >
-                                  <Link to={`/kartoteka/${patient.id}/upravit`} className="font-semibold text-gray-950 hover:underline">
+                                  {/* Klik na pacienta otevře souhrnný prescoring (dotazník, laboratoř, wearables) */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setDetail(patient.id)}
+                                    title="Otevřít souhrnný prescoring"
+                                    className="text-left font-semibold text-gray-950 hover:underline"
+                                  >
                                     {tableName(patient)}
-                                  </Link>
+                                  </button>
                                   <div className="tabular-nums text-gray-600">{patient.rodneCislo}</div>
                                   {program && (
                                     <Link
@@ -504,18 +526,9 @@ function PatientsBoard({
                                 <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
                               </td>
                               {i === 0 && (
-                                // Další postup: tlačítka ze šablony pacienta; zvolené je modré s časem volby
+                                // Další postup: tlačítka ze šablony pacienta nastaví jeho dnešní značku (např. Čekárna, K aplikaci)
                                 <td rowSpan={lines.length} className="w-px border-r border-gray-200 px-3 py-2.5 align-top group-hover:bg-gray-50">
-                                  <NextStepCell
-                                    actions={program?.actions ?? []}
-                                    chosen={mon?.nextStep ?? null}
-                                    onChoose={(a) => {
-                                      if (!mon) return
-                                      const same = mon.nextStep?.actionId === a.id
-                                      setNextStep(mon.id, same ? null : { actionId: a.id, label: a.label, at: new Date().toISOString() })
-                                      toast(same ? `Volba zrušena – ${tableName(patient)}` : `Další postup: ${a.label} – ${tableName(patient)}`)
-                                    }}
-                                  />
+                                  <NextStepButtons patientId={patient.id} />
                                 </td>
                               )}
                               {periods.map((p, pi) => (
@@ -710,53 +723,6 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
     <div className="mt-6">
       <h3 className="mb-3 text-sm font-medium text-gray-950">{title}</h3>
       <div className="flex flex-col gap-3">{children}</div>
-    </div>
-  )
-}
-
-/**
- * Buňka Další postup: tlačítka ze šablony pacienta. Klik zvolí další postup (tlačítko zmodrá, pod ním čas volby),
- * opakovaný klik volbu zruší. Volba se ukládá k monitoraci pacienta.
- */
-function NextStepCell({
-  actions,
-  chosen,
-  onChoose,
-}: {
-  actions: NextStepAction[]
-  chosen: Monitoring['nextStep'] | null
-  onChoose: (a: NextStepAction) => void
-}) {
-  // Zvolené tlačítko mohlo být mezitím ze šablony odebráno – volba zůstane vidět jako text.
-  const orphan = chosen && !actions.some((a) => a.id === chosen.actionId)
-  if (!actions.length && !chosen) return <span className="text-sm text-gray-300" title="Šablona nemá tlačítka Další postup">—</span>
-  return (
-    <div className="flex flex-col items-stretch gap-1.5">
-      {actions.map((a) => {
-        const on = chosen?.actionId === a.id
-        return (
-          <button
-            key={a.id}
-            type="button"
-            aria-pressed={on}
-            title={on ? 'Zrušit volbu' : `Zvolit: ${a.label}`}
-            onClick={() => onChoose(a)}
-            className={cx(
-              'inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition',
-              on ? 'bg-primary-600 text-white hover:bg-primary-500' : 'bg-white text-gray-950 ring-1 ring-gray-950/10 hover:bg-gray-50',
-            )}
-          >
-            {on && <CheckIcon className="h-4 w-4" />}
-            {a.label}
-          </button>
-        )
-      })}
-      {orphan && <span className="text-xs font-medium text-gray-700">Zvoleno: {chosen.label}</span>}
-      {chosen && (
-        <span className="text-xs text-gray-500">
-          Zvoleno {shortDate(chosen.at)} {new Date(chosen.at).toLocaleTimeString('cs-CZ', { hour: 'numeric', minute: '2-digit' })}
-        </span>
-      )}
     </div>
   )
 }

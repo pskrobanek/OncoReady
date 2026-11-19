@@ -17,6 +17,11 @@ function load(): DB {
   return seedDB()
 }
 
+/** Zrušená tlačítka „Další postup“ (dřívější výchozí). */
+const REMOVED_ACTION_IDS = ['a-sestra', 'a-lekar']
+const REMOVED_ACTION_LABELS = ['ke kontrole sestrou', 'ke kontrole lékařem']
+const isRemovedAction = (a: { id: string; label: string }) => REMOVED_ACTION_IDS.includes(a.id) || REMOVED_ACTION_LABELS.includes(a.label.trim().toLowerCase())
+
 /** Doplní kolekce přidané v novějších verzích, aby uložená data zůstala zachována. */
 function migrate(db: Partial<DB>): DB {
   const seed = seedDB()
@@ -28,11 +33,13 @@ function migrate(db: Partial<DB>): DB {
     wearables: db.wearables ?? seed.wearables,
     feedback: db.feedback ?? [],
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
-    // Dřívější výchozí tlačítka (Ke kontrole sestrou / lékařem) se nahradí novými (Čekárna / K aplikaci).
-    programs: (db.programs ?? seed.programs).map((p) => ({
-      ...p,
-      actions: !p.actions || (p.actions.length === 2 && p.actions.every((a) => a.id === 'a-sestra' || a.id === 'a-lekar')) ? DEFAULT_ACTIONS() : p.actions,
-    })),
+    // Zrušená tlačítka (Ke kontrole sestrou / lékařem) se odeberou; zůstane-li šablona bez tlačítek, dostane výchozí (Čekárna / K aplikaci).
+    programs: (db.programs ?? seed.programs).map((p) => {
+      const kept = (p.actions ?? []).filter((a) => !isRemovedAction(a))
+      return { ...p, actions: kept.length ? kept : DEFAULT_ACTIONS() }
+    }),
+    // Značky ze zrušených tlačítek se u pacientů smažou.
+    monitorings: (db.monitorings ?? seed.monitorings).map((m) => (m.nextStep && isRemovedAction({ id: m.nextStep.actionId, label: m.nextStep.label }) ? { ...m, nextStep: null } : m)),
   } as DB
 }
 

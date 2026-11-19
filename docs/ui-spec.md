@@ -156,7 +156,7 @@ Vzhled boxů 2–4:
   - Sloupec Aktuální odděluje od dalšího sloupce šedá svislá čára 1 px (v hlavičce i v řádcích).
 - **Další postup** (sloupec hned za Aktuální, oddělený šedou čarou i od měsíců) – tlačítka nastavují **značku pacienta**:
   - jedna buňka přes všechny řádky pacienta, zarovnaná nahoru;
-  - pod sebou **tlačítka ze šablony pacienta** (nastavují se při tvorbě / úpravě šablony, viz *Šablony*), výchozí: **Čekárna** a **K aplikaci** (od 2026-11-19; dříve „Ke kontrole sestrou / lékařem“);
+  - pod sebou **tlačítka ze šablony pacienta** (nastavují se při tvorbě / úpravě šablony, viz *Šablony*), výchozí: **Čekárna** a **K aplikaci** (od 2026-11-19; dřívější „Ke kontrole sestrou / lékařem“ jsou zrušené a z uložených dat se odeberou);
   - **Čekárna**: zmáčkne sestra, pacient se přesune nahoru do boxu Čekárna, kde ho lékař hned najde;
   - **K aplikaci**: označí sestra nebo lékař; pacient tím z čekárny odejde;
   - nezvolené tlačítko je bílé s šedým rámečkem (12 px tučně), **zvolené je modré s ✓** a pod tlačítky je šedě čas „od 8:34“;
@@ -610,6 +610,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-19 | Zrušena tlačítka a boxy **Ke kontrole sestrou** a **Ke kontrole lékařem** – odeberou se i ze šablon a značek uložených v prohlížeči (šablona bez tlačítek dostane výchozí Čekárna / K aplikaci). |
 | 2026-11-19 | Dashboard: skupiny pacientů jsou **samostatné boxy s odstupem** – Pacienti (hledání), Čekárna, K aplikaci, Všichni pacienti; barevné nadpisové pruhy zrušeny. Boxy značek jsou vidět i prázdné, „Všichni pacienti“ obsahuje i pacienty se značkou. Panel nástrojů je samostatná karta vpravo. |
 | 2026-11-19 | Dashboard: skupina Čekárna má výrazný modrý nadpisový pruh; nová skupina **K aplikaci** (a obecně skupina pro každou dnešní značku) s tmavě šedým pruhem; mezi skupinami šedá mezera. |
 | 2026-11-19 | Dashboard: sekce **Čekárna** nahoře v tabulce Pacienti; tlačítka ze šablony nastavují značku pacienta platnou jen daný den (výchozí **Čekárna** a **K aplikaci**); v šabloně volba „Čekárna“ u tlačítka. Klik na jméno pacienta otevře **Souhrnný prescoring** (s tlačítky značky a odkazem na kartu pacienta). Hledání prohledává všechny pacienty bez ohledu na filtry. |

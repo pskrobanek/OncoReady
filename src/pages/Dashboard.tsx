@@ -58,10 +58,11 @@ const GROUP_BY: { key: GroupBy; label: string; hint: string }[] = [
   { key: 'program', label: 'Šablony', hint: 'Podle šablony monitorace pacienta' },
 ]
 const GROUP_KEY = 'oncoready-dashboard-seskupeni'
-const HIDDEN_TAGS_KEY = 'oncoready-dashboard-skryte-priznaky'
-function loadHiddenTags(): string[] {
+/** Příznaky, které mají v hlavním okně vlastní box (Zobrazení › Boxy příznaků). Výchozí: žádný. */
+const SHOWN_TAGS_KEY = 'oncoready-dashboard-boxy-priznaku'
+function loadShownTags(): string[] {
   try {
-    const v = JSON.parse(localStorage.getItem(HIDDEN_TAGS_KEY) ?? '[]')
+    const v = JSON.parse(localStorage.getItem(SHOWN_TAGS_KEY) ?? '[]')
     return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []
   } catch {
     return []
@@ -376,12 +377,12 @@ function PatientsBoard({
       /* ignorovat */
     }
   }
-  // Boxy příznaků skryté v Zobrazení (ukládá se skryté, aby nový příznak byl vidět hned)
-  const [hiddenTags, setHiddenTags] = useState<string[]>(loadHiddenTags)
-  const changeHiddenTags = (h: string[]) => {
-    setHiddenTags(h)
+  // Boxy příznaků zapnuté v Zobrazení (výchozí žádný – všichni pacienti jsou v jednom seznamu)
+  const [shownTags, setShownTags] = useState<string[]>(loadShownTags)
+  const changeShownTags = (h: string[]) => {
+    setShownTags(h)
     try {
-      localStorage.setItem(HIDDEN_TAGS_KEY, JSON.stringify(h))
+      localStorage.setItem(SHOWN_TAGS_KEY, JSON.stringify(h))
     } catch {
       /* ignorovat */
     }
@@ -480,7 +481,7 @@ function PatientsBoard({
   const tagLabels = allTagLabels(filteredPrograms, tagged.map((r) => r.step!.label))
   const boxes: Box[] = [
     ...tagLabels
-      .filter((label) => !hiddenTags.includes(label))
+      .filter((label) => shownTags.includes(label))
       .map((label) => {
         const list = tagged.filter((r) => r.step!.label === label)
         return { key: `tag:${label}`, label, kind: 'tag' as const, count: list.length, parts: single(list) }
@@ -613,7 +614,7 @@ function PatientsBoard({
           {/* Vyhledávání */}
           <Card>
             <div className="flex items-center justify-between px-6 py-4">
-              <h2 className="text-base font-semibold leading-6 text-gray-950">Hledat</h2>
+              <h2 className="text-base font-semibold leading-6 text-gray-950">Vyhledat pacienta</h2>
               <span className="text-sm text-gray-500 tabular-nums">{new Set([...rows, ...tagged].map((r) => r.patient.id)).size} pacientů</span>
             </div>
             <div className="border-t border-gray-200 px-4 py-3 sm:px-6">
@@ -682,7 +683,7 @@ function PatientsBoard({
           <div className="flex border-b border-gray-200 px-3" role="tablist">
             {TOOLS.map(({ key, label, icon: Icon }) => {
               const active = tool === key
-              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none' || hiddenTags.length > 0
+              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none' || shownTags.length > 0
               return (
                 <button
                   key={key}
@@ -769,19 +770,19 @@ function PatientsBoard({
                 {tagLabels.map((label) => (
                   <Checkbox
                     key={label}
-                    checked={!hiddenTags.includes(label)}
-                    onChange={(v) => changeHiddenTags(v ? hiddenTags.filter((x) => x !== label) : [...hiddenTags, label])}
+                    checked={shownTags.includes(label)}
+                    onChange={(v) => changeShownTags(toggleIn(shownTags, label, v))}
                     label={<TagLabel programs={db.programs} label={label} />}
                   />
                 ))}
                 {tagLabels.length === 0 && <p className="text-sm text-gray-500">Šablony nemají žádné příznaky.</p>}
               </FilterGroup>
-              {(mode !== 'week' || groupBy !== 'none' || hiddenTags.length > 0) && (
+              {(mode !== 'week' || groupBy !== 'none' || shownTags.length > 0) && (
                 <button
                   onClick={() => {
                     changeMode('week')
                     changeGroupBy('none')
-                    changeHiddenTags([])
+                    changeShownTags([])
                   }}
                   className="mt-6 self-start text-sm font-medium text-primary-600 hover:underline"
                 >
@@ -829,7 +830,8 @@ function PatientsBoard({
           </FilterGroup>
 
           <FilterGroup title="Příznak">
-            {/* Dnešní příznak pacienta; nic nezaškrtnuto = nefiltruje */}
+            {/* Dnešní příznak pacienta. Vše (výchozí) = nefiltruje; výběr příznaku Vše odškrtne, odškrtnutí posledního vrátí Vše. */}
+            <Checkbox checked={!filters.tags?.length} onChange={() => onChange({ ...filters, tags: [] })} label="Vše" />
             {[...tagLabels, ''].map((label) => (
               <Checkbox
                 key={label || '-'}

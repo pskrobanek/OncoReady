@@ -117,8 +117,8 @@ export const DEFAULT_FILTERS: DashboardFilters = {
   scores: ['green', 'yellow', 'red', 'blue', 'na'],
   date: 'all',
   programIds: [],
-  // Výchozí: jen pacienti bez příznaku – pacienti s dnešním příznakem jsou ve svém boxu nahoře.
-  tags: [''],
+  // Výchozí: Vše (nefiltruje podle příznaku)
+  tags: [],
 }
 
 /** Demo pohledy pod Dashboardem: Chronická toxicita RT, Akutní toxicita RT, Stacionář. */

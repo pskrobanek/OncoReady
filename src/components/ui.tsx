@@ -69,10 +69,13 @@ export function PageHeader({
   title,
   breadcrumbs,
   actions,
+  titleAside,
 }: {
   title: string
   breadcrumbs?: { label: string; to?: string }[]
   actions?: ReactNode
+  /** Prvek hned vedle nadpisu (např. menu ⋯ pohledu). */
+  titleAside?: ReactNode
 }) {
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -93,7 +96,10 @@ export function PageHeader({
             ))}
           </nav>
         )}
-        <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">{title}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">{title}</h1>
+          {titleAside}
+        </div>
       </div>
       {actions && <div className="flex shrink-0 gap-3">{actions}</div>}
     </header>

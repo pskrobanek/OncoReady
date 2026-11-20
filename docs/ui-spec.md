@@ -111,7 +111,7 @@ Stránka má dvě části: vlevo **boxy s pacienty** pod sebou, vpravo samostatn
    - Pacient z boxu zmizí, když dostane jiný příznak, když se příznak zruší, nebo další den.
    - Ikona v hlavičce boxu = **ikona příznaku** ze šablony (šedá, 20 px). Má-li příznak se stejným názvem v různých šablonách různé ikony, použije se z první šablony.
 3. **Všichni pacienti** – celý seznam podle filtrů, řazení a seskupení z pravého panelu, dole výběr počtu na stránku.
-   - **Pacient s příznakem je i tady** (je tedy vidět dvakrát: ve svém boxu a v seznamu). ⚠️ OVĚŘIT, zda to tak má zůstat.
+   - Ve výchozím filtru (Příznak = Bez příznaku) se pacient s příznakem v seznamu **neopakuje**; po odškrtnutí filtru je vidět i tady.
    - Seskupení podle závažnosti / šablon (záložka *Zobrazení*) se zobrazuje jen uvnitř tohoto boxu jako světle šedé mezinadpisy.
    - Když filtru nikdo neodpovídá: „Žádní pacienti neodpovídají filtru“.
 
@@ -309,7 +309,7 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Vše** je zaškrtnuté, když jsou zaškrtnutá všechna pásma. Zaškrtnutí Vše zaškrtne všechna pásma, odškrtnutí všechna odškrtne (prázdná skupina nefiltruje, takže se ukážou všichni). Odškrtnutí kteréhokoli pásma odškrtne i Vše.
   - **Výchozí stav: Vše** (od 2026-11-20; dříve zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno). Platí i pro nový pohled.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
-- *Příznak* (zaškrtávací pole, NOVÉ 2026-11-20): každý příznak ze šablon (s šedou ikonou před názvem) a šedě **Bez příznaku**. Filtruje **Všichni pacienti** podle dnešního příznaku; nic nezaškrtnuto = nefiltruje. Ukládá se i do pohledu (starší pohledy dostanou prázdný výběr). Při hledání se nepoužije.
+- *Příznak* (zaškrtávací pole, NOVÉ 2026-11-20): každý příznak ze šablon (s šedou ikonou před názvem) a šedě **Bez příznaku**. **Výchozí: zaškrtnuté Bez příznaku** (od 2026-11-20) – seznam Všichni pacienti ukazuje pacienty bez dnešního příznaku, pacienti s příznakem jsou jen ve svém boxu (neopakují se). Platí pro hlavní Dashboard, „Obnovit výchozí“ a nový pohled; uložené pohledy si nechávají svůj filtr. ⚠️ OVĚŘIT: pacient s příznakem, jehož box je v Zobrazení skrytý, pak není vidět v žádném boxu. Filtruje **Všichni pacienti** podle dnešního příznaku; nic nezaškrtnuto = nefiltruje. Ukládá se i do pohledu (starší pohledy dostanou prázdný výběr). Při hledání se nepoužije.
 - *Šablona* (od 2026-10-26 **rozbalovací výběr více možností** místo zaškrtávacích polí, Filament Select multiple):
   - prázdné pole ukazuje šedě „Všechny šablony“ a nefiltruje;
   - klik do pole otevře seznam šablon; klik na šablonu ji přidá nebo odebere (vybraná je modře s ✓); seznam se zavře klikem mimo nebo klávesou Esc;
@@ -334,7 +334,7 @@ Pohled je **pojmenovaná kombinace filtrů Dashboardu**, kterou si uživatel ulo
   2. Na Dashboardu tlačítko **Uložit jako pohled** (dole v pravém panelu) → dialog s názvem → uloží aktuální filtr.
 - **Stránka pohledu** (`/pohledy/:id`):
   - drobečková navigace Dashboard › Pohledy, nadpis = název pohledu;
-  - vpravo nahoře tlačítka **Přejmenovat** (šedé) a **Smazat** (červené, s potvrzením);
+  - hned vedle nadpisu nenápadná šedá ikona **⋯** (tooltip „Možnosti pohledu“; od 2026-11-20 místo tlačítek vpravo). Klik otevře menu pod ikonou: **Přejmenovat** (ikona tužky) a **Smazat** (červeně s ikonou koše, s potvrzením). Menu se zavře klikem mimo nebo Esc;
   - obsah je stejný jako na Dashboardu: tabulka pacientů a panel filtrů.
 - **Změna filtru v pohledu** se neukládá hned:
   - v hlavičce panelu se objeví odkaz „Zahodit změny“;
@@ -705,6 +705,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Pohled: Přejmenovat / Smazat schované v menu pod ikonou ⋯ vedle nadpisu. Filtr Příznak má výchozí **Bez příznaku** (seznam Všichni pacienti bez pacientů, kteří jsou v boxech příznaků). |
 | 2026-11-20 | Zobrazení › Boxy příznaků (i boxy a filtr Příznak) nabízí jen příznaky šablon vybraných ve filtru Šablona. |
 | 2026-11-20 | Dashboard: nadpis horního boxu **Hledat**, skryté vodorovné posuvníky. Klinický report a prescoring ukazují **otázky dotazníku ze šablony** (u chronické toxicity zástupné otázky modulů EORTC s red flagy); demo data chronické toxicity vyplněná přes EORTC, úložiště v8. |
 | 2026-11-20 | **Nová demo data**: 34 smyšlených pacientů, 7 šablon (Stacionář – intenzivní / ostatní, Akutní toxicita RT, 4× Chronická toxicita RT s EORTC moduly), pohledy Chronická toxicita RT / Akutní toxicita RT / Stacionář, vyplnění ~75 %, dnešní příznaky. Úložiště v7. Boxy příznaků respektují filtr Šablona. |

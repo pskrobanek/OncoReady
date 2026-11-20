@@ -1,8 +1,8 @@
-import { Fragment, useMemo, useRef, useState, type ReactNode, type UIEvent } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
-import { ArrowsUpDownIcon, FunnelIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { ArrowsUpDownIcon, EllipsisHorizontalIcon, FunnelIcon, PencilSquareIcon, TrashIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
 import { tagIconByLabel, TagIconView } from '../components/TagIcons'
 import { activeStep, NextStepButtons } from '../components/NextStep'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
@@ -171,6 +171,50 @@ export function ViewPage() {
   return <ViewEditor key={view.id} viewId={view.id} />
 }
 
+/** Nenápadná ikona ⋯ vedle nadpisu pohledu; menu Přejmenovat / Smazat. */
+function ViewMenu({ onRename, onDelete }: { onRename: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+  const item = 'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm'
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        title="Možnosti pohledu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className={cx('rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600', open && 'bg-gray-100 text-gray-600')}
+      >
+        <EllipsisHorizontalIcon className="h-6 w-6" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute left-0 top-full z-30 mt-1 w-44 rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/10">
+          <button role="menuitem" type="button" className={cx(item, 'text-gray-700 hover:bg-gray-50')} onClick={() => (setOpen(false), onRename())}>
+            <PencilSquareIcon className="h-4 w-4 text-gray-400" />
+            Přejmenovat
+          </button>
+          <button role="menuitem" type="button" className={cx(item, 'text-red-600 hover:bg-red-50')} onClick={() => (setOpen(false), onDelete())}>
+            <TrashIcon className="h-4 w-4" />
+            Smazat
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ViewEditor({ viewId }: { viewId: string }) {
   const { db, updateView, deleteView } = useStore()
   const navigate = useNavigate()
@@ -186,16 +230,7 @@ function ViewEditor({ viewId }: { viewId: string }) {
       <PatientsBoard
         title={view.name}
         breadcrumbs={[{ label: 'Dashboard', to: '/' }, { label: 'Pohledy' }]}
-        headerActions={
-          <>
-            <Button color="gray" onClick={() => setRenaming(true)}>
-              Přejmenovat
-            </Button>
-            <Button color="danger" onClick={() => setDeleting(true)}>
-              Smazat
-            </Button>
-          </>
-        }
+        titleAside={<ViewMenu onRename={() => setRenaming(true)} onDelete={() => setDeleting(true)} />}
         filters={draft}
         onChange={setDraft}
         onReset={dirty ? () => setDraft(view.filters) : undefined}
@@ -299,6 +334,7 @@ function PatientsBoard({
   title,
   breadcrumbs,
   headerActions,
+  titleAside,
   filters,
   onChange,
   onReset,
@@ -308,6 +344,7 @@ function PatientsBoard({
   title: string
   breadcrumbs?: { label: string; to?: string }[]
   headerActions?: ReactNode
+  titleAside?: ReactNode
   filters: DashboardFilters
   onChange: (f: DashboardFilters) => void
   onReset?: () => void
@@ -569,7 +606,7 @@ function PatientsBoard({
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title={title} breadcrumbs={breadcrumbs} actions={headerActions} />
+      <PageHeader title={title} breadcrumbs={breadcrumbs} actions={headerActions} titleAside={titleAside} />
 
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-6">

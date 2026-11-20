@@ -7,7 +7,7 @@ import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, Mo
 import { todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
-const KEY = 'oncoready-mvp-db-v13' // při změně dat zvýšit verzi (v7 nová demo data, v8 EORTC, v9 stacionář bez Čekárny, v10 chronická toxicita po letech, v11 příznaky podle stavu)
+const KEY = 'oncoready-mvp-db-v15' // při změně dat zvýšit verzi (v7 nová demo data, v8 EORTC, v9 stacionář bez Čekárny, v10 chronická toxicita po letech, v11 příznaky podle stavu, v14 reset zobrazení, v15 oprava příznaku K lékaři)
 
 function load(): DB {
   try {
@@ -16,13 +16,27 @@ function load(): DB {
   } catch {
     /* prázdné nebo nedostupné úložiště → demo data */
   }
+  clearViewSettings()
   return seedDB()
 }
 
+/**
+ * Nastavení zobrazení uložená v prohlížeči (časová osa, boxy příznaků, sloupce, seskupení) patří k datům –
+ * při novém demu (nebo Obnovit demo data) se smažou, aby nezůstaly volby ze starých šablon.
+ */
+function clearViewSettings() {
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith('oncoready-dashboard-') || k.startsWith('oncoready-kartoteka-')) localStorage.removeItem(k)
+  } catch {
+    /* ignorovat */
+  }
+}
+
 /** Zrušená tlačítka „Další postup“ (dřívější výchozí). */
-const REMOVED_ACTION_IDS = ['a-sestra', 'a-lekar']
+// Pozor: odebírá se jen podle NÁZVU. Dřívější tlačítko „Ke kontrole lékařem“ mělo id 'a-lekar' – podle id se
+// odebírat nesmí, jinak by zmizel i nový příznak „K lékaři“ (2026-11-20 tím chyběl ve Stacionáři a v Akutní toxicitě).
 const REMOVED_ACTION_LABELS = ['ke kontrole sestrou', 'ke kontrole lékařem']
-const isRemovedAction = (a: { id: string; label: string }) => REMOVED_ACTION_IDS.includes(a.id) || REMOVED_ACTION_LABELS.includes(a.label.trim().toLowerCase())
+const isRemovedAction = (a: { id: string; label: string }) => REMOVED_ACTION_LABELS.includes(a.label.trim().toLowerCase())
 
 /** Doplní kolekce přidané v novějších verzích, aby uložená data zůstala zachována. */
 function migrate(db: Partial<DB>): DB {
@@ -88,7 +102,10 @@ function useDBState() {
   return useMemo(
     () => ({
       db,
-      resetDemo: () => setDb(seedDB()),
+      resetDemo: () => {
+        clearViewSettings()
+        setDb(seedDB())
+      },
 
       createPatient: (data: Omit<Patient, 'id'>) => {
         const p = { ...data, id: uid('p') }

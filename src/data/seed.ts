@@ -413,9 +413,9 @@ function assignTodayTags(db: DB, today: string) {
     }
     const group = program.id.startsWith('pr-ch') ? 'ch' : program.id === 'pr-ak' ? 'ak' : 'st'
     if (group === 'ch' && (sev === 'red' || (sev === 'yellow' && take('ch-y', 2)))) set('a-telefon')
-    if (group === 'ak' && (sev === 'red' || (sev === 'yellow' && take('ak-y', 2)))) set('a-lekar')
+    if (group === 'ak' && (sev === 'red' || (sev === 'yellow' && take('ak-y', 2)))) set('a-k-lekari')
     if (group === 'st') {
-      if (sev === 'red' || (sev === 'yellow' && take('st-y', 1))) set('a-lekar')
+      if (sev === 'red' || (sev === 'yellow' && take('st-y', 1))) set('a-k-lekari')
       else if (sev === 'green' && take('st-g', 2)) set('a-aplikace')
     }
   }

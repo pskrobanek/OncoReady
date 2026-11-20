@@ -246,7 +246,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 
 **Demo data** (přepracováno 2026-11-20 – simulují běžný chod kliniky; generátor `src/data/seed.ts`, laboratoř a wearables `src/data/readinessSeed.ts`)
 - Všichni pacienti jsou **smyšlení**. Rodná čísla jsou formálně platná (ženy měsíc +50, platné datum, 10 číslic dělitelných 11), datum narození se dopočítá. E-maily `jmeno.prijmeni@example.com`.
-- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v13** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
+- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v15** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
 - **Šablony** (pořadí určuje i pořadí příznaků / boxů):
 
 | Šablona | Zdroje | Dotazník | Frekvence | Konec | Příznaky | Pacienti |
@@ -760,6 +760,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | **Oprava**: příznak K lékaři mizel po znovunačtení stránky (měl stejné id jako zrušené tlačítko „Ke kontrole lékařem“) a Akutní toxicita pak dostávala výchozí Čekárnu / K aplikaci. Zrušená tlačítka se odebírají jen podle názvu; při novém demu se maže i uložené nastavení zobrazení; úložiště v15. |
 | 2026-11-20 | **e-Skill**: panel Filtr vpravo (test ano/ne, úroveň digitální gramotnosti, datum posledního testu vč. „starší než rok“, stav monitorace). Demo: jeden výsledek starší než rok. |
 | 2026-11-20 | **Statistiky** přepracovány: dlaždice, průměrný průběh akutní toxicity podle týdne léčby (průměr + 25.–75. percentil), pásma podle týdne, vývoj G3+ toxicity v modulech EORTC podle roku po RT (čára + teplotní mapa otázek), vyplňování dotazníků podle kohort, nejčastější závažné příznaky, laboratoř ve stacionáři; u každého grafu přepínač Graf / Tabulka. Demo: historická kohorta ukončených pacientů; Dashboard jen s aktivní monitorací; úložiště v13. |
 | 2026-11-20 | Menu: podstránky Kartotéky (pohledy) a Šablon jsou vidět jen v jejich sekci, vždy jen u Dashboardu. Zpětná vazba: moderní ikony a karta s efektem matného skla. |

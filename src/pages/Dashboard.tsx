@@ -499,7 +499,11 @@ function PatientsBoard({
   // Jen příznaky šablon vybraných ve filtru Šablona (nic nevybráno = všechny) – platí pro boxy, Zobrazení i filtr Příznak.
   const filteredPrograms = filters.programIds.length ? db.programs.filter((p) => filters.programIds.includes(p.id)) : db.programs
   const tagLabels = allTagLabels(filteredPrograms, tagged.map((r) => r.step!.label))
-  const shownTags = storedTags ?? (defaultTagBoxes === 'all' ? tagLabels : defaultTagBoxes === 'none' ? [] : defaultTagBoxes)
+  // Uložená volba platí jen pro příznaky, které šablony pohledu opravdu mají (staré názvy se ignorují);
+  // když z ní nezbude nic platného, použije se výchozí pohledu.
+  const validStored = storedTags?.filter((t) => tagLabels.includes(t))
+  const defaultShown = defaultTagBoxes === 'all' ? tagLabels : defaultTagBoxes === 'none' ? [] : defaultTagBoxes.filter((t) => tagLabels.includes(t))
+  const shownTags = storedTags && (validStored!.length > 0 || storedTags.length === 0) ? validStored! : defaultShown
   const tagBoxesChanged = storedTags !== null
   const boxes: Box[] = [
     ...tagLabels

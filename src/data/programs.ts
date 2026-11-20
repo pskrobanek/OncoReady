@@ -82,7 +82,7 @@ const tpl = (
 const ACT = {
   cekarna: (): NextStepAction => ({ id: 'a-cekarna', label: 'Čekárna', waiting: true, icon: 'clock' }),
   aplikace: (): NextStepAction => ({ id: 'a-aplikace', label: 'K aplikaci', icon: 'arrow' }),
-  lekar: (): NextStepAction => ({ id: 'a-lekar', label: 'K lékaři', icon: 'user' }),
+  lekar: (): NextStepAction => ({ id: 'a-k-lekari', label: 'K lékaři', icon: 'user' }),
   telefon: (): NextStepAction => ({ id: 'a-telefon', label: 'Zavolat', icon: 'phone' }),
 }
 const NEVER = DEFAULT_END()

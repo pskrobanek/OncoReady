@@ -438,7 +438,9 @@ function PatientsBoard({
         : []
   // Box pro každý příznak (tlačítka ze šablon v jejich pořadí + příznaky, jejichž tlačítko už v šabloně není),
   // jen ty, které nejsou skryté v Zobrazení. Hlavička boxu má ikonu příznaku.
-  const tagLabels = allTagLabels(db.programs, tagged.map((r) => r.step!.label))
+  // Jen příznaky šablon vybraných ve filtru Šablona (nic nevybráno = všechny) – platí pro boxy, Zobrazení i filtr Příznak.
+  const filteredPrograms = filters.programIds.length ? db.programs.filter((p) => filters.programIds.includes(p.id)) : db.programs
+  const tagLabels = allTagLabels(filteredPrograms, tagged.map((r) => r.step!.label))
   const boxes: Box[] = [
     ...tagLabels
       .filter((label) => !hiddenTags.includes(label))

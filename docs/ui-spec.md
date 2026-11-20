@@ -286,7 +286,7 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Šablony** – „Podle šablony monitorace pacienta“: skupiny podle názvu šablony abecedně, pacienti bez šablony na konci („Bez šablony“).
   - Skupiny jsou jen uvnitř boxu **Všichni pacienti**. Nadpis skupiny je řádek přes celou šířku tabulky (šedé pozadí, 14 px tučně, u závažnosti barevná tečka, za názvem šedě počet pacientů). Při vodorovném posunu zůstává vlevo.
   - Uvnitř skupiny platí zvolené řazení. Pořadí skupin je pevné (nemění se směrem řazení).
-- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak ze šablon s ikonou (Čekárna, K aplikaci, …). Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. Výchozí: všechny zaškrtnuté (nový příznak se zobrazí hned). Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
+- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak s ikonou (Čekárna, K aplikaci, …) – **jen příznaky šablon vybraných ve filtru Šablona** (nic nevybráno = všechny šablony). Např. v pohledu Chronická toxicita RT jen K lékaři a Zavolat, ve Stacionáři Čekárna, K aplikaci, K lékaři. Totéž platí pro boxy příznaků v hlavním okně a pro volby filtru Příznak. Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. Výchozí: všechny zaškrtnuté (nový příznak se zobrazí hned). Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
 - Odkaz „Obnovit výchozí zobrazení“ (vrátí časovou osu, seskupení i boxy příznaků) se zobrazí jen při změně.
 - Poznámka: „Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.“ **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
 - Do záložky lze později přidat další volby zobrazení (např. výběr zdrojů).
@@ -705,6 +705,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Zobrazení › Boxy příznaků (i boxy a filtr Příznak) nabízí jen příznaky šablon vybraných ve filtru Šablona. |
 | 2026-11-20 | Dashboard: nadpis horního boxu **Hledat**, skryté vodorovné posuvníky. Klinický report a prescoring ukazují **otázky dotazníku ze šablony** (u chronické toxicity zástupné otázky modulů EORTC s red flagy); demo data chronické toxicity vyplněná přes EORTC, úložiště v8. |
 | 2026-11-20 | **Nová demo data**: 34 smyšlených pacientů, 7 šablon (Stacionář – intenzivní / ostatní, Akutní toxicita RT, 4× Chronická toxicita RT s EORTC moduly), pohledy Chronická toxicita RT / Akutní toxicita RT / Stacionář, vyplnění ~75 %, dnešní příznaky. Úložiště v7. Boxy příznaků respektují filtr Šablona. |
 | 2026-11-20 | Příznaky: **výběr ikony** u každého příznaku v šabloně (20 ikon); ikona se ukazuje na tlačítku ve sloupci Příznak (zvolené tlačítko místo ✓ bílou ikonou), v hlavičce boxu, ve filtru i v Zobrazení. |

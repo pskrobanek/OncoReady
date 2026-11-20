@@ -10,6 +10,8 @@ import type { Band } from '../lib/scoring'
 import { addDays, todayIso } from '../lib/format'
 import { labValues, rng, wearDay } from './readinessSeed'
 import { planDates } from '../lib/schedule'
+import { DEF_KEY } from '../lib/scoring'
+import { DEFAULT_QUESTIONNAIRE_ID, libraryItem } from './questionnaireLibrary'
 
 
 const SCORABLE = QUESTIONS.filter((q) => q.type !== 'control').map((q) => q.id)
@@ -44,6 +46,33 @@ function makeAnswers(score: number, band: Band, pinned: Record<string, number> =
 }
 
 
+
+/**
+ * Odpovědi na dotazník z knihovny (EORTC – zástupné otázky) tak, aby vyšlo zadané pásmo:
+ * zelená = odpovědi Vůbec ne / Trochu / občas Dost, bez red flagu; žlutá = jedna odpověď „Velmi“ (bez red flagu);
+ * červená = jedna odpověď red flag. Modrá u těchto dotazníků není (počítá se jako žlutá).
+ */
+function defAnswers(defId: string, band: Band, r: () => number): Answers {
+  const def = libraryItem(defId)!
+  const answers: Answers = { [DEF_KEY]: defId }
+  for (const q of def.questions) {
+    let v = r() < 0.5 ? 0 : r() < 0.75 ? 1 : 2
+    while (v > 0 && q.answers[v].redFlag) v-- // základ nikdy není red flag
+    answers[q.id] = v
+  }
+  const pickQ = (ok: (q: (typeof def.questions)[number]) => boolean) => {
+    const pool = def.questions.filter(ok)
+    return pool[Math.floor(r() * pool.length)]
+  }
+  if (band === 'red') {
+    const q = pickQ((x) => x.answers.some((a) => a.redFlag))
+    if (q) answers[q.id] = q.answers.findIndex((a) => a.redFlag)
+  } else if (band === 'yellow' || band === 'blue') {
+    const q = pickQ((x) => !x.answers[3].redFlag)
+    if (q) answers[q.id] = 3
+  }
+  return answers
+}
 
 /** Platné rodné číslo (10 číslic, ženy měsíc +50, číslo dělitelné 11). */
 function rodneCislo(y: number, m: number, d: number, female: boolean, seq: number) {
@@ -187,7 +216,8 @@ function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | '
       const later = addDays(date, int(0, 2)) // vyplní v den termínu nebo do 2 dnů, nejpozději dnes
       const day = later > today ? today : later
       const at = day === today ? `${today}T${time(7, 9)}:00` : `${day}T${time()}:00`
-      questionnaires.push({ id: `q${q}`, monitoringId: mon.id, scheduledFor: date, filledAt: at, answers: makeAnswers(int(lo, hi), band) })
+      const answers = program.questionnaireId === DEFAULT_QUESTIONNAIRE_ID ? makeAnswers(int(lo, hi), band) : defAnswers(program.questionnaireId, band, r)
+      questionnaires.push({ id: `q${q}`, monitoringId: mon.id, scheduledFor: date, filledAt: at, answers })
     }
 
     // Laboratoř: akutní toxicita každý týden, stacionář den před každým termínem; ~75 % odběrů je k dispozici.

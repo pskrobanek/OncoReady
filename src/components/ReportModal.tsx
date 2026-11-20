@@ -1,30 +1,26 @@
 import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
-import { ArrowDownIcon, ArrowUpIcon, EnvelopeIcon, PhoneIcon } from '@heroicons/react/20/solid'
+import { ArrowDownIcon, ArrowUpIcon, EnvelopeIcon, FlagIcon, PhoneIcon } from '@heroicons/react/20/solid'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts'
-import { QUESTIONS } from '../data/questionnaire'
-import { answerColor, answerPoints, BAND_META, bandOf, bandReason, totalScore } from '../lib/scoring'
+import { answerColor, answerLabel, answerPoints, BAND_META, bandOf, bandReason, defOf, isRedFlag, questionsOf, totalScore } from '../lib/scoring'
 import { dateTime, reportName, shortDate } from '../lib/format'
 import { questionnairesOf, useStore } from '../lib/store'
 import type { Answers, Questionnaire } from '../lib/types'
 import { CloseButton, cx, Modal, useToast } from './ui'
 
-export function answerText(qid: string, value: unknown): string {
-  const q = QUESTIONS.find((x) => x.id === qid)!
-  if (value === undefined || value === null) return '—'
-  if (q.type === 'scale') return Number(value).toFixed(2)
-  if (q.type === 'choice') return q.options[Number(value)]?.label ?? '—'
-  return value ? 'Ano' : 'Ne'
-}
+/** Text odpovědi na otázku `qid` v odpovědích `answers` (výchozí dotazník i dotazník z knihovny). */
+export const answerText = (qid: string, answers: Answers): string => answerLabel(qid, answers)
 
 /** 420603277036 → +420 603 277 036 */
 const formatPhone = (t: string) => (/^\d{12}$/.test(t) ? `+${t.slice(0, 3)} ${t.slice(3, 6)} ${t.slice(6, 9)} ${t.slice(9)}` : t)
 
 /** Závažnost odpovědi pro řazení a porovnání (žádost o kontrolu = nejvýš). */
 export function severity(qid: string, answers: Answers): number | null {
-  const q = QUESTIONS.find((x) => x.id === qid)!
   if (answers[qid] === undefined) return null
+  if (isRedFlag(qid, answers)) return 5
+  const q = questionsOf(answers).find((x) => x.id === qid)
+  if (!q) return null
   if (q.type === 'control') return answers[qid] ? 5 : 0
-  return answerPoints(qid, answers[qid])
+  return answerPoints(qid, answers[qid], answers)
 }
 
 const DOT_FILL: Record<string, string> = { green: '#10b981', yellow: '#fbbf24', red: '#dc2626', blue: '#2563eb' }
@@ -57,7 +53,7 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
     .sort((a, b) => b.filledAt!.localeCompare(a.filledAt!))[0]
 
   // Nejzávažnější odpovědi nahoře (stabilní řazení – při shodě pořadí z dotazníku).
-  const rows = QUESTIONS.filter((q) => answers[q.id] !== undefined).sort(
+  const rows = questionsOf(answers).filter((q) => answers[q.id] !== undefined).sort(
     (a, b) => (severity(b.id, answers) ?? -1) - (severity(a.id, answers) ?? -1),
   )
 
@@ -67,7 +63,7 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
       `Datum odeslání: ${dateTime(questionnaire.filledAt!)}`,
       `${BAND_META[band].label}: ${score} b – ${bandReason(answers)}`,
       '',
-      ...rows.map((q) => `[${q.source}] ${q.text}\n→ ${answerText(q.id, answers[q.id])}`),
+      ...rows.map((q) => `[${q.source}] ${q.text}\n→ ${answerText(q.id, answers)}${isRedFlag(q.id, answers) ? ' (red flag)' : ''}`),
     ].join('\n')
     navigator.clipboard?.writeText(text).then(
       () => toast('Report zkopírován do schránky'),
@@ -80,7 +76,10 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
       <div className="flex items-start gap-4 border-b border-gray-200 px-6 py-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold text-gray-950">Klinický report — {reportName(patient)}</h2>
-          <p className="mt-0.5 text-sm text-gray-500">Datum odeslání: {dateTime(questionnaire.filledAt)}</p>
+          <p className="mt-0.5 text-sm text-gray-500">
+            {defOf(answers)?.name ?? 'OncoReady – akutní toxicita'} · Datum odeslání: {dateTime(questionnaire.filledAt)}
+          </p>
+          {defOf(answers)?.licensed && <p className="mt-0.5 text-xs text-amber-700">⚠️ Zástupné znění otázek pro prototyp – oficiální znění EORTC se vloží po získání licence.</p>}
           <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
             {patient.telefon ? (
               <span className="inline-flex select-all items-center gap-1.5 tabular-nums">
@@ -151,7 +150,8 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
         </div>
         <div className="flex flex-col gap-3">
           {rows.map((q) => {
-            const pts = answerPoints(q.id, answers[q.id])
+            const pts = answerPoints(q.id, answers[q.id], answers)
+            const flag = isRedFlag(q.id, answers)
             const isControl = q.type === 'control'
             const now = severity(q.id, answers)
             const before = previous ? severity(q.id, previous.answers!) : null
@@ -165,10 +165,13 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
                 <div
                   className={cx(
                     'max-w-[45%] text-right text-base font-semibold',
-                    isControl ? (answers[q.id] ? 'text-blue-600' : 'text-gray-700') : answerColor(pts),
+                    isControl ? (answers[q.id] ? 'text-blue-600' : 'text-gray-700') : flag ? 'text-red-600' : answerColor(pts),
                   )}
                 >
-                  {answerText(q.id, answers[q.id])}
+                  <span className="inline-flex items-center gap-1">
+                    {flag && <FlagIcon className="h-4 w-4" title="Red flag" />}
+                    {answerText(q.id, answers)}
+                  </span>
                   {delta !== null && previous && (
                     <div
                       className={cx(
@@ -178,7 +181,7 @@ export function ReportModal({ questionnaire, onClose }: { questionnaire: Questio
                     >
                       {delta > 0 ? <ArrowUpIcon className="h-3.5 w-3.5" /> : delta < 0 ? <ArrowDownIcon className="h-3.5 w-3.5" /> : null}
                       {delta > 0 ? 'horší' : delta < 0 ? 'lepší' : 'beze změny'}
-                      {delta !== 0 && <span className="font-normal text-gray-400">· dříve: {answerText(q.id, previous.answers![q.id])}</span>}
+                      {delta !== 0 && <span className="font-normal text-gray-400">· dříve: {answerText(q.id, previous.answers!)}</span>}
                     </div>
                   )}
                 </div>

@@ -50,11 +50,70 @@ const oncoready: QuestionnaireDef = {
   }),
 }
 
+/**
+ * Zástupné otázky pro prototyp (vlastní volné znění podle oblastí modulu, NE oficiální text EORTC).
+ * Odpovědi na 4bodové škále Vůbec ne / Trochu / Dost / Velmi = 0–3 body. `flag` = od které odpovědi (index) je red flag.
+ */
+type DemoItem = [id: string, text: string, flag?: number]
+const SCALE4 = ['Vůbec ne', 'Trochu', 'Dost', 'Velmi']
+const demo = (items: DemoItem[]): QuestionnaireDef['questions'] =>
+  items.map(([id, text, flag]) => ({ id, text, answers: SCALE4.map((t, i) => ({ id: `${id}-${i}`, text: t, points: i, redFlag: flag !== undefined && i >= flag })) }))
+/** Obecné otázky (oblasti QLQ-C30), které jsou v každém modulu na začátku. */
+const CORE: DemoItem[] = [
+  ['c-unava', 'Cítil(a) jste se během posledního týdne unavený/á?'],
+  ['c-bolest', 'Měl(a) jste bolesti?', 3],
+  ['c-nevolnost', 'Bylo vám nevolno?'],
+  ['c-spanek', 'Měl(a) jste potíže se spánkem?'],
+  ['c-cinnosti', 'Omezovaly vás potíže v běžných denních činnostech?'],
+]
+const DEMO_ITEMS: Record<string, DemoItem[]> = {
+  'lib-eortc-c30': CORE,
+  'lib-eortc-br45': [
+    ...CORE,
+    ['br-bolest', 'Bolelo vás v oblasti ozářeného prsu?'],
+    ['br-otok', 'Byl ozářený prs oteklý?'],
+    ['br-kuze', 'Byla kůže v ozařované oblasti podrážděná, zarudlá nebo bolestivá?', 3],
+    ['br-paze-otok', 'Měla jste otok paže nebo ruky na straně léčby?', 3],
+    ['br-paze-pohyb', 'Bylo pro vás obtížné zvednout paži nebo s ní pohybovat?'],
+    ['br-telo', 'Byla jste nespokojená se vzhledem svého těla?'],
+  ],
+  'lib-eortc-hn43': [
+    ...CORE,
+    ['hn-sucho', 'Měl(a) jste sucho v ústech?'],
+    ['hn-polykani', 'Měl(a) jste potíže s polykáním tuhé stravy?', 3],
+    ['hn-chut', 'Změnila se vám chuť jídla?'],
+    ['hn-bolest-usta', 'Bolelo vás v ústech nebo v krku?'],
+    ['hn-slina', 'Měl(a) jste hustou nebo lepkavou slinu?'],
+    ['hn-rec', 'Měl(a) jste potíže s řečí?'],
+    ['hn-zuby', 'Měl(a) jste potíže se zuby nebo dásněmi?'],
+  ],
+  'lib-eortc-pr25': [
+    ...CORE,
+    ['pr-caste', 'Musel jste během dne močit často?'],
+    ['pr-noc', 'Musel jste v noci vstávat na močení?'],
+    ['pr-paleni', 'Pálilo nebo bolelo vás při močení?'],
+    ['pr-krev-moc', 'Měl jste krev v moči?', 2],
+    ['pr-unik', 'Unikala vám moč?'],
+    ['pr-stolice', 'Měl jste potíže se stolicí (průjem, nucení na stolici)?'],
+    ['pr-krev-stolice', 'Měl jste krev ve stolici?', 2],
+    ['pr-erekce', 'Měl jste potíže s erekcí?'],
+  ],
+  'lib-eortc-lc29': [
+    ...CORE,
+    ['lc-kasel', 'Kašlal(a) jste?'],
+    ['lc-krev', 'Vykašlával(a) jste krev?', 2],
+    ['lc-dusnost-klid', 'Byl(a) jste dušný/á v klidu?', 3],
+    ['lc-dusnost-chuze', 'Byl(a) jste dušný/á při chůzi?'],
+    ['lc-hrudnik', 'Bolelo vás na hrudi?'],
+    ['lc-polykani', 'Bolelo vás při polykání?'],
+  ],
+}
+
 const licensed = (id: string, name: string, items: number, description: string, scales: string[], publisher = 'EORTC', kind: LibraryQuestionnaire['kind'] = 'static'): LibraryQuestionnaire => ({
   id,
   name,
   description,
-  questions: [],
+  questions: DEMO_ITEMS[id] ? demo(DEMO_ITEMS[id]) : [],
   publisher,
   items,
   licensed: true,

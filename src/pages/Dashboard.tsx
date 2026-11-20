@@ -574,7 +574,7 @@ function PatientsBoard({
           {/* Vyhledávání */}
           <Card>
             <div className="flex items-center justify-between px-6 py-4">
-              <h2 className="text-base font-semibold leading-6 text-gray-950">Pacienti</h2>
+              <h2 className="text-base font-semibold leading-6 text-gray-950">Hledat</h2>
               <span className="text-sm text-gray-500 tabular-nums">{new Set([...rows, ...tagged].map((r) => r.patient.id)).size} pacientů</span>
             </div>
             <div className="border-t border-gray-200 px-4 py-3 sm:px-6">
@@ -602,7 +602,7 @@ function PatientsBoard({
                     scrollers.current[box.key] = el
                   }}
                   onScroll={syncScroll}
-                  className="overflow-x-auto border-t border-gray-200"
+                  className="no-scrollbar overflow-x-auto border-t border-gray-200"
                 >
                   <table className="w-full table-auto divide-y divide-gray-200 text-start">
                     {head}

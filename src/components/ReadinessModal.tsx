@@ -1,6 +1,5 @@
 // Souhrnný prescoring pacienta (dotazník, laboratoř, wearables) – otevírá se kliknutím na jméno pacienta na Dashboardu.
 import type { ReactNode } from 'react'
-import { QUESTIONS } from '../data/questionnaire'
 import { agoText, fullDate, num, reportName, shortDate, signed, todayIso } from '../lib/format'
 import {
   evalLab,
@@ -13,7 +12,7 @@ import {
   type MetricRow,
   type SourceState,
 } from '../lib/readiness'
-import { answerColor, answerPoints, BAND_META, bandOf, bandReason, totalScore } from '../lib/scoring'
+import { answerColor, answerPoints, BAND_META, bandOf, bandReason, isRedFlag, questionsOf, totalScore } from '../lib/scoring'
 import { currentMonitoring, useStore } from '../lib/store'
 import type { Questionnaire } from '../lib/types'
 import { Link } from 'react-router-dom'
@@ -222,7 +221,7 @@ function QuestionnaireResult({ q, onOpenReport }: { q: Questionnaire; onOpenRepo
   const answers = q.answers!
   const band = bandOf(answers)
   const score = totalScore(answers)
-  const notable = QUESTIONS.filter((x) => (severity(x.id, answers) ?? 0) >= 3).sort(
+  const notable = questionsOf(answers).filter((x) => (severity(x.id, answers) ?? 0) >= 3).sort(
     (a, b) => (severity(b.id, answers) ?? 0) - (severity(a.id, answers) ?? 0),
   )
   return (
@@ -239,12 +238,13 @@ function QuestionnaireResult({ q, onOpenReport }: { q: Questionnaire; onOpenRepo
       {notable.length > 0 ? (
         <ul className="divide-y divide-gray-100">
           {notable.map((x) => {
-            const pts = answerPoints(x.id, answers[x.id])
+            const pts = answerPoints(x.id, answers[x.id], answers)
             return (
               <li key={x.id} className="flex items-center gap-4 py-2">
                 <span className="min-w-0 flex-1 text-sm text-gray-700">{x.text}</span>
-                <span className={cx('max-w-[40%] text-right text-sm font-semibold', x.type === 'control' ? 'text-blue-600' : answerColor(pts))}>
-                  {answerText(x.id, answers[x.id])}
+                <span className={cx('max-w-[40%] text-right text-sm font-semibold', x.type === 'control' ? 'text-blue-600' : isRedFlag(x.id, answers) ? 'text-red-600' : answerColor(pts))}>
+                  {isRedFlag(x.id, answers) && <span className="mr-1">🚩</span>}
+                  {answerText(x.id, answers)}
                   {pts !== null && <span className="ml-1 text-xs font-normal text-gray-400">({pts} b)</span>}
                 </span>
               </li>

@@ -8,3 +8,13 @@ html {
 input[type='search']::-webkit-search-cancel-button {
   cursor: pointer;
 }
+
+/* Vodorovný posun bez viditelného posuvníku (tabulky na Dashboardu) – posouvá se kolečkem se Shiftem, touchpadem nebo dotykem. */
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

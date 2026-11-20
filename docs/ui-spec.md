@@ -102,7 +102,7 @@ Celkové skóre je součet bodů všech odpovědí. Pravidla jsou na jednom mís
 Stránka má dvě části: vlevo **boxy s pacienty** pod sebou, vpravo samostatná karta s panelem nástrojů (záložky Filtr, Řazení a Zobrazení, šířka 288 px). Na menší obrazovce je panel pod boxy.
 
 **Boxy** (od 2026-11-19; dříve jedna společná tabulka) – každý box je samostatná bílá karta (zaoblené rohy, jemný rámeček), mezi boxy je mezera 24 px:
-1. **Pacienti** – nadpis, vpravo počet pacientů, pod ním hledání (jméno a rodné číslo) přes celou šířku.
+1. **Hledat** (od 2026-11-20; dříve nadpis „Pacienti“) – nadpis „Hledat“, vpravo počet pacientů, pod ním hledání (jméno a rodné číslo) přes celou šířku.
    - **Hledání prohledává všechny pacienty** – při zadaném textu se filtry (Skóre, Datum vyplnění, Šablona) nepoužijí. Sestra tak najde i pacienta, kterého aktuální filtr skrývá.
 2. **Boxy příznaků** (od 2026-11-20) – jeden box pro každý **příznak** ze šablon (tlačítka v boxu *Příznaky* šablony, viz *Šablony*), v pořadí podle šablon; výchozí **Čekárna** a **K aplikaci**.
    - **Které boxy jsou vidět, se volí v Zobrazení › Boxy příznaků** – tím se určuje, kolik boxů v hlavním okně je. Výchozí: všechny.
@@ -120,6 +120,7 @@ Vzhled boxů 2–3:
 - pod hlavičkou je tabulka se **stejnou hlavičkou sloupců v každém boxu** (Pacient, zdroj, Aktuální, Příznak, časová osa);
 - **řádek pacienta vypadá ve všech boxech stejně** (pruh, zdroje, Aktuální, tlačítka, časová osa);
 - sloupce mají pevné nejmenší šířky, takže **lícují pod sebou napříč boxy**; vodorovný posun časové osy je pro všechny boxy **společný**.
+- **vodorovné posuvníky se nezobrazují** (od 2026-11-20) – tabulka se posouvá do stran kolečkem myši se Shiftem, touchpadem nebo dotykem. ⚠️ OVĚŘIT, zda uživatelům s myší bez touchpadu stačí Shift + kolečko.
 
 **Tabulka v boxu** (rozložení podle náčrtu 2026-10-26; sloupec Souhrn odebrán)
 - **Řazení** a **časová osa** se nastavují v pravém panelu (viz *Panel nástrojů*).
@@ -244,7 +245,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 
 **Demo data** (přepracováno 2026-11-20 – simulují běžný chod kliniky; generátor `src/data/seed.ts`, laboratoř a wearables `src/data/readinessSeed.ts`)
 - Všichni pacienti jsou **smyšlení**. Rodná čísla jsou formálně platná (ženy měsíc +50, platné datum, 10 číslic dělitelných 11), datum narození se dopočítá. E-maily `jmeno.prijmeni@example.com`.
-- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v7** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
+- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v8** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
 - **Šablony** (pořadí určuje i pořadí příznaků / boxů):
 
 | Šablona | Zdroje | Dotazník | Frekvence | Konec | Příznaky | Pacienti |
@@ -263,7 +264,8 @@ Pravidla se vyhodnocují v tomto pořadí:
 - **Profil pacienta** určuje pásma: dobrý (82 % zelená), střední (50 % zelená, 33 % žlutá, 10 % červená), horší (30 % červená). Laboratoř u stacionáře hlavně neutropenie a trombocytopenie, u RT hemoglobin a kreatinin; wearables občas zvýšená teplota u horšího profilu.
 - **Dnešní příznaky** pro ukázku boxů: Čekárna – Dvořák (7:52), Sedláčková (8:14); K aplikaci – Zemanová (7:40); K lékaři – Černá (8:31); Zavolat – Král (9:05).
 - e-Skill: 5 výsledků u pacientů chronické toxicity.
-- ⚠️ OVĚŘIT: dotazníky chronické toxicity jsou v šabloně EORTC, ale vyplnění a vyhodnocení v demu zatím používá model dotazníku OncoReady (znění EORTC není v aplikaci kvůli licenci).
+- **Dotazníky chronické toxicity jsou vyplněné otázkami modulu EORTC** ze šablony (od 2026-11-20) – klinický report i souhrnný prescoring ukazují otázky a odpovědi EORTC. Otázky jsou **zástupné** (vlastní volné znění podle oblastí modulu: 5 obecných otázek + 6–8 otázek modulu, škála Vůbec ne / Trochu / Dost / Velmi = 0–3 b, u vybraných otázek red flag), oficiální znění se vloží po získání licence.
+- Vyhodnocení dotazníku z knihovny: **red flag → červené pásmo**, odpověď „Velmi“ (3 b) → žluté, jinak zelené; skóre = součet bodů. ⚠️ OVĚŘIT s klinikem (EORTC se oficiálně vyhodnocuje škálami 0–100).
 
 **Panel nástrojů** (pravý sloupec, NOVÉ)
 - Nahoře jsou záložky s ikonou (16 px) a názvem: **Filtr** (ikona trychtýře), **Řazení** (ikona šipek ↑↓) a **Zobrazení** (ikona sloupců, NOVÉ 2026-10-26).
@@ -501,6 +503,10 @@ Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 
 ## Klinický report (modal)
 
+- (2026-11-20) Pod nadpisem je **název dotazníku** („EORTC QLQ-PR25 · Datum odeslání: …“, u výchozího „OncoReady – akutní toxicita“). U zástupných otázek EORTC oranžově „⚠️ Zástupné znění otázek pro prototyp – oficiální znění EORTC se vloží po získání licence.“
+- Otázky a odpovědi se berou z **dotazníku, kterým pacient odpovídal** (šablona → dotazník). U dotazníku z knihovny je místo zdroje TheraData/PRO-CTCAE šedě název dotazníku. Odpověď označená jako **red flag** je červeně s 🚩 a řadí se nahoru; v kopírovaném textu „(red flag)“.
+- Pásmo a vysvětlení: „Alespoň jedna odpověď je red flag.“ / „Alespoň jedna odpověď „Velmi“ (3 body).“ / „Žádná odpověď „Velmi“ ani red flag.“
+
 Otevírá se kliknutím na vyplněný odznak. Šířka je přibližně 768 px.
 
 - **Hlavička**:
@@ -699,6 +705,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Dashboard: nadpis horního boxu **Hledat**, skryté vodorovné posuvníky. Klinický report a prescoring ukazují **otázky dotazníku ze šablony** (u chronické toxicity zástupné otázky modulů EORTC s red flagy); demo data chronické toxicity vyplněná přes EORTC, úložiště v8. |
 | 2026-11-20 | **Nová demo data**: 34 smyšlených pacientů, 7 šablon (Stacionář – intenzivní / ostatní, Akutní toxicita RT, 4× Chronická toxicita RT s EORTC moduly), pohledy Chronická toxicita RT / Akutní toxicita RT / Stacionář, vyplnění ~75 %, dnešní příznaky. Úložiště v7. Boxy příznaků respektují filtr Šablona. |
 | 2026-11-20 | Příznaky: **výběr ikony** u každého příznaku v šabloně (20 ikon); ikona se ukazuje na tlačítku ve sloupci Příznak (zvolené tlačítko místo ✓ bílou ikonou), v hlavičce boxu, ve filtru i v Zobrazení. |
 | 2026-11-20 | **Příznaky**: v šabloně nová karta Příznaky (tlačítka, která pacientovi nastaví příznak); na Dashboardu sloupec **Příznak** (dříve Další postup), boxy pro každý příznak volitelné v **Zobrazení › Boxy příznaků**, nový filtr **Příznak** (včetně Bez příznaku, ukládá se do pohledu). |

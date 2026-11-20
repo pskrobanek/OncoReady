@@ -28,6 +28,9 @@ export interface NextStepAction {
 }
 
 /** Šablona monitorace = program sledování (stránka „Šablony“). Pacientům se přiřazuje v kartotéce. */
+/** Zdroj dat pro připravenost pacienta. */
+export type SourceKey = 'questionnaire' | 'lab' | 'wearables'
+
 export type ScheduleUnit = 'day' | 'week' | 'month' | 'year'
 
 /**
@@ -70,6 +73,8 @@ export interface MonitoringProgram {
   frequencyDays: number
   /** Frekvence odesílání dotazníků (od 2026-11-20). */
   schedule: Schedule
+  /** Zdroje, ze kterých se počítá připravenost pacientů s touto šablonou (od 2026-11-20). */
+  sources: SourceKey[]
   /** Zahájení monitorace (od 2026-11-20). */
   start: ScheduleStart
   /** Konec monitorace – uplatní se jen u pravidelné frekvence. */

@@ -3,12 +3,12 @@
 import { statusOf } from '../components/QuestionnaireBadges'
 import { addDays, agoText, daysBetween, num, signed, todayIso } from './format'
 import { bandOf, totalScore, type Band } from './scoring'
-import type { DB, LabParam, LabResult, Questionnaire, WearableDay } from './types'
+import type { DB, LabParam, LabResult, Questionnaire, SourceKey, WearableDay } from './types'
 
 export type Level = 'green' | 'yellow' | 'red'
 /** Souhrnný stav; gray = některý zdroj chybí nebo je neaktuální. */
 export type Overall = Level | 'gray'
-export type SourceKey = 'questionnaire' | 'lab' | 'wearables'
+export type { SourceKey }
 
 export const SOURCES: { key: SourceKey; label: string }[] = [
   { key: 'questionnaire', label: 'Dotazník' },
@@ -182,10 +182,16 @@ export function readinessOf(db: DB, patientId: string, today = todayIso()): Read
   const days = db.wearables.filter((d) => d.patientId === patientId && d.date <= today).sort((a, b) => a.date.localeCompare(b.date))
 
   const sources: SourceState[] = []
+  // Zdroje ze šablony aktuální monitorace pacienta – ostatní se nepočítají (bez šablony všechny).
+  const ms = db.monitorings.filter((m) => m.patientId === patientId).sort((a, b) => b.start.localeCompare(a.start))
+  const mon = ms.find((m) => m.active) ?? ms[0]
+  const allowed = new Set<SourceKey>(db.programs.find((p) => p.id === mon?.programId)?.sources ?? ['questionnaire', 'lab', 'wearables'])
 
   // Dotazník
   const q = filled[0]
-  if (!monIds.size) {
+  if (!allowed.has('questionnaire')) {
+    /* šablona dotazník nepočítá */
+  } else if (!monIds.size) {
     /* pacient bez monitorace – dotazník není jeho zdrojem */
   } else if (!q) sources.push({ source: 'questionnaire', state: 'missing', level: 'gray', date: null, findings: [staleFinding('questionnaire', null, today)] })
   else {
@@ -202,7 +208,7 @@ export function readinessOf(db: DB, patientId: string, today = todayIso()): Read
   }
 
   // Laboratoř
-  const lab = labs[0]
+  const lab = allowed.has('lab') ? labs[0] : undefined
   if (lab) {
     const ev = evalLab(lab)
     const fresh = daysBetween(lab.date, today) <= FRESH_DAYS.lab
@@ -214,7 +220,7 @@ export function readinessOf(db: DB, patientId: string, today = todayIso()): Read
   }
 
   // Wearables
-  const day = days[days.length - 1]
+  const day = allowed.has('wearables') ? days[days.length - 1] : undefined
   if (day) {
     const ev = evalWearDay(day, days)
     const fresh = daysBetween(day.date, today) <= FRESH_DAYS.wearables

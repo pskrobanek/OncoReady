@@ -1,14 +1,14 @@
-import { PlusIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { PlusIcon } from '@heroicons/react/20/solid'
 import { TrashIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { BandBar } from '../components/programs'
 import { Button, Card, ConfirmModal, cx, Field, PageHeader, Radio, TextInput, useToast } from '../components/ui'
-import { CLASSIFICATIONS, DEFAULT_ACTIONS, DIAGNOSES, diagnosisName, MAX_SCORE } from '../data/programs'
+import { DEFAULT_ACTIONS } from '../data/programs'
+import { SourceIcon } from '../components/Readiness'
 import { fullDate, todayIso } from '../lib/format'
 import { approxDays, DEFAULT_END, DEFAULT_SCHEDULE, DEFAULT_START, MAX_COUNT, MONTHS, planDates, UNIT_LABEL, UNITS, unitWord, WEEKDAYS } from '../lib/schedule'
 import { useStore } from '../lib/store'
-import type { Classification, MonitoringProgram, Schedule, ScheduleEnd, ScheduleStart, ScheduleUnit } from '../lib/types'
+import type { MonitoringProgram, SourceKey, Schedule, ScheduleEnd, ScheduleStart, ScheduleUnit } from '../lib/types'
 
 const SELECT =
   'block w-full rounded-lg border-none bg-white px-3 py-1.5 text-sm leading-6 text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600'
@@ -22,12 +22,13 @@ const EMPTY: Omit<MonitoringProgram, 'id'> = {
   schedule: DEFAULT_SCHEDULE(),
   start: DEFAULT_START(),
   ending: DEFAULT_END(),
+  // Diagnózy, klasifikace, tag, pásma a tlačítka Další postup se ve formuláři od 2026-11-20 nezadávají – zůstávají výchozí.
   bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
   actions: DEFAULT_ACTIONS(),
+  sources: ['questionnaire'],
 }
 
 const stepId = () => `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
-const actionId = () => `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 /** Vytvořit / upravit šablonu monitorace (program sledování). */
 export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
@@ -42,19 +43,10 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
 
   if (mode === 'edit' && !existing) return <Navigate to="/sablony" replace />
 
-  // Pásma se zadávají dvěma hranicemi, takže se nepřekrývají a nemají mezery.
-  const greenMax = form.bands.green.max ?? 0
-  const yellowMax = form.bands.yellow.max ?? 0
-  const setBounds = (g: number, y: number) =>
-    setForm({
-      ...form,
-      bands: { green: { min: 0, max: g }, yellow: { min: g + 1, max: y }, red: { min: y + 1, max: null } },
-    })
-
   const validate = () => {
     const e: Record<string, string> = {}
     if (!form.name.trim()) e.name = 'Toto pole je povinné.'
-    if (form.diagnoses.length === 0) e.diagnoses = 'Vyberte alespoň jednu diagnózu.'
+    if (form.sources.length === 0) e.sources = 'Přidejte alespoň jeden zdroj.'
     const inRange = (n: number) => Number.isInteger(n) && n >= 1 && n <= MAX_COUNT
     const sc = form.schedule
     if (sc.kind === 'regular' && !inRange(sc.every)) e.frequency = `Zadejte číslo od 1 do ${MAX_COUNT}.`
@@ -63,17 +55,13 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
     if (form.start.kind === 'date' && !form.start.date) e.start = 'Vyberte datum zahájení.'
     if (sc.kind === 'regular' && form.ending.kind === 'count' && !inRange(form.ending.count)) e.ending = `Zadejte počet dotazníků od 1 do ${MAX_COUNT}.`
     if (sc.kind === 'regular' && form.ending.kind === 'duration' && !inRange(form.ending.amount)) e.ending = `Zadejte dobu od 1 do ${MAX_COUNT}.`
-    if (greenMax < 0) e.bands = 'Zelené pásmo musí končit na 0 nebo více bodech.'
-    else if (yellowMax <= greenMax) e.bands = 'Žluté pásmo musí končit výš než zelené.'
-    else if (yellowMax >= MAX_SCORE) e.bands = `Žluté pásmo musí končit pod maximem dotazníku (${MAX_SCORE} b).`
-    if (form.actions.some((a) => !a.label.trim())) e.actions = 'Vyplňte název tlačítka, nebo ho odeberte.'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   const save = () => {
     if (!validate()) return
-    const data = { ...form, frequencyDays: approxDays(form.schedule), name: form.name.trim(), tag: form.tag.trim(), actions: form.actions.map((a) => ({ ...a, label: a.label.trim() })) }
+    const data = { ...form, frequencyDays: approxDays(form.schedule), name: form.name.trim(), }
     if (existing) {
       store.updateProgram({ ...data, id: existing.id })
       toast('Uloženo')
@@ -83,9 +71,6 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
       navigate('/sablony')
     }
   }
-
-  const availableDx = DIAGNOSES.filter((d) => !form.diagnoses.includes(d.code))
-  const usedTags = [...new Set(store.db.programs.map((p) => p.tag).filter(Boolean))]
 
   return (
     <div className="flex flex-col gap-8">
@@ -118,163 +103,7 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
           onEnding={(ending) => setForm({ ...form, ending })}
         />
 
-        <Card className="p-6">
-          <h2 className="text-base font-semibold text-gray-950">Zařazení</h2>
-          <div className="mt-6 grid items-start gap-6 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <Field label="Diagnózy" required error={errors.diagnoses}>
-                <div
-                  className={cx(
-                    'flex flex-wrap items-center gap-1.5 rounded-lg bg-white px-2 py-1.5 shadow-sm ring-1',
-                    errors.diagnoses ? 'ring-red-600' : 'ring-gray-950/10',
-                  )}
-                >
-                  {form.diagnoses.map((c) => (
-                    <span key={c} className="inline-flex items-center gap-1 rounded-md bg-primary-50 py-0.5 pl-2 pr-1 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20">
-                      <span className="font-mono">{c}</span>
-                      <span className="hidden text-primary-600/80 sm:inline">{diagnosisName(c)}</span>
-                      <button
-                        type="button"
-                        title="Odebrat"
-                        onClick={() => setForm({ ...form, diagnoses: form.diagnoses.filter((x) => x !== c) })}
-                        className="rounded text-primary-500 hover:bg-primary-100"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </span>
-                  ))}
-                  <select
-                    value=""
-                    onChange={(e) => e.target.value && setForm({ ...form, diagnoses: [...form.diagnoses, e.target.value] })}
-                    className="min-w-[12rem] flex-1 border-none bg-transparent py-0.5 text-sm text-gray-500 outline-none"
-                  >
-                    <option value="">+ Přidat diagnózu (MKN-10)…</option>
-                    {availableDx.map((d) => (
-                      <option key={d.code} value={d.code}>
-                        {d.code} – {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </Field>
-            </div>
-
-            <Field label="Klasifikace" required>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {CLASSIFICATIONS.map((c) => (
-                  <button
-                    type="button"
-                    key={c.value}
-                    title={c.hint}
-                    onClick={() => setForm({ ...form, classification: c.value as Classification })}
-                    className={cx(
-                      'rounded-lg px-3 py-2 text-sm font-semibold ring-1 transition',
-                      form.classification === c.value
-                        ? 'bg-primary-50 text-primary-700 ring-2 ring-primary-600'
-                        : 'bg-white text-gray-700 ring-gray-950/10 hover:bg-gray-50',
-                    )}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-sm text-gray-500">{CLASSIFICATIONS.find((c) => c.value === form.classification)!.hint}</p>
-            </Field>
-
-            <Field label="Tag" helper="Krátký štítek pro filtrování, např. Prs, ORL, Studie.">
-              <TextInput list="tags" value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value })} />
-              <datalist id="tags">
-                {usedTags.map((t) => (
-                  <option key={t} value={t} />
-                ))}
-              </datalist>
-            </Field>
-
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-base font-semibold text-gray-950">Rozsah pásem</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Celkové skóre dotazníku (0–{MAX_SCORE} b) se zařadí do pásma podle těchto hranic.
-          </p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <BandInput dot="bg-emerald-500" label="Zelené pásmo" from={0}>
-              <TextInput type="number" min={0} className="!w-20" value={greenMax} onChange={(e) => setBounds(Number(e.target.value), yellowMax)} />
-            </BandInput>
-            <BandInput dot="bg-amber-400" label="Žluté pásmo" from={greenMax + 1}>
-              <TextInput type="number" min={greenMax + 1} className="!w-20" value={yellowMax} onChange={(e) => setBounds(greenMax, Number(e.target.value))} />
-            </BandInput>
-            <BandInput dot="bg-red-600" label="Červené pásmo" from={yellowMax + 1} />
-          </div>
-          <div className="mt-6">
-            <BandBar bands={form.bands} />
-          </div>
-          {errors.bands && <p className="mt-3 text-sm text-red-600">{errors.bands}</p>}
-          <p className="mt-4 text-xs text-gray-400">
-            ⚠️ Modré pásmo („Vyžádal kontrolu“) nezávisí na skóre – nastaví ho odpověď pacienta.
-          </p>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-base font-semibold text-gray-950">Další postup</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup. Klik pacientovi nastaví značku pro dnešní den.
-            Tlačítko se zaškrtnutou volbou Čekárna zařadí pacienta nahoru do čekárny.
-          </p>
-          <div className="mt-6 flex flex-col gap-3">
-            {form.actions.map((a, i) => (
-              <div key={a.id} className="flex items-center gap-3">
-                <span className="w-5 shrink-0 text-right text-sm tabular-nums text-gray-400">{i + 1}.</span>
-                <TextInput
-                  value={a.label}
-                  placeholder="Název tlačítka, např. K aplikaci"
-                  invalid={!!errors.actions && !a.label.trim()}
-                  onChange={(e) => setForm({ ...form, actions: form.actions.map((x) => (x.id === a.id ? { ...x, label: e.target.value } : x)) })}
-                />
-                <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-gray-700" title="Pacient s touto značkou se zobrazí nahoře v čekárně">
-                  <input
-                    type="checkbox"
-                    checked={!!a.waiting}
-                    onChange={(e) => setForm({ ...form, actions: form.actions.map((x) => (x.id === a.id ? { ...x, waiting: e.target.checked } : x)) })}
-                    className="h-4 w-4 rounded accent-primary-600"
-                  />
-                  Čekárna
-                </label>
-                <button
-                  type="button"
-                  title="Odebrat tlačítko"
-                  onClick={() => setForm({ ...form, actions: form.actions.filter((x) => x.id !== a.id) })}
-                  className="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-red-600"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              </div>
-            ))}
-            {form.actions.length === 0 && <p className="text-sm text-gray-500">Šablona nemá žádná tlačítka – sloupec Další postup bude u jejích pacientů prázdný.</p>}
-            <button
-              type="button"
-              onClick={() => setForm({ ...form, actions: [...form.actions, { id: actionId(), label: '' }] })}
-              className="inline-flex items-center gap-1 self-start text-sm font-semibold text-primary-600 hover:underline"
-            >
-              <PlusIcon className="h-4 w-4" />
-              Přidat tlačítko
-            </button>
-          </div>
-          {errors.actions && <p className="mt-3 text-sm text-red-600">{errors.actions}</p>}
-          {form.actions.some((a) => a.label.trim()) && (
-            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
-              <span className="text-sm text-gray-500">Náhled:</span>
-              {form.actions
-                .filter((a) => a.label.trim())
-                .map((a) => (
-                  <span key={a.id} className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10">
-                    {a.label}
-                  </span>
-                ))}
-            </div>
-          )}
-        </Card>
+        <SourcesCard value={form.sources} error={errors.sources} onChange={(sources) => setForm({ ...form, sources })} />
 
         <div className="flex gap-3">
           <Button type="submit">{existing ? 'Uložit' : 'Vytvořit'}</Button>
@@ -294,21 +123,6 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
           navigate('/sablony')
         }}
       />
-    </div>
-  )
-}
-
-function BandInput({ dot, label, from, children }: { dot: string; label: string; from: number; children?: React.ReactNode }) {
-  return (
-    <div className="rounded-lg bg-gray-50 p-4 ring-1 ring-gray-950/5">
-      <div className="flex items-center gap-2 text-sm font-medium text-gray-950">
-        <span className={cx('h-2.5 w-2.5 rounded-full', dot)} />
-        {label}
-      </div>
-      <div className="mt-3 flex items-center gap-2 text-sm text-gray-500 tabular-nums">
-        od <span className="w-6 font-semibold text-gray-950">{from}</span>
-        {children ? <>do {children}</> : <span className="py-1.5">a více</span>}
-      </div>
     </div>
   )
 }
@@ -577,6 +391,62 @@ function FrequencyCard({
           </div>
         )}
       </div>
+    </Card>
+  )
+}
+
+/** Zdroje, ze kterých lze počítat připravenost. Další zdroje = nová položka (a jejich zpracování v readiness.ts). */
+const SOURCE_OPTIONS: { key: SourceKey; label: string; hint: string }[] = [
+  { key: 'questionnaire', label: 'Dotazník', hint: 'Odpovědi pacienta – pásmo podle bodů. Termíny podle frekvence výše.' },
+  { key: 'lab', label: 'Laboratoř', hint: 'Krevní obraz a biochemie (neutrofily, trombocyty, hemoglobin, kreatinin, bilirubin).' },
+  { key: 'wearables', label: 'Wearables', hint: 'Teplota, saturace, tep a kroky z chytrých hodinek nebo náramku.' },
+]
+
+/** Box Zdroje: seznam zvolených zdrojů a tlačítka pro přidání dalších. */
+function SourcesCard({ value, error, onChange }: { value: SourceKey[]; error?: string; onChange: (v: SourceKey[]) => void }) {
+  const rest = SOURCE_OPTIONS.filter((o) => !value.includes(o.key))
+  return (
+    <Card className="p-6">
+      <h2 className="text-base font-semibold text-gray-950">Zdroje</h2>
+      <p className="mt-1 text-sm text-gray-500">Ze kterých zdrojů se u pacientů s touto šablonou počítá připravenost. Barva pacienta je nejhorší výsledek ze zvolených zdrojů.</p>
+
+      <ul className="mt-6 flex flex-col divide-y divide-gray-100 rounded-lg ring-1 ring-gray-950/10">
+        {SOURCE_OPTIONS.filter((o) => value.includes(o.key)).map((o) => (
+          <li key={o.key} className="flex items-center gap-3 px-4 py-3">
+            <SourceIcon source={o.key} className="h-5 w-5 text-gray-500" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-gray-950">{o.label}</div>
+              <div className="text-sm text-gray-500">{o.hint}</div>
+            </div>
+            <button
+              type="button"
+              title="Odebrat zdroj"
+              onClick={() => onChange(value.filter((x) => x !== o.key))}
+              className="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-red-600"
+            >
+              <TrashIcon className="h-5 w-5" />
+            </button>
+          </li>
+        ))}
+        {value.length === 0 && <li className="px-4 py-3 text-sm text-gray-500">Zatím žádný zdroj.</li>}
+      </ul>
+
+      {rest.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {rest.map((o) => (
+            <button
+              type="button"
+              key={o.key}
+              onClick={() => onChange(SOURCE_OPTIONS.map((x) => x.key).filter((k) => k === o.key || value.includes(k)))}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10 hover:bg-gray-50"
+            >
+              <PlusIcon className="h-4 w-4 text-gray-400" />
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
     </Card>
   )
 }

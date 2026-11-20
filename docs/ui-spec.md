@@ -157,7 +157,7 @@ Vzhled boxů 2–4:
   - Sloupec Aktuální odděluje od dalšího sloupce šedá svislá čára 1 px (v hlavičce i v řádcích).
 - **Další postup** (sloupec hned za Aktuální, oddělený šedou čarou i od měsíců) – tlačítka nastavují **značku pacienta**:
   - jedna buňka přes všechny řádky pacienta, zarovnaná nahoru;
-  - pod sebou **tlačítka ze šablony pacienta** (nastavují se při tvorbě / úpravě šablony, viz *Šablony*), výchozí: **Čekárna** a **K aplikaci** (od 2026-11-19; dřívější „Ke kontrole sestrou / lékařem“ jsou zrušené a z uložených dat se odeberou);
+  - pod sebou **tlačítka ze šablony pacienta** (od 2026-11-20 se ve formuláři šablony nenastavují – nové šablony mají výchozí), výchozí: **Čekárna** a **K aplikaci** (od 2026-11-19; dřívější „Ke kontrole sestrou / lékařem“ jsou zrušené a z uložených dat se odeberou);
   - **Čekárna**: zmáčkne sestra, pacient se přesune nahoru do boxu Čekárna, kde ho lékař hned najde;
   - **K aplikaci**: označí sestra nebo lékař; pacient tím z čekárny odejde;
   - nezvolené tlačítko je bílé s šedým rámečkem (12 px tučně), **zvolené je modré s ✓** a pod tlačítky je šedě čas „od 8:34“;
@@ -353,17 +353,14 @@ Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
 
 - Drobečková navigace Šablony › Přehled, nadpis „Šablony“, vpravo **Vytvořit**.
 - Staré adresy `/monitorace…` přesměrují na `/sablony`.
-- Hledání (název, tag, klasifikace, kód nebo název diagnózy).
+- Hledání podle názvu (od 2026-11-20; dříve i tag, klasifikace a diagnózy).
 - **Sloupce:**
 
 | Sloupec | Obsah |
 | --- | --- |
 | Název | tučně, zalamuje se |
-| Diagnózy | štítky s kódem MKN-10 (monospace); název diagnózy je v tooltipu |
-| Tag | šedý štítek |
-| Klasifikace | barevný štítek: nonMD šedá, MD modrá, research fialová, other oranžová |
+| Zdroje | pod sebou šedá ikona a název zdroje (Dotazník, Laboratoř, Wearables) |
 | Frekvence | Popis frekvence, např. „Jednorázově“, „Každých 7 dní“, „Každé 2 týdny ve středu“, „Každý měsíc, 15. den“, „Každý rok v březnu“, „Vlastní (3 termíny)“. Pod ním šedě zahájení a konec: „Zahájení 7.12.2026 · celkem 10 dotazníků“ / „Zahájení ručně · po dobu 3 měsíců“. |
-| Pásma (body) | tři štítky s tečkou: zelené `0–7`, žluté `8–14`, červené `15+` |
 | Pacienti | počet pacientů s aktivní monitorací podle této šablony (tooltip) |
 | akce | Upravit, Smazat (s potvrzením) |
 
@@ -374,7 +371,7 @@ Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
 
 Nadpis „Nová šablona“ / „Upravit šablonu“, drobečková navigace Šablony › Vytvořit / Upravit. Na úpravě je vpravo nahoře **Smazat**.
 
-Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zařazení → Rozsah pásem → Další postup**.
+Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zdroje**. Karty Zařazení (diagnózy, klasifikace, tag), Rozsah pásem a Další postup jsou **z formuláře odebrané** (2026-11-20).
 
 **Karta 1 – Název:** jen pole **Název\*** přes celou šířku.
 
@@ -408,35 +405,22 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zařazení → Rozsa
 - **Náhled** (šedý rámeček dole): „Náhled – při začátku monitorace dnes (20.11.2026) přijdou dotazníky:“ a prvních 8 termínů jako štítky s datem. Při konci Nikdy na konci „… a dál až do konce monitorace pacienta“, při více termínech „… celkem N“.
 - Validace: interval, počet dotazníků, doba a čísla v řádcích Vlastní musí být 1–999 („Zadejte číslo od 1 do 999.“); Vlastní musí mít aspoň jeden řádek („Přidejte alespoň jeden termín.“).
 
-**Karta 3 – Zařazení** (dva sloupce; pole, která dřív byla v kartě 1 s Názvem – ⚠️ OVĚŘIT, zda je ponechat):
-- **Diagnózy\*** přes celou šířku:
-  - vybrané diagnózy jsou modré štítky „kód + název“ s ✕;
-  - na konci je výběr „+ Přidat diagnózu (MKN-10)…“;
-  - musí být vybrána aspoň jedna.
-- **Klasifikace\***: čtyři přepínací tlačítka nonMD / MD / research / other. Pod nimi je vysvětlivka:
-  - nonMD = mimo zdravotnický prostředek;
-  - MD = zdravotnický prostředek;
-  - research = výzkum / studie;
-  - other = ostatní.
-  - **⚠️ OVĚŘIT** význam zkratek.
-- **Tag** (vpravo vedle Klasifikace). Tag nabízí už použité tagy a má nápovědu „Krátký štítek pro filtrování…“ (⚠️ OVĚŘIT: filtr podle tagu byl z Dashboardu odebrán – upravit text nápovědy, nebo tag úplně zrušit?).
+**Karta 3 – Zdroje** (NOVÉ 2026-11-20):
+- Nadpis „Zdroje“, popis „Ze kterých zdrojů se u pacientů s touto šablonou počítá připravenost. Barva pacienta je nejhorší výsledek ze zvolených zdrojů.“
+- Seznam zvolených zdrojů v rámečku, každý řádek: šedá ikona zdroje (stejná jako na Dashboardu), název, šedý popis a vpravo koš (Odebrat zdroj):
+  - **Dotazník** – „Odpovědi pacienta – pásmo podle bodů. Termíny podle frekvence výše.“
+  - **Laboratoř** – „Krevní obraz a biochemie (neutrofily, trombocyty, hemoglobin, kreatinin, bilirubin).“
+  - **Wearables** – „Teplota, saturace, tep a kroky z chytrých hodinek nebo náramku.“
+- Pod seznamem bílá tlačítka **+ Laboratoř**, **+ Wearables**… pro zdroje, které ještě nejsou přidané (pořadí zdrojů je vždy Dotazník, Laboratoř, Wearables). Prázdný seznam: „Zatím žádný zdroj.“
+- Nová šablona má předvyplněný jen **Dotazník**. Validace: aspoň jeden zdroj („Přidejte alespoň jeden zdroj.“).
+- **Dopad na Dashboard:** u pacienta se zobrazují a do barvy pruhu počítají **jen zdroje z šablony jeho aktuální monitorace** (bez šablony všechny). Pacient, který zdroj ze šablony nemá vůbec (např. nemá hodinky), ho nevidí – ⚠️ OVĚŘIT: má se chybějící povinný zdroj ukazovat jako „bez dat“ (šedá → Neúplné)?
+- ⚠️ OVĚŘIT: Frekvence se týká jen dotazníku – má se při odebrání Dotazníku skrýt / přesunout pod zdroj Dotazník?
+- Návrhy dalších zdrojů (zatím neimplementováno, k diskusi): viz *Otevřené otázky*.
 
-**Karta 4 – Rozsah pásem:**
-- Tři dlaždice: Zelené od 0 do [X], Žluté od X+1 do [Y], Červené od Y+1 a více.
-- Zadávají se jen **dvě hranice**, takže pásma se nepřekrývají a nemají mezery.
-- Pod dlaždicemi je náhledový pruh 0–40 b.
-- Validace:
-  - žluté musí končit výš než zelené;
-  - žluté musí končit pod maximem dotazníku (40 b).
-- Poznámka: modré pásmo nezávisí na skóre.
-
-**Karta 5 – Další postup**:
-- Popis: „Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup. Klik pacientovi nastaví značku pro dnešní den. Tlačítko se zaškrtnutou volbou Čekárna zařadí pacienta nahoru do čekárny.“
-- Seznam tlačítek: pořadové číslo, textové pole s názvem, zaškrtávací pole **Čekárna** (pacient s touto značkou se zobrazí v boxu Čekárna) a ikona koše (Odebrat). Pod seznamem odkaz **+ Přidat tlačítko**.
-- Nová šablona má předvyplněná tlačítka **Čekárna** (se zaškrtnutou volbou Čekárna) a **K aplikaci**.
-- Validace: prázdný název → „Vyplňte název tlačítka, nebo ho odeberte.“
-- Pod seznamem **Náhled** tlačítek tak, jak se zobrazí na Dashboardu. Bez tlačítek: „Šablona nemá žádná tlačítka – sloupec Další postup bude u jejích pacientů prázdný.“
-- Změna se na Dashboardu projeví hned po uložení.
+**Odebrané z formuláře** (data u stávajících šablon zůstávají, nové šablony dostanou výchozí hodnoty):
+- Diagnózy, Klasifikace a Tag.
+- Rozsah pásem (barva odznaku se stejně počítá podle pravidla „max. body jedné odpovědi“).
+- Tlačítka Další postup – všechny nové šablony mají výchozí **Čekárna** a **K aplikaci**, v UI se nenastavují.
 
 Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 
@@ -644,12 +628,14 @@ Klik na řádek otevře **detail výsledku**:
 8. Některá jména jsou v produkčních datech zadaná obráceně (Příjmení „Anna“, Jméno „Malá“). Replika to přebírá. Doporučení: v UI zdůraznit pořadí polí.
 9. Meze laboratoře a wearables, okna aktuálnosti (vázat laboratoř na datum příštího cyklu léčby?) a pořadí v souhrnu (má „Neúplné“ přebíjet „K posouzení“?).
 10. Odkud přijdou data laboratoře (LIS / nemocniční systém) a wearables (které zařízení, jak často), a co má otevřít klik na jejich odznak.
-11. Které zdroje jsou pro připravenost povinné (např. laboratoř u chemoterapie)? Nastavovat to v šabloně?
+11. Které zdroje jsou pro připravenost povinné (např. laboratoř u chemoterapie)? – v šabloně je teď box Zdroje; ověřit, zda chybějící zdroj ze šablony ukazovat jako „bez dat“.
+12. Další možné zdroje do šablony (návrh 2026-11-20): **Vitální funkce v ambulanci** (TK, tep, teplota, hmotnost), **Hmotnost a nutriční screening** (úbytek hmotnosti, NRS 2002), **Výkonnostní stav ECOG / Karnofsky** (zadá lékař), **Hodnocení toxicity lékařem (CTCAE)**, **e-Skill / digitální gramotnost** (už je v aplikaci), **Telefonický kontakt sestry** (strukturovaný záznam), **Glykémie / domácí měření** (diabetici na kortikoidech).
 
 ## Changelog
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Šablona: z formuláře odebrány karty Zařazení (diagnózy, klasifikace, tag), Rozsah pásem a Další postup; nová karta **Zdroje** (Dotazník / Laboratoř / Wearables, přidat / odebrat). Dashboard počítá jen zdroje ze šablony pacienta. Seznam šablon: sloupce Název, Zdroje, Frekvence, Pacienti. |
 | 2026-11-20 | Šablona › Frekvence: nová část **Zahájení monitorace** – Datum (kalendář) / Aktivovat ručně. Dialog Nová monitorace podle ní předvyplní Start, nebo vypne Aktivní. V seznamu šablon pod frekvencí „Zahájení …“. |
 | 2026-11-20 | Šablona: první karta jen **Název**; nová karta **Frekvence** – Jednorázově / Pravidelně (den, týden + den v týdnu, měsíc + den v měsíci, rok + měsíc; interval 1–999) / Vlastní (řádky „za N jednotek od začátku“) a **Konec monitorace** (Nikdy / počtem dotazníků / dobou) s náhledem termínů. Diagnózy, Klasifikace a Tag v kartě Zařazení. Dotazníky monitorace se plánují podle nové frekvence. |
 | 2026-11-20 | Zpětná vazba v levém menu je nenápadnější: bez karty a pozadí (jen čára nahoře), ostré rohy (2 px), bez stínů, šedý nadpis a ikona; Odeslat je bez textu šedé. |

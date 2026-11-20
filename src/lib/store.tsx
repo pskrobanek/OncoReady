@@ -64,6 +64,7 @@ function migrate(stored: Partial<DB>): DB {
         actions: kept.length ? kept : DEFAULT_ACTIONS(),
         // Šablony z doby před volbou frekvence: Pravidelně každých N dní, konec Nikdy
         schedule: p.schedule ?? scheduleFromDays(p.frequencyDays ?? 7),
+        sources: p.sources ?? ['questionnaire', 'lab', 'wearables'],
         start: p.start ?? DEFAULT_START(),
         ending: p.ending ?? DEFAULT_END(),
       }

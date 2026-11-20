@@ -1,9 +1,9 @@
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BandRanges, ClassificationBadge, DiagnosisChips, TagBadge } from '../components/programs'
+import { SourceIcon } from '../components/Readiness'
 import { Button, Card, ConfirmModal, LinkAction, PageHeader, PerPage, resultsLabel, SearchInput, useToast } from '../components/ui'
-import { diagnosisName } from '../data/programs'
+import { sourceMeta } from '../lib/readiness'
 import { endLabel, scheduleLabel, startLabel } from '../lib/schedule'
 import { useStore } from '../lib/store'
 
@@ -22,8 +22,7 @@ export function Sablony() {
       .sort((a, b) => a.name.localeCompare(b.name, 'cs'))
       .filter(
         (p) =>
-          !term ||
-          [p.name, p.tag, p.classification, ...p.diagnoses, ...p.diagnoses.map(diagnosisName)].some((x) => x.toLowerCase().includes(term)),
+          !term || p.name.toLowerCase().includes(term),
       )
   }, [db.programs, search])
 
@@ -45,7 +44,7 @@ export function Sablony() {
           <table className="w-full table-auto divide-y divide-gray-200 border-t border-gray-200 text-start">
             <thead className="whitespace-nowrap bg-gray-50/50">
               <tr>
-                {['Název', 'Diagnózy', 'Tag', 'Klasifikace', 'Frekvence', 'Pásma (body)', 'Pacienti'].map((h, i) => (
+                {['Název', 'Zdroje', 'Frekvence', 'Pacienti'].map((h, i) => (
                   <th key={h} className={`${i === 0 ? 'px-6' : 'px-3'} py-3.5 text-start text-sm font-semibold text-gray-950`}>
                     {h}
                   </th>
@@ -57,17 +56,19 @@ export function Sablony() {
               {rows.slice(0, perPage).map((p) => (
                 <tr key={p.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/sablony/${p.id}/upravit`)}>
                   <td className="min-w-[12rem] px-6 py-4 text-sm font-medium text-gray-950">{p.name}</td>
-                  <td className="min-w-[9rem] px-3 py-4">
-                    <DiagnosisChips codes={p.diagnoses} />
-                  </td>
-                  <td className="px-3 py-4">{p.tag && <TagBadge>{p.tag}</TagBadge>}</td>
                   <td className="px-3 py-4">
-                    <ClassificationBadge value={p.classification} />
+                    <div className="flex flex-col gap-1">
+                      {p.sources.map((k) => (
+                        <span key={k} className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-700">
+                          <SourceIcon source={k} className="h-4 w-4 text-gray-400" />
+                          {sourceMeta(k).label}
+                        </span>
+                      ))}
+                    </div>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-950">{scheduleLabel(p.schedule)}
-                    <div className="text-gray-500">{[startLabel(p.start), endLabel(p.schedule, p.ending)].filter(Boolean).join(' · ')}</div></td>
-                  <td className="whitespace-nowrap px-3 py-4">
-                    <BandRanges bands={p.bands} />
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-950">
+                    {scheduleLabel(p.schedule)}
+                    <div className="text-gray-500">{[startLabel(p.start), endLabel(p.schedule, p.ending)].filter(Boolean).join(' · ')}</div>
                   </td>
                   <td className="px-3 py-4 text-sm tabular-nums text-gray-950" title="Pacienti s aktivní monitorací podle této šablony">{activePatients(p.id)}</td>
                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>

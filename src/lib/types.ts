@@ -57,7 +57,7 @@ export type ScheduleUnit = 'day' | 'week' | 'month' | 'year'
 /**
  * Frekvence dotazníků v šabloně. Všechna pole jsou vždy vyplněná (formulář si pamatuje volby i při přepnutí druhu).
  * - once: jeden dotazník v den začátku monitorace
- * - regular: každých `every` jednotek; týden ve dni `weekday` (1 = po … 7 = ne), měsíc ve dni `monthDay` (1–31), rok v měsíci `month` (1–12)
+ * - regular: každých `every` jednotek; týden ve dni `weekday` (0 = od data zahájení, 1 = po … 7 = ne), měsíc ve dni `monthDay` (1–31), rok v měsíci `month` (1–12)
  * - custom: termíny `steps` – každý za `count` jednotek od začátku monitorace
  */
 export interface Schedule {

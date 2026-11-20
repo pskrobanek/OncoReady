@@ -274,6 +274,19 @@ function FrequencyCard({
             {sc.unit === 'week' && (
               <Field label="Den v týdnu">
                 <div className="flex flex-wrap gap-2">
+                  {/* Od zahájení = každých N týdnů ode dne zahájení monitorace (bez pevného dne v týdnu) */}
+                  <button
+                    type="button"
+                    title="Stejný den v týdnu jako zahájení monitorace"
+                    onClick={() => set({ weekday: 0 })}
+                    className={cx(
+                      'h-9 rounded-lg px-3 text-sm font-semibold ring-1 transition',
+                      sc.weekday === 0 ? 'bg-primary-50 text-primary-700 ring-2 ring-primary-600' : 'bg-white text-gray-700 ring-gray-950/10 hover:bg-gray-50',
+                    )}
+                  >
+                    Od data zahájení
+                  </button>
+                  <span className="mx-1 w-px self-stretch bg-gray-200" aria-hidden />
                   {WEEKDAYS.map((d, i) => (
                     <button
                       type="button"
@@ -356,32 +369,23 @@ function FrequencyCard({
           <h3 className="text-sm font-medium text-gray-950">Konec monitorace</h3>
           {sc.kind === 'regular' ? (
             <>
-              <Radio name="ending" checked={ending.kind === 'never'} onChange={() => onEnding({ ...ending, kind: 'never' })} label="Nikdy (dotazníky chodí až do konce monitorace pacienta)" />
-              <Radio
-                name="ending"
-                checked={ending.kind === 'count'}
-                onChange={() => onEnding({ ...ending, kind: 'count' })}
-                label={
-                  <span className="flex flex-wrap items-center gap-2 font-normal text-gray-700">
-                    <span className="font-medium text-gray-950">Počtem dotazníků</span>
-                    <NumberInput value={ending.count} invalid={!!errors.ending && ending.kind === 'count'} onChange={(count) => onEnding({ ...ending, kind: 'count', count })} />
-                    {ending.count === 1 ? 'dotazník' : ending.count >= 2 && ending.count <= 4 ? 'dotazníky' : 'dotazníků'}
-                  </span>
-                }
-              />
-              <Radio
-                name="ending"
-                checked={ending.kind === 'duration'}
-                onChange={() => onEnding({ ...ending, kind: 'duration' })}
-                label={
-                  <span className="flex flex-wrap items-center gap-2 font-normal text-gray-700">
-                    <span className="font-medium text-gray-950">Dobou</span>
-                    <NumberInput value={ending.amount} invalid={!!errors.ending && ending.kind === 'duration'} onChange={(amount) => onEnding({ ...ending, kind: 'duration', amount })} />
-                    <UnitSelect value={ending.unit} count={ending.amount} onChange={(unit) => onEnding({ ...ending, kind: 'duration', unit })} />
-                    od začátku monitorace
-                  </span>
-                }
-              />
+              {/* Volby jsou jen text; pole se nabídnou až pod zvolenou volbou */}
+              <Radio name="ending" checked={ending.kind === 'never'} onChange={() => onEnding({ ...ending, kind: 'never' })} label="Nikdy" />
+              <Radio name="ending" checked={ending.kind === 'count'} onChange={() => onEnding({ ...ending, kind: 'count' })} label="Počtem dotazníků" />
+              {ending.kind === 'count' && (
+                <div className="-mt-1 flex flex-wrap items-center gap-2 pl-7 text-sm text-gray-700">
+                  <NumberInput value={ending.count} invalid={!!errors.ending} onChange={(count) => onEnding({ ...ending, count })} />
+                  {ending.count === 1 ? 'dotazník' : ending.count >= 2 && ending.count <= 4 ? 'dotazníky' : 'dotazníků'}
+                </div>
+              )}
+              <Radio name="ending" checked={ending.kind === 'duration'} onChange={() => onEnding({ ...ending, kind: 'duration' })} label="Dobou" />
+              {ending.kind === 'duration' && (
+                <div className="-mt-1 flex flex-wrap items-center gap-2 pl-7 text-sm text-gray-700">
+                  <NumberInput value={ending.amount} invalid={!!errors.ending} onChange={(amount) => onEnding({ ...ending, amount })} />
+                  <UnitSelect value={ending.unit} count={ending.amount} onChange={(unit) => onEnding({ ...ending, unit })} />
+                  od začátku monitorace
+                </div>
+              )}
               {errors.ending && <p className="text-sm text-red-600">{errors.ending}</p>}
             </>
           ) : (

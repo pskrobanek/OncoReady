@@ -72,7 +72,8 @@ export function planDates(s: Schedule, end: ScheduleEnd, start: string, until: s
       case 'day':
         return addDays(start, n * k)
       case 'week': {
-        const first = addDays(start, ((s.weekday - weekdayOf(start) + 7) % 7) || 7) // nejbližší zvolený den po začátku
+        // weekday 0 = od data zahájení (stejný den v týdnu jako zahájení), jinak nejbližší zvolený den po zahájení
+        const first = s.weekday === 0 ? addDays(start, 7 * n) : addDays(start, ((s.weekday - weekdayOf(start) + 7) % 7) || 7)
         return addDays(first, 7 * n * (k - 1))
       }
       case 'month': {
@@ -123,7 +124,7 @@ export function scheduleLabel(s: Schedule): string {
     n === 1
       ? { day: 'Každý den', week: 'Každý týden', month: 'Každý měsíc', year: 'Každý rok' }[s.unit]
       : `${n >= 2 && n <= 4 ? 'Každé' : 'Každých'} ${n} ${unitWord(n, s.unit)}`
-  if (s.unit === 'week') return `${each} ${WEEKDAYS_IN[s.weekday - 1]}`
+  if (s.unit === 'week') return s.weekday === 0 ? `${each} od zahájení` : `${each} ${WEEKDAYS_IN[s.weekday - 1]}`
   if (s.unit === 'month') return `${each}, ${s.monthDay}. den`
   if (s.unit === 'year') return `${each} ${MONTHS_IN[s.month - 1]}`
   return each

@@ -391,17 +391,16 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zdroje**. Karty Zař
     - Popisky tlačítek se skloňují podle čísla: 1 → den / týden / měsíc / rok, 2–4 → dny / týdny / měsíce / roky, 5+ → dní / týdnů / měsíců / let. Výchozí jednotka týden.
     - Na úzké obrazovce se tlačítka zalomí pod pole s číslem.
   - **Den**: jen interval (každých N dní; první dotazník N dní po začátku).
-  - **Týden**: navíc **Den v týdnu** – 7 tlačítek Po Út St Čt Pá So Ne (jedno vybrané, výchozí Po). První dotazník je nejbližší zvolený den po začátku, pak každých N týdnů.
+  - **Týden**: navíc **Den v týdnu** – první tlačítko **Od data zahájení** (od 2026-11-20; dotazník každých N týdnů ode dne zahájení, tj. ve stejný den v týdnu jako zahájení), za svislou čárkou 7 tlačítek Po Út St Čt Pá So Ne (jedno vybrané, výchozí Po). U dne v týdnu je první dotazník nejbližší zvolený den po zahájení, pak každých N týdnů. V seznamu šablon „Každé 2 týdny od zahájení“.
   - **Měsíc**: navíc **Den v měsíci** – výběr 1.–31. (výchozí 1.), nápověda „Když měsíc tolik dní nemá, dotazník se odešle poslední den měsíce.“
   - **Rok**: navíc **Měsíc** – výběr Leden–Prosinec (výchozí Leden), nápověda „Den v měsíci je stejný jako den začátku monitorace.“ (⚠️ OVĚŘIT, zda nemá jít vybrat i den.)
 - **Vlastní:** seznam řádků „1. za **[číslo]** **[týden ▾]** od začátku monitorace 🗑“ – číslo 1–999, druh den / týden / měsíc / rok (skloňuje se podle čísla). Odkaz **+ Přidat termín** přidá řádek o 1 vyšší se stejným druhem. Při přepnutí na Vlastní je předvyplněný jeden řádek „za 1 týden“.
   - ⚠️ OVĚŘIT: každý řádek je doba **od začátku monitorace** (ne od předchozího dotazníku). Termíny se seřadí podle data, stejné termíny se sloučí.
 - **Konec monitorace** (pod tenkou čárou):
-  - jen u **Pravidelně** – přepínač (radio):
-    - **Nikdy** (dotazníky chodí až do konce monitorace pacienta) – výchozí;
-    - **Počtem dotazníků** [číslo] dotazníků (výchozí 10);
-    - **Dobou** [číslo] [měsíce ▾] od začátku monitorace (výchozí 3 měsíce; druh den / týden / měsíc / rok).
-    - Klik do pole u volby tu volbu rovnou vybere.
+  - jen u **Pravidelně** – přepínač (radio) **jen s textem**: **Nikdy** (výchozí) / **Počtem dotazníků** / **Dobou** (od 2026-11-20).
+    - Pole se nabídnou až **pod zvolenou volbou** (odsazené pod text volby):
+      - Počtem dotazníků: [číslo] dotazníků (výchozí 10);
+      - Dobou: [číslo] [měsíce ▾] od začátku monitorace (výchozí 3 měsíce; den / týden / měsíc / rok).
   - u Jednorázově text „Monitorace končí jediným dotazníkem.“, u Vlastní „Monitorace končí posledním zadaným termínem.“ (⚠️ OVĚŘIT, zda má jít konec nastavit i tam.)
 - **Náhled** (šedý rámeček dole): „Náhled – při začátku monitorace dnes (20.11.2026) přijdou dotazníky:“ a prvních 8 termínů jako štítky s datem. Při konci Nikdy na konci „… a dál až do konce monitorace pacienta“, při více termínech „… celkem N“.
 - Validace: interval, počet dotazníků, doba a čísla v řádcích Vlastní musí být 1–999 („Zadejte číslo od 1 do 999.“); Vlastní musí mít aspoň jeden řádek („Přidejte alespoň jeden termín.“).
@@ -660,6 +659,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Šablona › Frekvence: u týdne volba **Od data zahájení** (vedle dnů v týdnu); Konec monitorace má volby jen jako text a pole (počet / doba) se nabídnou až pod zvolenou volbou. |
 | 2026-11-20 | Šablona › Zdroje › Dotazník: tlačítko **Vybrat dotazník** otevře detail – knihovna předpřipravených (OncoReady, EORTC QLQ-C30 / BR45 / H&N43 / PR25 / LC29, PRO-CTCAE – licencované jen jako metadata), náhled otázek, **vlastní dotazníky** s otázkami, odpověďmi, body a red flagem (nový, upravit, smazat, duplikovat). |
 | 2026-11-20 | Šablona › Frekvence › Pravidelně: číslo a tlačítka jednotky (den / týden / měsíc / rok, skloňované podle čísla) v jednom řádku „Opakovat každých“. |
 | 2026-11-20 | Šablona: z formuláře odebrány karty Zařazení (diagnózy, klasifikace, tag), Rozsah pásem a Další postup; nová karta **Zdroje** (Dotazník / Laboratoř / Wearables, přidat / odebrat). Dashboard počítá jen zdroje ze šablony pacienta. Seznam šablon: sloupce Název, Zdroje, Frekvence, Pacienti. |

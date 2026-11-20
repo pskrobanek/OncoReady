@@ -89,18 +89,16 @@ const NEVER = DEFAULT_END()
  * Demo šablony (2026-11-20) – pořadí určuje i pořadí příznaků (boxů) na Dashboardu:
  * - Chronická toxicita RT – 4 šablony s moduly EORTC, jen dotazník, každé 4 týdny;
  * - Akutní toxicita RT – dotazník OncoReady + laboratoř, každý týden po dobu 8 týdnů;
- * - Stacionář – intenzivní léčba (každý týden) a ostatní (každé 3 týdny), dotazník + laboratoř + wearables.
+ * - Stacionář – intenzivní léčba (každý týden) a ostatní (každé 3 týdny), dotazník + laboratoř + wearables; příznaky K lékaři, K aplikaci.
  */
 export const seedPrograms = (): MonitoringProgram[] => [
   tpl('pr-st-int', 'Stacionář – intenzivní léčba', ['C15', 'C20', 'C34', 'C50'], ['questionnaire', 'lab', 'wearables'], DEFAULT_QUESTIONNAIRE_ID, 1, NEVER, [
-    ACT.cekarna(),
-    ACT.aplikace(),
     ACT.lekar(),
+    ACT.aplikace(),
   ]),
   tpl('pr-st-ost', 'Stacionář – ostatní', ['C50', 'C53', 'C61', 'C67'], ['questionnaire', 'lab', 'wearables'], DEFAULT_QUESTIONNAIRE_ID, 3, NEVER, [
-    ACT.cekarna(),
-    ACT.aplikace(),
     ACT.lekar(),
+    ACT.aplikace(),
   ]),
   tpl('pr-ak', 'Akutní toxicita RT', ['C50', 'C61', 'C20', 'C53', 'C32'], ['questionnaire', 'lab'], DEFAULT_QUESTIONNAIRE_ID, 1, { ...NEVER, kind: 'duration', amount: 8, unit: 'week' }, [
     ACT.cekarna(),

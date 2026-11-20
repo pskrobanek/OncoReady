@@ -163,8 +163,8 @@ const FILL_RATE = 0.75
 
 /** Dnešní příznaky (pro ukázku boxů): [příjmení, akce, čas]. Platí jen dnes. */
 const TODAY_TAGS: [string, string, string, string][] = [
-  ['Dvořák', 'a-cekarna', 'Čekárna', '07:52'],
-  ['Sedláčková', 'a-cekarna', 'Čekárna', '08:14'],
+  ['Dvořák', 'a-lekar', 'K lékaři', '07:52'],
+  ['Sedláčková', 'a-lekar', 'K lékaři', '08:14'],
   ['Zemanová', 'a-aplikace', 'K aplikaci', '07:40'],
   ['Černá', 'a-lekar', 'K lékaři', '08:31'],
   ['Král', 'a-telefon', 'Zavolat', '09:05'],

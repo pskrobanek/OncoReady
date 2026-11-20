@@ -245,13 +245,13 @@ Pravidla se vyhodnocují v tomto pořadí:
 
 **Demo data** (přepracováno 2026-11-20 – simulují běžný chod kliniky; generátor `src/data/seed.ts`, laboratoř a wearables `src/data/readinessSeed.ts`)
 - Všichni pacienti jsou **smyšlení**. Rodná čísla jsou formálně platná (ženy měsíc +50, platné datum, 10 číslic dělitelných 11), datum narození se dopočítá. E-maily `jmeno.prijmeni@example.com`.
-- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v8** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
+- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v9** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
 - **Šablony** (pořadí určuje i pořadí příznaků / boxů):
 
 | Šablona | Zdroje | Dotazník | Frekvence | Konec | Příznaky | Pacienti |
 | --- | --- | --- | --- | --- | --- | --- |
-| Stacionář – intenzivní léčba | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každý týden od zahájení | nikdy | Čekárna, K aplikaci, K lékaři | 6 |
-| Stacionář – ostatní | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každé 3 týdny od zahájení | nikdy | Čekárna, K aplikaci, K lékaři | 6 |
+| Stacionář – intenzivní léčba | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každý týden od zahájení | nikdy | K lékaři, K aplikaci | 6 |
+| Stacionář – ostatní | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každé 3 týdny od zahájení | nikdy | K lékaři, K aplikaci | 6 |
 | Akutní toxicita RT | dotazník, laboratoř | OncoReady – akutní toxicita | každý týden od zahájení | po dobu 8 týdnů | Čekárna, K lékaři | 10 |
 | Chronická toxicita RT – prs | dotazník | EORTC QLQ-BR45 | každé 4 týdny od zahájení | nikdy | K lékaři, Zavolat | 3 |
 | Chronická toxicita RT – hlava a krk | dotazník | EORTC QLQ-H&N43 | každé 4 týdny | nikdy | K lékaři, Zavolat | 3 |
@@ -262,7 +262,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 - **Monitorace**: chronická toxicita začala před 3–11 měsíci, akutní před 1–7 týdny, stacionář intenzivní před 3–16 týdny, ostatní před 1,5–9 měsíci. Termíny dotazníků se počítají z frekvence šablony (včetně plánovaných do budoucna).
 - **Vyplnění ~75 %**: minulý termín je vyplněný s pravděpodobností 75 % (v den termínu nebo do 2 dnů; dnešní termín 40 %, ráno). Laboratoř: akutní toxicita v den termínu, stacionář den před termínem, k dispozici ~80 %. Wearables (stacionář): posledních 8 týdnů, výpadky synchronizace po 1–3 dnech (~75 % dní).
 - **Profil pacienta** určuje pásma: dobrý (82 % zelená), střední (50 % zelená, 33 % žlutá, 10 % červená), horší (30 % červená). Laboratoř u stacionáře hlavně neutropenie a trombocytopenie, u RT hemoglobin a kreatinin; wearables občas zvýšená teplota u horšího profilu.
-- **Dnešní příznaky** pro ukázku boxů: Čekárna – Dvořák (7:52), Sedláčková (8:14); K aplikaci – Zemanová (7:40); K lékaři – Černá (8:31); Zavolat – Král (9:05).
+- **Dnešní příznaky** pro ukázku boxů: K lékaři – Dvořák (7:52), Sedláčková (8:14), Černá (8:31); K aplikaci – Zemanová (7:40); Zavolat – Král (9:05).
 - e-Skill: 5 výsledků u pacientů chronické toxicity.
 - **Dotazníky chronické toxicity jsou vyplněné otázkami modulu EORTC** ze šablony (od 2026-11-20) – klinický report i souhrnný prescoring ukazují otázky a odpovědi EORTC. Otázky jsou **zástupné** (vlastní volné znění podle oblastí modulu: 5 obecných otázek + 6–8 otázek modulu, škála Vůbec ne / Trochu / Dost / Velmi = 0–3 b, u vybraných otázek red flag), oficiální znění se vloží po získání licence.
 - Vyhodnocení dotazníku z knihovny: **red flag → červené pásmo**, odpověď „Velmi“ (3 b) → žluté, jinak zelené; skóre = součet bodů. ⚠️ OVĚŘIT s klinikem (EORTC se oficiálně vyhodnocuje škálami 0–100).
@@ -286,7 +286,7 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Šablony** – „Podle šablony monitorace pacienta“: skupiny podle názvu šablony abecedně, pacienti bez šablony na konci („Bez šablony“).
   - Skupiny jsou jen uvnitř boxu **Všichni pacienti**. Nadpis skupiny je řádek přes celou šířku tabulky (šedé pozadí, 14 px tučně, u závažnosti barevná tečka, za názvem šedě počet pacientů). Při vodorovném posunu zůstává vlevo.
   - Uvnitř skupiny platí zvolené řazení. Pořadí skupin je pevné (nemění se směrem řazení).
-- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak s ikonou (Čekárna, K aplikaci, …) – **jen příznaky šablon vybraných ve filtru Šablona** (nic nevybráno = všechny šablony). Např. v pohledu Chronická toxicita RT jen K lékaři a Zavolat, ve Stacionáři Čekárna, K aplikaci, K lékaři. Totéž platí pro boxy příznaků v hlavním okně a pro volby filtru Příznak. Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. **Výchozí: nic nezaškrtnuto**, v pohledu **Stacionář všechny příznaky** (Čekárna, K aplikaci, K lékaři) – pohled má nastavení výchozích boxů (všechny / žádný). Volba se pamatuje v prohlížeči **zvlášť pro Dashboard a každý pohled**; „Obnovit výchozí zobrazení“ vrátí výchozí boxy daného pohledu. Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
+- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak s ikonou (Čekárna, K aplikaci, …) – **jen příznaky šablon vybraných ve filtru Šablona** (nic nevybráno = všechny šablony). Např. v pohledu Chronická toxicita RT jen K lékaři a Zavolat, ve Stacionáři K lékaři, K aplikaci. Totéž platí pro boxy příznaků v hlavním okně a pro volby filtru Příznak. Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. **Výchozí: nic nezaškrtnuto**, v pohledu **Stacionář všechny příznaky** (K lékaři, K aplikaci) – pohled má nastavení výchozích boxů (všechny / žádný). Volba se pamatuje v prohlížeči **zvlášť pro Dashboard a každý pohled**; „Obnovit výchozí zobrazení“ vrátí výchozí boxy daného pohledu. Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
 - Odkaz „Obnovit výchozí zobrazení“ (vrátí časovou osu, seskupení i boxy příznaků) se zobrazí jen při změně.
 - Poznámka: „Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.“ **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
 - Do záložky lze později přidat další volby zobrazení (např. výběr zdrojů).
@@ -707,6 +707,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Demo: šablony Stacionáře mají místo příznaku Čekárna příznak **K lékaři** (příznaky K lékaři, K aplikaci); úložiště v9. |
 | 2026-11-20 | Pohled **Stacionář** má výchozí zobrazené všechny boxy příznaků (Čekárna, K aplikaci, K lékaři); volba boxů se pamatuje zvlášť pro Dashboard a každý pohled. |
 | 2026-11-20 | Horní box **Vyhledat pacienta**. Filtr Příznak má volbu **Vše** (výchozí). Zobrazení › Boxy příznaků: výchozí **žádný box** – hlavní Dashboard ukazuje všechny pacienty v jednom seznamu. |
 | 2026-11-20 | Pohled: Přejmenovat / Smazat schované v menu pod ikonou ⋯ vedle nadpisu. Filtr Příznak má výchozí **Bez příznaku** (seznam Všichni pacienti bez pacientů, kteří jsou v boxech příznaků). |

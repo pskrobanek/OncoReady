@@ -7,7 +7,7 @@ import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, Mo
 import { todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
-const KEY = 'oncoready-mvp-db-v12' // při změně dat zvýšit verzi (v7 nová demo data, v8 EORTC, v9 stacionář bez Čekárny, v10 chronická toxicita po letech, v11 příznaky podle stavu)
+const KEY = 'oncoready-mvp-db-v13' // při změně dat zvýšit verzi (v7 nová demo data, v8 EORTC, v9 stacionář bez Čekárny, v10 chronická toxicita po letech, v11 příznaky podle stavu)
 
 function load(): DB {
   try {

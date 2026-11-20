@@ -426,7 +426,7 @@ function PatientsBoard({
         const program = db.programs.find((p) => p.id === mon?.programId)
         return { patient, mon, program, qs: mon ? questionnairesOf(db, mon.id) : [] }
       })
-      .filter((r) => r.mon && r.qs.length > 0)
+      .filter((r) => r.mon && r.mon.active && r.qs.length > 0) // ukončené monitorace (historie) na Dashboard nepatří
       .filter((r) => !term || tableName(r.patient).toLowerCase().includes(term) || r.patient.rodneCislo.includes(term))
       .map((r) => {
         const ready = readinessOf(db, r.patient.id, today)

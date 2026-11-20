@@ -2,7 +2,7 @@
 // Všichni pacienti jsou smyšlení; rodná čísla jsou formálně platná (datum narození + dělitelnost 11), kontakty smyšlené.
 // Data se generují deterministicky vůči dnešku: termíny podle frekvence šablony, vyplnění ~75 %.
 // Nepoužívat skutečné údaje pacientů.
-import type { Answers, DB, LabResult, Monitoring, Patient, Questionnaire, WearableDay } from '../lib/types'
+import type { Answers, DB, LabResult, Monitoring, MonitoringProgram, Patient, Questionnaire, WearableDay } from '../lib/types'
 import { QUESTIONS, scaleValueForPoints } from './questionnaire'
 import { seedPatientViews, seedPrograms, seedViews } from './programs'
 import { eskillFor } from './eskillSeed'
@@ -17,14 +17,28 @@ import { DEFAULT_QUESTIONNAIRE_ID, libraryItem } from './questionnaireLibrary'
 
 const SCORABLE = QUESTIONS.filter((q) => q.type !== 'control').map((q) => q.id)
 
-/** Vygeneruje odpovědi tak, aby dávaly přesně zadané skóre a pásmo. */
-function makeAnswers(score: number, band: Band, pinned: Record<string, number> = {}): Answers {
+/** Jak často bývá příznak u radioterapie závažný (váha pro výběr otázky se závažnou odpovědí v demu). */
+const SEVERE_WEIGHT: Record<string, number> = { skin: 3, fatigue: 3, swallowing: 2, diarrhea: 2, pain: 2, appetite: 1.5, nausea: 1, mood: 1, symptoms: 1, health: 1 }
+
+/**
+ * Vygeneruje odpovědi tak, aby dávaly přesně zadané skóre a pásmo.
+ * S generátorem `r` se závažná odpověď (3 / 4 body) dá náhodně podle SEVERE_WEIGHT a body se rozloží v náhodném pořadí.
+ */
+function makeAnswers(score: number, band: Band, pinned: Record<string, number> = {}, r?: () => number): Answers {
   const pts: Record<string, number> = { ...pinned }
-  if (band === 'red' && !Object.values(pts).some((p) => p >= 4)) pts.symptoms = 4
-  if (band === 'yellow' && !Object.values(pts).some((p) => p >= 3)) pts.pain = 3
+  const pickSevere = () => {
+    if (!r) return band === 'red' ? 'symptoms' : 'pain'
+    const total = SCORABLE.reduce((a, id) => a + (SEVERE_WEIGHT[id] ?? 1), 0)
+    let x = r() * total
+    for (const id of SCORABLE) if ((x -= SEVERE_WEIGHT[id] ?? 1) <= 0) return id
+    return SCORABLE[0]
+  }
+  if (band === 'red' && !Object.values(pts).some((p) => p >= 4)) pts[pickSevere()] = 4
+  if (band === 'yellow' && !Object.values(pts).some((p) => p >= 3)) pts[pickSevere()] = 3
   const cap = band === 'red' ? 3 : band === 'yellow' ? 2 : band === 'blue' ? 3 : 2
   let rest = score - Object.values(pts).reduce((a, b) => a + b, 0)
   const free = SCORABLE.filter((id) => !(id in pts))
+  if (r) free.sort(() => r() - 0.5)
   free.forEach((id) => (pts[id] = 0))
   while (rest > 0) {
     let progressed = false
@@ -185,6 +199,109 @@ const addMonths = (iso: string, n: number) => {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
 }
 
+// ---------------------------------------------------------------------------
+// Historická kohorta pro Statistiky: pacienti s UKONČENOU monitorací (na Dashboardu nejsou, v Kartotéce „Ukončeno“).
+// ---------------------------------------------------------------------------
+const M_FIRST = ['Jan', 'Petr', 'Josef', 'Pavel', 'Martin', 'Tomáš', 'Jaroslav', 'Miroslav', 'Zdeněk', 'Václav', 'Karel', 'Milan', 'Michal', 'Jiří', 'Ladislav', 'Vladimír', 'Stanislav', 'František', 'Roman', 'Luboš']
+const F_FIRST = ['Jana', 'Marie', 'Eva', 'Hana', 'Anna', 'Lenka', 'Kateřina', 'Věra', 'Alena', 'Petra', 'Lucie', 'Jaroslava', 'Ludmila', 'Helena', 'Ivana', 'Zdeňka', 'Monika', 'Jitka', 'Martina', 'Dana']
+const LAST = ['Novák', 'Svoboda', 'Novotný', 'Dvořák', 'Černý', 'Procházka', 'Kučera', 'Veselý', 'Horák', 'Němec', 'Marek', 'Pospíšil', 'Hájek', 'Jelínek', 'Král', 'Růžička', 'Beneš', 'Fiala', 'Sedláček', 'Doležal', 'Zeman', 'Kolář', 'Navrátil', 'Čermák', 'Urban', 'Blažek', 'Kříž', 'Kovář', 'Bartoš', 'Šimek', 'Vlček', 'Polák', 'Musil', 'Kopecký', 'Štěpánek', 'Holub', 'Matoušek', 'Krejčí', 'Kadlec', 'Pešek']
+/** Ženská podoba příjmení (Novák → Nováková, Novotný → Novotná, Svoboda → Svobodová, Hájek → Hájková, Krejčí → Krejčí). */
+const female = (s: string) =>
+  s.endsWith('í') ? s : s.endsWith('ý') ? s.slice(0, -1) + 'á' : s.endsWith('a') ? s.slice(0, -1) + 'ová' : s.endsWith('ek') ? s.slice(0, -2) + 'ková' : s.endsWith('ec') ? s.slice(0, -2) + 'cová' : s + 'ová'
+
+type Ctx = Pick<DB, 'patients' | 'monitorings' | 'questionnaires' | 'labs'>
+/**
+ * Doplní ukončené pacienty:
+ * - Akutní toxicita RT (60 pacientů za posledních ~18 měsíců): 8 týdenních dotazníků, toxicita stoupá do 5.–6. týdne
+ *   a ke konci léčby mírně klesá; laboratoř každý týden (~80 %); vyplnění ~75 %.
+ * - Chronická toxicita RT (prostata 40, ostatní moduly po 10): RT před 1–5 lety, 1 dotazník ročně;
+ *   G3+ (odpověď „Velmi“ / red flag) nejčastější ve 2. roce po RT.
+ */
+function addHistory(ctx: Ctx, programs: MonitoringProgram[], today: string, r: () => number, int: (a: number, b: number) => number, time: (from?: number, to?: number) => string) {
+  let n = 0
+  let q = ctx.questionnaires.length + 1000
+  const person = (sex: 'm' | 'f' | 'any') => {
+    const f = sex === 'f' || (sex === 'any' && r() < 0.5)
+    const last = LAST[int(0, LAST.length - 1)]
+    const born: [number, number, number] = [int(1954, 1972), int(1, 12), int(1, 28)]
+    const rc = rodneCislo(born[0], born[1], born[2], f, 500 + n * 41)
+    const p: Patient = {
+      id: `h${++n}`,
+      prijmeni: f ? female(last) : last,
+      jmeno: f ? F_FIRST[int(0, F_FIRST.length - 1)] : M_FIRST[int(0, M_FIRST.length - 1)],
+      rodneCislo: rc,
+      datumNarozeni: birthDate(rc),
+      telefon: '',
+      email: '',
+    }
+    p.email = `${ascii(p.jmeno)}.${ascii(p.prijmeni)}@example.com`
+    ctx.patients.push(p)
+    return p
+  }
+  const bandFor = (score: number): Band => (score >= 14 ? 'red' : score >= 8 ? 'yellow' : 'green')
+
+  // Akutní toxicita RT
+  const acute = programs.find((p) => p.id === 'pr-ak')!
+  for (let i = 0; i < 60; i++) {
+    const p = person('any')
+    const start = addDays(today, -7 * int(10, 78))
+    const mon: Monitoring = { id: `hm${n}`, patientId: p.id, programId: acute.id, start, end: addDays(start, 56), active: false, nextStep: null }
+    ctx.monitorings.push(mon)
+    const base = 2 + r() * 3 // výchozí obtíže
+    const peak = 3 + r() * 9 // jak moc toxicita stoupne (u části pacientů výrazně)
+    const peakWeek = int(5, 6)
+    for (let w = 1; w <= 8; w++) {
+      const date = addDays(start, 7 * w)
+      q++
+      const shape = w <= peakWeek ? w / peakWeek : 1 - 0.18 * (w - peakWeek)
+      const score = Math.max(0, Math.min(22, Math.round(base + peak * shape + (r() - 0.5) * 3)))
+      const filled = r() < FILL_RATE
+      const band = r() < 0.05 ? 'blue' : bandFor(score)
+      ctx.questionnaires.push({
+        id: `q${q}`,
+        monitoringId: mon.id,
+        scheduledFor: date,
+        filledAt: filled ? `${addDays(date, int(0, 1))}T${time()}:00` : null,
+        answers: filled ? makeAnswers(band === 'blue' ? Math.min(score, 11) : score, band, {}, r) : null,
+      })
+      if (r() < 0.8) {
+        const lv = shape > 0.8 && r() < 0.25 ? (r() < 0.3 ? 'red' : 'yellow') : r() < 0.06 ? 'yellow' : 'ok'
+        ctx.labs.push({ id: `hl${ctx.labs.length + 1}`, patientId: p.id, date: addDays(date, -1), values: labValues(r, lv, false) })
+      }
+    }
+  }
+
+  // Chronická toxicita RT – ukončené roční sledování
+  const G3_BY_YEAR = [0.12, 0.3, 0.22, 0.15, 0.1] // pravděpodobnost G3+ v 1.–5. roce po RT (vrchol ve 2. roce)
+  for (const [programId, count, sex] of [['pr-ch-pr', 40, 'm'], ['pr-ch-br', 10, 'f'], ['pr-ch-hn', 10, 'any'], ['pr-ch-lc', 10, 'any']] as const) {
+    const program = programs.find((x) => x.id === programId)!
+    for (let i = 0; i < count; i++) {
+      const p = person(sex)
+      const years = int(2, 5)
+      const start = addDays(today, -365 * years - int(30, 300))
+      const mon: Monitoring = { id: `hm${n}`, patientId: p.id, programId, start, end: addDays(start, 365 * years + 30), active: false, nextStep: null }
+      ctx.monitorings.push(mon)
+      for (let y = 1; y <= years; y++) {
+        const date = addDays(start, 365 * y - int(0, 20))
+        if (date > today) break
+        q++
+        const filled = r() < 0.8
+        const x = r()
+        const g3 = G3_BY_YEAR[y - 1]
+        // G3+ = red flag (červená) nebo odpověď „Velmi“ (žlutá); jinak bez závažných obtíží
+        const b: Band = x < g3 * 0.6 ? 'red' : x < g3 ? 'yellow' : 'green'
+        ctx.questionnaires.push({
+          id: `q${q}`,
+          monitoringId: mon.id,
+          scheduledFor: date,
+          filledAt: filled ? `${addDays(date, int(0, 3))}T${time()}:00` : null,
+          answers: filled ? defAnswers(program.questionnaireId, b, r) : null,
+        })
+      }
+    }
+  }
+}
+
 /** Vygeneruje celou databázi demo dat vůči dnešku. */
 function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | 'customQuestionnaires' | 'patientViews'> {
   const programs = seedPrograms()
@@ -232,7 +349,7 @@ function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | '
       const later = addDays(date, int(0, 2)) // vyplní v den termínu nebo do 2 dnů, nejpozději dnes
       const day = later > today ? today : later
       const at = day === today ? `${today}T${time(7, 9)}:00` : `${day}T${time()}:00`
-      const answers = program.questionnaireId === DEFAULT_QUESTIONNAIRE_ID ? makeAnswers(int(lo, hi), band) : defAnswers(program.questionnaireId, band, r)
+      const answers = program.questionnaireId === DEFAULT_QUESTIONNAIRE_ID ? makeAnswers(int(lo, hi), band, {}, r) : defAnswers(program.questionnaireId, band, r)
       questionnaires.push({ id: `q${q}`, monitoringId: mon.id, scheduledFor: date, filledAt: at, answers })
     }
 
@@ -265,6 +382,7 @@ function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | '
     }
   })
 
+  addHistory({ patients, monitorings, questionnaires, labs }, programs, today, r, int, time)
   const data = { patients, monitorings, questionnaires, labs, wearables, eskillResults: eskillFor(patients.slice(0, 12).map((p) => p.id), today) }
   assignTodayTags({ ...data, programs, views: [], feedback: [], customQuestionnaires: [], patientViews: [] }, today)
   return data
@@ -284,7 +402,7 @@ function assignTodayTags(db: DB, today: string) {
   }
   const used: Record<string, number> = {}
   const take = (key: string, max: number) => (used[key] = (used[key] ?? 0) + 1) <= max
-  for (const mon of db.monitorings) {
+  for (const mon of db.monitorings.filter((m) => m.active)) {
     const program = db.programs.find((p) => p.id === mon.programId)!
     const band = worstCurrent(readinessOf(db, mon.patientId, today))
     // Vyžádal kontrolu (modrá) = stejně naléhavé jako červená

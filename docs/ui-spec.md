@@ -362,7 +362,7 @@ Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
 | Diagnózy | štítky s kódem MKN-10 (monospace); název diagnózy je v tooltipu |
 | Tag | šedý štítek |
 | Klasifikace | barevný štítek: nonMD šedá, MD modrá, research fialová, other oranžová |
-| Frekvence | Denně / Každé 3 dny / Týdně / Každé 2 týdny / Měsíčně / Každé 3 měsíce / Každých N dní |
+| Frekvence | Popis frekvence, např. „Jednorázově“, „Každých 7 dní“, „Každé 2 týdny ve středu“, „Každý měsíc, 15. den“, „Každý rok v březnu“, „Vlastní (3 termíny)“. Pod ním šedě konec, pokud je nastavený: „celkem 10 dotazníků“ / „po dobu 3 měsíců“. |
 | Pásma (body) | tři štítky s tečkou: zelené `0–7`, žluté `8–14`, červené `15+` |
 | Pacienti | počet pacientů s aktivní monitorací podle této šablony (tooltip) |
 | akce | Upravit, Smazat (s potvrzením) |
@@ -374,8 +374,36 @@ Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
 
 Nadpis „Nová šablona“ / „Upravit šablonu“, drobečková navigace Šablony › Vytvořit / Upravit. Na úpravě je vpravo nahoře **Smazat**.
 
-**Karta 1 (dva sloupce):**
-- **Název\*** a **Tag**. Tag nabízí už použité tagy a má nápovědu „Krátký štítek pro filtrování…“ (⚠️ OVĚŘIT: filtr podle tagu byl z Dashboardu odebrán – upravit text nápovědy, nebo tag úplně zrušit?).
+Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zařazení → Rozsah pásem → Další postup**.
+
+**Karta 1 – Název:** jen pole **Název\*** přes celou šířku.
+
+**Karta 2 – Frekvence** (NOVÉ 2026-11-20; nahrazuje výběr „Frekvence odesílání“ s počtem dní):
+- Nadpis „Frekvence“, popis „Jak často se pacientovi automaticky odešle dotazník.“
+- Tři přepínací tlačítka (vzhled jako Klasifikace) s vysvětlivkou pod nimi:
+  - **Jednorázově** – „Jeden dotazník v den začátku monitorace.“ (⚠️ OVĚŘIT: v den začátku, nebo za zvolenou dobu?)
+  - **Pravidelně** (výchozí) – „Dotazník se opakuje po zvoleném intervalu.“
+  - **Vlastní** – „Termíny zadáte po řádcích – každý za určitou dobu od začátku monitorace.“
+- **Pravidelně:**
+  - **Opakovat po**: čtyři menší přepínací tlačítka **Den / Týden / Měsíc / Rok** (výchozí Týden).
+  - Řádek „Každý / Každé / Každých **[číslo]** den / týdny / měsíců…“ – číslo 1–999, slovo se skloňuje podle čísla; za polem šedě „(1–999)“.
+  - **Den**: jen interval (každých N dní; první dotazník N dní po začátku).
+  - **Týden**: navíc **Den v týdnu** – 7 tlačítek Po Út St Čt Pá So Ne (jedno vybrané, výchozí Po). První dotazník je nejbližší zvolený den po začátku, pak každých N týdnů.
+  - **Měsíc**: navíc **Den v měsíci** – výběr 1.–31. (výchozí 1.), nápověda „Když měsíc tolik dní nemá, dotazník se odešle poslední den měsíce.“
+  - **Rok**: navíc **Měsíc** – výběr Leden–Prosinec (výchozí Leden), nápověda „Den v měsíci je stejný jako den začátku monitorace.“ (⚠️ OVĚŘIT, zda nemá jít vybrat i den.)
+- **Vlastní:** seznam řádků „1. za **[číslo]** **[týden ▾]** od začátku monitorace 🗑“ – číslo 1–999, druh den / týden / měsíc / rok (skloňuje se podle čísla). Odkaz **+ Přidat termín** přidá řádek o 1 vyšší se stejným druhem. Při přepnutí na Vlastní je předvyplněný jeden řádek „za 1 týden“.
+  - ⚠️ OVĚŘIT: každý řádek je doba **od začátku monitorace** (ne od předchozího dotazníku). Termíny se seřadí podle data, stejné termíny se sloučí.
+- **Konec monitorace** (pod tenkou čárou):
+  - jen u **Pravidelně** – přepínač (radio):
+    - **Nikdy** (dotazníky chodí až do konce monitorace pacienta) – výchozí;
+    - **Počtem dotazníků** [číslo] dotazníků (výchozí 10);
+    - **Dobou** [číslo] [měsíce ▾] od začátku monitorace (výchozí 3 měsíce; druh den / týden / měsíc / rok).
+    - Klik do pole u volby tu volbu rovnou vybere.
+  - u Jednorázově text „Monitorace končí jediným dotazníkem.“, u Vlastní „Monitorace končí posledním zadaným termínem.“ (⚠️ OVĚŘIT, zda má jít konec nastavit i tam.)
+- **Náhled** (šedý rámeček dole): „Náhled – při začátku monitorace dnes (20.11.2026) přijdou dotazníky:“ a prvních 8 termínů jako štítky s datem. Při konci Nikdy na konci „… a dál až do konce monitorace pacienta“, při více termínech „… celkem N“.
+- Validace: interval, počet dotazníků, doba a čísla v řádcích Vlastní musí být 1–999 („Zadejte číslo od 1 do 999.“); Vlastní musí mít aspoň jeden řádek („Přidejte alespoň jeden termín.“).
+
+**Karta 3 – Zařazení** (dva sloupce; pole, která dřív byla v kartě 1 s Názvem – ⚠️ OVĚŘIT, zda je ponechat):
 - **Diagnózy\*** přes celou šířku:
   - vybrané diagnózy jsou modré štítky „kód + název“ s ✕;
   - na konci je výběr „+ Přidat diagnózu (MKN-10)…“;
@@ -386,9 +414,9 @@ Nadpis „Nová šablona“ / „Upravit šablonu“, drobečková navigace Šab
   - research = výzkum / studie;
   - other = ostatní.
   - **⚠️ OVĚŘIT** význam zkratek.
-- **Frekvence odesílání\***: výběr předvoleb, nebo „Vlastní interval…“ s polem „každých N dní“.
+- **Tag** (vpravo vedle Klasifikace). Tag nabízí už použité tagy a má nápovědu „Krátký štítek pro filtrování…“ (⚠️ OVĚŘIT: filtr podle tagu byl z Dashboardu odebrán – upravit text nápovědy, nebo tag úplně zrušit?).
 
-**Karta 2 – Rozsah pásem:**
+**Karta 4 – Rozsah pásem:**
 - Tři dlaždice: Zelené od 0 do [X], Žluté od X+1 do [Y], Červené od Y+1 a více.
 - Zadávají se jen **dvě hranice**, takže pásma se nepřekrývají a nemají mezery.
 - Pod dlaždicemi je náhledový pruh 0–40 b.
@@ -397,7 +425,7 @@ Nadpis „Nová šablona“ / „Upravit šablonu“, drobečková navigace Šab
   - žluté musí končit pod maximem dotazníku (40 b).
 - Poznámka: modré pásmo nezávisí na skóre.
 
-**Karta 3 – Další postup**:
+**Karta 5 – Další postup**:
 - Popis: „Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Další postup. Klik pacientovi nastaví značku pro dnešní den. Tlačítko se zaškrtnutou volbou Čekárna zařadí pacienta nahoru do čekárny.“
 - Seznam tlačítek: pořadové číslo, textové pole s názvem, zaškrtávací pole **Čekárna** (pacient s touto značkou se zobrazí v boxu Čekárna) a ikona koše (Odebrat). Pod seznamem odkaz **+ Přidat tlačítko**.
 - Nová šablona má předvyplněná tlačítka **Čekárna** (se zaškrtnutou volbou Čekárna) a **K aplikaci**.
@@ -410,7 +438,10 @@ Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 ### Napojení na pacienta
 
 - Dialog *Nová monitorace / Upravit monitoraci* v Kartotéce má pole **Šablona** (výběr, nebo „— bez šablony —“).
-- Dotazníky se naplánují podle frekvence zvolené šablony. Bez šablony se posílají každých 7 dní.
+- Dotazníky se naplánují podle **frekvence a konce** zvolené šablony, nejpozději do konce monitorace pacienta (zvolené v kalendáři). Bez šablony se posílají každých 7 dní.
+  - Text pod dialogem: „Naplánuje se N dotazníků (každé 2 týdny ve středu, celkem 10 dotazníků).“
+- Šablony uložené před 2026-11-20 (jen počet dní) se převedou na **Pravidelně – každých N dní, konec Nikdy**.
+- Pro stáří dotazníku na Dashboardu se z frekvence počítá přibližný interval ve dnech (týden = 7, měsíc = 30, rok = 365; Vlastní = nejkratší mezera mezi termíny; Jednorázově = 7).
 - Tabulka Monitorace pacienta má první sloupec **Šablona**.
 
 **⚠️ OVĚŘIT – rozsahy pásem se zatím nepoužívají pro barvu odznaků.** Barva se stále počítá podle pravidla „nejvyšší body jedné odpovědi“ (viz *Pravidla pásma*). Je potřeba rozhodnout, jestli má pásmo určovat celkové skóre podle rozsahů šablony, maximum jedné odpovědi, nebo obojí (horší z obou).
@@ -603,7 +634,7 @@ Klik na řádek otevře **detail výsledku**:
 3. Úplný seznam otázek dotazníku, jejich bodování a zdroje (TheraData / PRO-CTCAE).
 4. Přesná pravidla pásem a priorita mezi modrým a červeným pásmem.
 5. Logika filtru na Dashboardu: filtruje se podle nejnovějšího dotazníku, nebo podle kteréhokoli?
-6. Frekvence plánovaných dotazníků v šabloně.
+6. Frekvence plánovaných dotazníků v šabloně – návrh v *Šablony › Karta 2 – Frekvence*; ověřit význam řádků Vlastní (od začátku vs. od předchozího) a zda konec platí i pro Jednorázově / Vlastní.
 7. Obsah stránky Statistiky.
 8. Některá jména jsou v produkčních datech zadaná obráceně (Příjmení „Anna“, Jméno „Malá“). Replika to přebírá. Doporučení: v UI zdůraznit pořadí polí.
 9. Meze laboratoře a wearables, okna aktuálnosti (vázat laboratoř na datum příštího cyklu léčby?) a pořadí v souhrnu (má „Neúplné“ přebíjet „K posouzení“?).
@@ -614,6 +645,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Šablona: první karta jen **Název**; nová karta **Frekvence** – Jednorázově / Pravidelně (den, týden + den v týdnu, měsíc + den v měsíci, rok + měsíc; interval 1–999) / Vlastní (řádky „za N jednotek od začátku“) a **Konec monitorace** (Nikdy / počtem dotazníků / dobou) s náhledem termínů. Diagnózy, Klasifikace a Tag v kartě Zařazení. Dotazníky monitorace se plánují podle nové frekvence. |
 | 2026-11-20 | Zpětná vazba v levém menu je nenápadnější: bez karty a pozadí (jen čára nahoře), ostré rohy (2 px), bez stínů, šedý nadpis a ikona; Odeslat je bez textu šedé. |
 | 2026-11-20 | Filtr Skóre: nová volba **Vše** nahoře, je výchozí (Dashboard i nový pohled) – na Dashboardu jsou tak vidět všichni pacienti včetně zelených a žlutých. |
 | 2026-11-19 | Demo data: 4 noví zelení pacienti (Horáková, Veselý, Marková, Bartoš) – všechny aktuální zdroje v pořádku, mohou k aplikaci; doplní se i do uložených dat. |

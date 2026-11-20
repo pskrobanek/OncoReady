@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { LATER_DEMO_PATIENTS, seedDB } from '../data/seed'
 import { DEFAULT_ACTIONS } from '../data/programs'
+import { DEFAULT_END, planDates, scheduleFromDays } from './schedule'
 import type { Answers, DashboardView, DB, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
-import { addDays, todayIso } from './format'
+import { todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
 const KEY = 'oncoready-mvp-db-v6' // při změně struktury dat zvýšit verzi
@@ -58,7 +59,13 @@ function migrate(stored: Partial<DB>): DB {
     // Zrušená tlačítka (Ke kontrole sestrou / lékařem) se odeberou; zůstane-li šablona bez tlačítek, dostane výchozí (Čekárna / K aplikaci).
     programs: (db.programs ?? seed.programs).map((p) => {
       const kept = (p.actions ?? []).filter((a) => !isRemovedAction(a))
-      return { ...p, actions: kept.length ? kept : DEFAULT_ACTIONS() }
+      return {
+        ...p,
+        actions: kept.length ? kept : DEFAULT_ACTIONS(),
+        // Šablony z doby před volbou frekvence: Pravidelně každých N dní, konec Nikdy
+        schedule: p.schedule ?? scheduleFromDays(p.frequencyDays ?? 7),
+        ending: p.ending ?? DEFAULT_END(),
+      }
     }),
     // Značky ze zrušených tlačítek se u pacientů smažou.
     monitorings: (db.monitorings ?? seed.monitorings).map((m) => (m.nextStep && isRemovedAction({ id: m.nextStep.actionId, label: m.nextStep.label }) ? { ...m, nextStep: null } : m)),
@@ -118,15 +125,14 @@ function useDBState() {
           }
         }),
 
-      /** Nová monitorace pacienta – naplánuje dotazníky podle frekvence zvolené monitorace (bez ní každých 7 dní). */
+      /** Nová monitorace pacienta – naplánuje dotazníky podle frekvence a konce ze šablony (bez šablony každých 7 dní). */
       createMonitoring: (data: Omit<Monitoring, 'id'>) =>
         setDb((s) => {
           const m = { ...data, id: uid('m') }
-          const every = s.programs.find((p) => p.id === m.programId)?.frequencyDays ?? 7
-          const qs: Questionnaire[] = []
-          for (let date = addDays(m.start, every); date <= m.end; date = addDays(date, every)) {
-            qs.unshift({ id: uid('q'), monitoringId: m.id, scheduledFor: date, filledAt: null, answers: null })
-          }
+          // Termíny podle frekvence a konce ze šablony, nejpozději do konce monitorace pacienta.
+          const program = s.programs.find((p) => p.id === m.programId)
+          const dates = program ? planDates(program.schedule, program.ending, m.start, m.end) : planDates(scheduleFromDays(7), DEFAULT_END(), m.start, m.end)
+          const qs: Questionnaire[] = dates.reverse().map((date) => ({ id: uid('q'), monitoringId: m.id, scheduledFor: date, filledAt: null, answers: null }))
           return { ...s, monitorings: [...s.monitorings, m], questionnaires: [...s.questionnaires, ...qs] }
         }),
       /** Nastavit (nebo zrušit) značku pacienta u jeho monitorace. */

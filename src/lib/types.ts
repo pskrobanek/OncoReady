@@ -28,13 +28,44 @@ export interface NextStepAction {
 }
 
 /** Šablona monitorace = program sledování (stránka „Šablony“). Pacientům se přiřazuje v kartotéce. */
+export type ScheduleUnit = 'day' | 'week' | 'month' | 'year'
+
+/**
+ * Frekvence dotazníků v šabloně. Všechna pole jsou vždy vyplněná (formulář si pamatuje volby i při přepnutí druhu).
+ * - once: jeden dotazník v den začátku monitorace
+ * - regular: každých `every` jednotek; týden ve dni `weekday` (1 = po … 7 = ne), měsíc ve dni `monthDay` (1–31), rok v měsíci `month` (1–12)
+ * - custom: termíny `steps` – každý za `count` jednotek od začátku monitorace
+ */
+export interface Schedule {
+  kind: 'once' | 'regular' | 'custom'
+  unit: ScheduleUnit
+  every: number
+  weekday: number
+  monthDay: number
+  month: number
+  steps: { id: string; count: number; unit: ScheduleUnit }[]
+}
+
+/** Konec monitorace: nikdy / po počtu dotazníků / po době od začátku. */
+export interface ScheduleEnd {
+  kind: 'never' | 'count' | 'duration'
+  count: number
+  amount: number
+  unit: ScheduleUnit
+}
+
 export interface MonitoringProgram {
   id: string
   name: string
   diagnoses: string[] // kódy MKN-10, např. „C50“
   tag: string
   classification: Classification
-  frequencyDays: number // jak často se pacientovi odesílá dotazník
+  /** Přibližný interval v dnech – dopočítává se z `schedule` (stáří dotazníku, starší logika). */
+  frequencyDays: number
+  /** Frekvence odesílání dotazníků (od 2026-11-20). */
+  schedule: Schedule
+  /** Konec monitorace – uplatní se jen u pravidelné frekvence. */
+  ending: ScheduleEnd
   bands: { green: ScoreRange; yellow: ScoreRange; red: ScoreRange }
   /** Tlačítka „Další postup“ (v pořadí zobrazení). */
   actions: NextStepAction[]

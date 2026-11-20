@@ -28,7 +28,7 @@ import { DURATION_WEEKS, RangeCalendar, weeksLabel } from '../components/RangeCa
 import { ESkillResultModal, ScorePill } from '../components/eskill'
 import { useOpenESkillTest } from './ESkill'
 import { PlayIcon } from '@heroicons/react/20/solid'
-import { frequencyLabel } from '../data/programs'
+import { DEFAULT_END, endLabel, planDates, scheduleFromDays, scheduleLabel } from '../lib/schedule'
 import { eskillOf, questionnairesOf, useStore } from '../lib/store'
 import type { ESkillResult, Monitoring, Patient, Questionnaire } from '../lib/types'
 
@@ -322,10 +322,11 @@ export function MonitoringModal({
   const [active, setActive] = useState(initial?.active ?? true)
   const [error, setError] = useState<string | null>(null)
 
-  const every = program?.frequencyDays ?? 7
+  const schedule = program?.schedule ?? scheduleFromDays(7)
+  const ending = program?.ending ?? DEFAULT_END()
+  const freqText = [scheduleLabel(schedule), endLabel(schedule, ending)].filter(Boolean).join(', ').toLowerCase()
   const weeks = start && end ? (Date.parse(end) - Date.parse(start)) / (7 * 86400000) : null
-  let planned = 0
-  if (start && end) for (let d = addDays(start, every); d <= end; d = addDays(d, every)) planned++
+  const planned = start && end ? planDates(schedule, ending, start, end).length : 0
 
   const submit = () => {
     if (!start || !end) return setError('Vyberte začátek i konec monitorace.')
@@ -419,10 +420,10 @@ export function MonitoringModal({
             <p className="text-sm text-gray-500">
               {start && end ? (
                 <>
-                  Naplánuje se <strong className="text-gray-950">{planned}</strong> {planned === 1 ? 'dotazník' : planned >= 2 && planned <= 4 ? 'dotazníky' : 'dotazníků'} ({frequencyLabel(every).toLowerCase()}).
+                  Naplánuje se <strong className="text-gray-950">{planned}</strong> {planned === 1 ? 'dotazník' : planned >= 2 && planned <= 4 ? 'dotazníky' : 'dotazníků'} ({freqText}).
                 </>
               ) : (
-                <>Dotazníky se naplánují automaticky: {frequencyLabel(every).toLowerCase()} od začátku monitorace.</>
+                <>Dotazníky se naplánují automaticky: {freqText}.</>
               )}
             </p>
           )}

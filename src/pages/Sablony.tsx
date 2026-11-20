@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BandRanges, ClassificationBadge, DiagnosisChips, TagBadge } from '../components/programs'
 import { Button, Card, ConfirmModal, LinkAction, PageHeader, PerPage, resultsLabel, SearchInput, useToast } from '../components/ui'
-import { diagnosisName, frequencyLabel } from '../data/programs'
+import { diagnosisName } from '../data/programs'
+import { endLabel, scheduleLabel } from '../lib/schedule'
 import { useStore } from '../lib/store'
 
 /** Seznam šablon monitorace (programů sledování). */
@@ -63,7 +64,8 @@ export function Sablony() {
                   <td className="px-3 py-4">
                     <ClassificationBadge value={p.classification} />
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-950">{frequencyLabel(p.frequencyDays)}</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-950">{scheduleLabel(p.schedule)}
+                    {endLabel(p.schedule, p.ending) && <div className="text-gray-500">{endLabel(p.schedule, p.ending)}</div>}</td>
                   <td className="whitespace-nowrap px-3 py-4">
                     <BandRanges bands={p.bands} />
                   </td>

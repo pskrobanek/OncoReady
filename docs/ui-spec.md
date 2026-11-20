@@ -387,8 +387,9 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zdroje**. Karty Zař
   - **Pravidelně** (výchozí) – „Dotazník se opakuje po zvoleném intervalu.“
   - **Vlastní** – „Termíny zadáte po řádcích – každý za určitou dobu od začátku monitorace.“
 - **Pravidelně:**
-  - **Opakovat po**: čtyři menší přepínací tlačítka **Den / Týden / Měsíc / Rok** (výchozí Týden).
-  - Řádek „Každý / Každé / Každých **[číslo]** den / týdny / měsíců…“ – číslo 1–999, slovo se skloňuje podle čísla; za polem šedě „(1–999)“.
+  - **Opakovat každých** (od 2026-11-20 v jednom řádku): nejdřív **pole na číslo** (1–999, výchozí 1), hned za ním čtyři menší přepínací tlačítka jednotky a na konci šedě „(1–999)“.
+    - Popisky tlačítek se skloňují podle čísla: 1 → den / týden / měsíc / rok, 2–4 → dny / týdny / měsíce / roky, 5+ → dní / týdnů / měsíců / let. Výchozí jednotka týden.
+    - Na úzké obrazovce se tlačítka zalomí pod pole s číslem.
   - **Den**: jen interval (každých N dní; první dotazník N dní po začátku).
   - **Týden**: navíc **Den v týdnu** – 7 tlačítek Po Út St Čt Pá So Ne (jedno vybrané, výchozí Po). První dotazník je nejbližší zvolený den po začátku, pak každých N týdnů.
   - **Měsíc**: navíc **Den v měsíci** – výběr 1.–31. (výchozí 1.), nápověda „Když měsíc tolik dní nemá, dotazník se odešle poslední den měsíce.“
@@ -635,6 +636,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Šablona › Frekvence › Pravidelně: číslo a tlačítka jednotky (den / týden / měsíc / rok, skloňované podle čísla) v jednom řádku „Opakovat každých“. |
 | 2026-11-20 | Šablona: z formuláře odebrány karty Zařazení (diagnózy, klasifikace, tag), Rozsah pásem a Další postup; nová karta **Zdroje** (Dotazník / Laboratoř / Wearables, přidat / odebrat). Dashboard počítá jen zdroje ze šablony pacienta. Seznam šablon: sloupce Název, Zdroje, Frekvence, Pacienti. |
 | 2026-11-20 | Šablona › Frekvence: nová část **Zahájení monitorace** – Datum (kalendář) / Aktivovat ručně. Dialog Nová monitorace podle ní předvyplní Start, nebo vypne Aktivní. V seznamu šablon pod frekvencí „Zahájení …“. |
 | 2026-11-20 | Šablona: první karta jen **Název**; nová karta **Frekvence** – Jednorázově / Pravidelně (den, týden + den v týdnu, měsíc + den v měsíci, rok + měsíc; interval 1–999) / Vlastní (řádky „za N jednotek od začátku“) a **Konec monitorace** (Nikdy / počtem dotazníků / dobou) s náhledem termínů. Diagnózy, Klasifikace a Tag v kartě Zařazení. Dotazníky monitorace se plánují podle nové frekvence. |

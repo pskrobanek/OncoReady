@@ -136,7 +136,7 @@ const KINDS: { value: Schedule['kind']; label: string; hint: string }[] = [
 /** Přepínač z několika tlačítek (stejný vzhled jako Klasifikace). */
 function Segmented<T extends string>({ value, options, onChange, size = 'md' }: { value: T; options: { value: T; label: string; title?: string }[]; onChange: (v: T) => void; size?: 'md' | 'sm' }) {
   return (
-    <div className={cx('grid gap-2', size === 'md' ? 'grid-cols-3' : 'grid-cols-4 sm:max-w-md')}>
+    <div className={cx('grid gap-2', size === 'md' ? 'grid-cols-3' : 'grid-cols-4')}>
       {options.map((o) => (
         <button
           type="button"
@@ -247,15 +247,21 @@ function FrequencyCard({
         {/* Pravidelně: jednotka, interval a den v týdnu / den v měsíci / měsíc */}
         {sc.kind === 'regular' && (
           <div className="flex flex-col gap-5 border-t border-gray-100 pt-5">
-            <Field label="Opakovat po">
-              <Segmented size="sm" value={sc.unit} options={UNITS.map((u) => ({ value: u, label: UNIT_LABEL[u] }))} onChange={(unit) => set({ unit })} />
+            {/* V jednom řádku: číslo a za ním tlačítka jednotky (popisky se skloňují podle čísla) */}
+            <Field label="Opakovat každých">
+              <div className="flex flex-wrap items-center gap-3">
+                <NumberInput value={sc.every} invalid={!!errors.frequency} onChange={(every) => set({ every })} />
+                <div className="min-w-[16rem] flex-1 sm:max-w-md">
+                  <Segmented
+                    size="sm"
+                    value={sc.unit}
+                    options={UNITS.map((u) => ({ value: u, label: unitWord(sc.every || 5, u), title: UNIT_LABEL[u] }))}
+                    onChange={(unit) => set({ unit })}
+                  />
+                </div>
+                <span className="text-sm text-gray-400">(1–{MAX_COUNT})</span>
+              </div>
             </Field>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700">
-              {sc.every >= 2 && sc.every <= 4 ? 'Každé' : sc.every === 1 ? 'Každý' : 'Každých'}
-              <NumberInput value={sc.every} invalid={!!errors.frequency} onChange={(every) => set({ every })} />
-              {unitWord(sc.every || 5, sc.unit)}
-              <span className="text-gray-400">(1–{MAX_COUNT})</span>
-            </div>
             {sc.unit === 'week' && (
               <Field label="Den v týdnu">
                 <div className="flex flex-wrap gap-2">

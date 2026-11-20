@@ -358,7 +358,7 @@ function PatientsBoard({
   /** Kde se pamatuje Zobrazení › Boxy příznaků (Dashboard / id pohledu). */
   boardId?: string
   /** Výchozí boxy příznaků, dokud si je uživatel nezmění. */
-  defaultTagBoxes?: 'all' | 'none'
+  defaultTagBoxes?: 'all' | 'none' | string[]
   title: string
   breadcrumbs?: { label: string; to?: string }[]
   headerActions?: ReactNode
@@ -499,7 +499,7 @@ function PatientsBoard({
   // Jen příznaky šablon vybraných ve filtru Šablona (nic nevybráno = všechny) – platí pro boxy, Zobrazení i filtr Příznak.
   const filteredPrograms = filters.programIds.length ? db.programs.filter((p) => filters.programIds.includes(p.id)) : db.programs
   const tagLabels = allTagLabels(filteredPrograms, tagged.map((r) => r.step!.label))
-  const shownTags = storedTags ?? (defaultTagBoxes === 'all' ? tagLabels : [])
+  const shownTags = storedTags ?? (defaultTagBoxes === 'all' ? tagLabels : defaultTagBoxes === 'none' ? [] : defaultTagBoxes)
   const tagBoxesChanged = storedTags !== null
   const boxes: Box[] = [
     ...tagLabels

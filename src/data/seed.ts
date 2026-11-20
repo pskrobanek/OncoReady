@@ -9,6 +9,7 @@ import { eskillFor } from './eskillSeed'
 import type { Band } from '../lib/scoring'
 import { addDays, todayIso } from '../lib/format'
 import { labValues, rng, wearDay } from './readinessSeed'
+import { readinessOf, worstCurrent } from '../lib/readiness'
 import { planDates } from '../lib/schedule'
 import { DEF_KEY } from '../lib/scoring'
 import { DEFAULT_QUESTIONNAIRE_ID, libraryItem } from './questionnaireLibrary'
@@ -95,7 +96,7 @@ type Profile = 'good' | 'moderate' | 'poor'
 const BAND_ODDS: Record<Profile, [Band, number][]> = {
   good: [['green', 0.82], ['yellow', 0.13], ['blue', 0.03], ['red', 0.02]],
   moderate: [['green', 0.5], ['yellow', 0.33], ['blue', 0.07], ['red', 0.1]],
-  poor: [['green', 0.25], ['yellow', 0.35], ['blue', 0.1], ['red', 0.3]],
+  poor: [['green', 0.15], ['yellow', 0.3], ['blue', 0.1], ['red', 0.45]],
 }
 /** Skóre podle pásma (pásmo určuje nejvyšší body jedné odpovědi, skóre je součet). */
 const SCORE_RANGE: Record<Band, [number, number]> = { green: [1, 7], yellow: [8, 13], red: [12, 20], blue: [5, 11] }
@@ -125,7 +126,7 @@ const SPECS: Spec[] = [
   { prijmeni: 'Holub', jmeno: 'Karel', female: M, born: [1960, 9, 15], program: 'pr-ch-hn', startWeeksAgo: 14, profile: 'good' },
   // Chronická toxicita RT – prostata (QLQ-PR25)
   { prijmeni: 'Veselý', jmeno: 'Tomáš', female: M, born: [1958, 3, 22], program: 'pr-ch-pr', startWeeksAgo: 48, profile: 'good' },
-  { prijmeni: 'Mareš', jmeno: 'Jaroslav', female: M, born: [1954, 12, 4], program: 'pr-ch-pr', startWeeksAgo: 34, profile: 'moderate' },
+  { prijmeni: 'Mareš', jmeno: 'Jaroslav', female: M, born: [1954, 12, 4], program: 'pr-ch-pr', startWeeksAgo: 34, profile: 'poor' },
   { prijmeni: 'Pospíšil', jmeno: 'František', female: M, born: [1957, 6, 30], program: 'pr-ch-pr', startWeeksAgo: 22, profile: 'good' },
   // Chronická toxicita RT – plíce (QLQ-LC29)
   { prijmeni: 'Bartoš', jmeno: 'Jiří', female: M, born: [1955, 11, 30], program: 'pr-ch-lc', startWeeksAgo: 36, profile: 'moderate' },
@@ -137,16 +138,16 @@ const SPECS: Spec[] = [
   { prijmeni: 'Černá', jmeno: 'Lenka', female: F, born: [1975, 10, 3], program: 'pr-ak', startWeeksAgo: 5, profile: 'poor' },
   { prijmeni: 'Růžička', jmeno: 'Pavel', female: M, born: [1956, 7, 21], program: 'pr-ak', startWeeksAgo: 5, profile: 'good' },
   { prijmeni: 'Veselá', jmeno: 'Kateřina', female: F, born: [1980, 5, 16], program: 'pr-ak', startWeeksAgo: 4, profile: 'good' },
-  { prijmeni: 'Šimek', jmeno: 'Milan', female: M, born: [1961, 12, 28], program: 'pr-ak', startWeeksAgo: 4, profile: 'moderate' },
+  { prijmeni: 'Šimek', jmeno: 'Milan', female: M, born: [1961, 12, 28], program: 'pr-ak', startWeeksAgo: 4, profile: 'poor' },
   { prijmeni: 'Procházková', jmeno: 'Alena', female: F, born: [1966, 3, 8], program: 'pr-ak', startWeeksAgo: 3, profile: 'good' },
-  { prijmeni: 'Hájek', jmeno: 'Stanislav', female: M, born: [1959, 9, 1], program: 'pr-ak', startWeeksAgo: 3, profile: 'moderate' },
+  { prijmeni: 'Hájek', jmeno: 'Stanislav', female: M, born: [1959, 9, 1], program: 'pr-ak', startWeeksAgo: 3, profile: 'poor' },
   { prijmeni: 'Benešová', jmeno: 'Monika', female: F, born: [1978, 8, 25], program: 'pr-ak', startWeeksAgo: 2, profile: 'good' },
   { prijmeni: 'Kříž', jmeno: 'Václav', female: M, born: [1954, 6, 13], program: 'pr-ak', startWeeksAgo: 1, profile: 'good' },
   // Stacionář – intenzivní léčba (každý týden)
   { prijmeni: 'Krokerová', jmeno: 'Petra', female: F, born: [1966, 9, 17], program: 'pr-st-int', startWeeksAgo: 16, profile: 'poor' },
-  { prijmeni: 'Dvořák', jmeno: 'Petr', female: M, born: [1962, 4, 4], program: 'pr-st-int', startWeeksAgo: 12, profile: 'moderate' },
+  { prijmeni: 'Dvořák', jmeno: 'Petr', female: M, born: [1962, 4, 4], program: 'pr-st-int', startWeeksAgo: 12, profile: 'poor' },
   { prijmeni: 'Sedláčková', jmeno: 'Jitka', female: F, born: [1970, 2, 19], program: 'pr-st-int', startWeeksAgo: 10, profile: 'good' },
-  { prijmeni: 'Beneš', jmeno: 'Miroslav', female: M, born: [1957, 10, 10], program: 'pr-st-int', startWeeksAgo: 8, profile: 'moderate' },
+  { prijmeni: 'Beneš', jmeno: 'Miroslav', female: M, born: [1957, 10, 10], program: 'pr-st-int', startWeeksAgo: 8, profile: 'poor' },
   { prijmeni: 'Doležalová', jmeno: 'Renata', female: F, born: [1973, 12, 1], program: 'pr-st-int', startWeeksAgo: 6, profile: 'good' },
   { prijmeni: 'Vlček', jmeno: 'Zdeněk', female: M, born: [1960, 1, 24], program: 'pr-st-int', startWeeksAgo: 3, profile: 'good' },
   // Stacionář – ostatní (každé 3 týdny)
@@ -161,14 +162,6 @@ const SPECS: Spec[] = [
 /** Podíl vyplnění / dostupnosti dat (dotazníky, odběry, dny z hodinek). */
 const FILL_RATE = 0.75
 
-/** Dnešní příznaky (pro ukázku boxů): [příjmení, akce, čas]. Platí jen dnes. */
-const TODAY_TAGS: [string, string, string, string][] = [
-  ['Dvořák', 'a-lekar', 'K lékaři', '07:52'],
-  ['Sedláčková', 'a-lekar', 'K lékaři', '08:14'],
-  ['Zemanová', 'a-aplikace', 'K aplikaci', '07:40'],
-  ['Černá', 'a-lekar', 'K lékaři', '08:31'],
-  ['Král', 'a-telefon', 'Zavolat', '09:05'],
-]
 
 /**
  * Termíny chronické toxicity: v dřívějších letech 1 dotazník za rok (roční kontrola), v letošním roce
@@ -223,8 +216,6 @@ function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | '
     const start = chronic ? addDays(chronicPlan[0], -int(3, 20)) : addDays(today, -7 * sp.startWeeksAgo - int(0, 3))
     const end = program.ending.kind === 'duration' ? addDays(start, 7 * program.ending.amount) : addDays(start, chronic ? 365 * 6 : 365)
     const mon: Monitoring = { id: `m${i + 1}`, patientId: id, programId: program.id, start, end, active: true, nextStep: null }
-    const tag = TODAY_TAGS.find((t) => t[0] === sp.prijmeni)
-    if (tag) mon.nextStep = { actionId: tag[1], label: tag[2], at: `${today}T${tag[3]}:00` }
     monitorings.push(mon)
 
     // Dotazníky: termíny podle frekvence šablony; minulé vyplněné s pravděpodobností ~75 % (v den termínu nebo do 2 dnů).
@@ -274,7 +265,42 @@ function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | '
     }
   })
 
-  return { patients, monitorings, questionnaires, labs, wearables, eskillResults: eskillFor(patients.slice(0, 12).map((p) => p.id), today) }
+  const data = { patients, monitorings, questionnaires, labs, wearables, eskillResults: eskillFor(patients.slice(0, 12).map((p) => p.id), today) }
+  assignTodayTags({ ...data, programs, views: [], feedback: [], customQuestionnaires: [] }, today)
+  return data
+}
+
+/**
+ * Dnešní příznaky podle aktuálního stavu pacienta (barva pruhu u jména):
+ * - chronická toxicita: Zavolat červeným (a modrým = vyžádal kontrolu) a 2 žlutým (zeleným ne);
+ * - akutní toxicita: K lékaři červeným, modrým a 2 žlutým;
+ * - stacionář: K lékaři červeným, modrým a 1 žlutému, K aplikaci 2 zeleným.
+ */
+function assignTodayTags(db: DB, today: string) {
+  let minute = 7 * 60 + 35
+  const at = () => {
+    minute += 9
+    return `${today}T${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}:00`
+  }
+  const used: Record<string, number> = {}
+  const take = (key: string, max: number) => (used[key] = (used[key] ?? 0) + 1) <= max
+  for (const mon of db.monitorings) {
+    const program = db.programs.find((p) => p.id === mon.programId)!
+    const band = worstCurrent(readinessOf(db, mon.patientId, today))
+    // Vyžádal kontrolu (modrá) = stejně naléhavé jako červená
+    const sev = band === 'blue' ? 'red' : band
+    const set = (actionId: string) => {
+      const a = program.actions.find((x) => x.id === actionId)!
+      mon.nextStep = { actionId, label: a.label, at: at() }
+    }
+    const group = program.id.startsWith('pr-ch') ? 'ch' : program.id === 'pr-ak' ? 'ak' : 'st'
+    if (group === 'ch' && (sev === 'red' || (sev === 'yellow' && take('ch-y', 2)))) set('a-telefon')
+    if (group === 'ak' && (sev === 'red' || (sev === 'yellow' && take('ak-y', 2)))) set('a-lekar')
+    if (group === 'st') {
+      if (sev === 'red' || (sev === 'yellow' && take('st-y', 1))) set('a-lekar')
+      else if (sev === 'green' && take('st-g', 2)) set('a-aplikace')
+    }
+  }
 }
 
 export const seedDB = (): DB => ({

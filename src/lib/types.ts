@@ -117,8 +117,8 @@ export interface DashboardView {
   id: string
   name: string
   filters: DashboardFilters
-  /** Výchozí boxy příznaků v pohledu: všechny příznaky jeho šablon, nebo žádný (dokud si uživatel nevybere v Zobrazení). */
-  tagBoxes?: 'all' | 'none'
+  /** Výchozí boxy příznaků v pohledu: všechny příznaky jeho šablon, žádný, nebo vyjmenované (dokud si uživatel nevybere v Zobrazení). */
+  tagBoxes?: 'all' | 'none' | string[]
   /** Výchozí členění časové osy v pohledu (week / month / year / filled). */
   timeline?: 'week' | 'month' | 'year' | 'filled'
 }

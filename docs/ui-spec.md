@@ -123,7 +123,7 @@ Vzhled boxů 2–3:
 - sloupce mají pevné nejmenší šířky, takže **lícují pod sebou napříč boxy**; vodorovný posun časové osy je pro všechny boxy **společný**.
 - **vodorovné posuvníky se nezobrazují** (od 2026-11-20) – tabulka se posouvá do stran kolečkem myši se Shiftem, touchpadem nebo dotykem. ⚠️ OVĚŘIT, zda uživatelům s myší bez touchpadu stačí Shift + kolečko.
 
-**Tabulka v boxu** (rozložení podle náčrtu 2026-10-26; sloupec Souhrn odebrán)
+**Tabulka v boxu** (rozložení podle náčrtu 2026-10-26; sloupec Souhrn odebrán). Na Dashboardu a v pohledech jsou jen pacienti s **aktivní** monitorací (od 2026-11-20; ukončení jsou jen v Kartotéce).
 - **Řazení** a **časová osa** se nastavují v pravém panelu (viz *Panel nástrojů*).
 - **Sloupce** (zleva): Pacient · zdroj (bez nadpisu) · Aktuální · **Příznak** · časová osa · prázdná výplň. Hlavička má jeden řádek, všechny nadpisy jsou stejné (14 px, tučně).
 - **Řádky**: pacient má **řádek za každý zdroj, který má**, v pořadí Dotazník, Laboratoř, Wearables.
@@ -246,7 +246,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 
 **Demo data** (přepracováno 2026-11-20 – simulují běžný chod kliniky; generátor `src/data/seed.ts`, laboratoř a wearables `src/data/readinessSeed.ts`)
 - Všichni pacienti jsou **smyšlení**. Rodná čísla jsou formálně platná (ženy měsíc +50, platné datum, 10 číslic dělitelných 11), datum narození se dopočítá. E-maily `jmeno.prijmeni@example.com`.
-- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v12** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
+- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v13** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
 - **Šablony** (pořadí určuje i pořadí příznaků / boxů):
 
 | Šablona | Zdroje | Dotazník | Frekvence | Konec | Příznaky | Pacienti |
@@ -259,6 +259,8 @@ Pravidla se vyhodnocují v tomto pořadí:
 | Chronická toxicita RT – prostata | dotazník | EORTC QLQ-PR25 | každé 4 měsíce (15. den) | nikdy | Zavolat | 3 |
 | Chronická toxicita RT – plíce | dotazník | EORTC QLQ-LC29 | každé 4 měsíce (15. den) | nikdy | Zavolat | 3 |
 
+- **Historická kohorta pro Statistiky** (NOVÉ 2026-11-20): 60 pacientů s **ukončenou** akutní toxicitou (posledních ~18 měsíců; toxicita stoupá do 5.–6. týdne léčby a ke konci mírně klesá) a 70 pacientů s ukončeným ročním sledováním chronické toxicity (prostata 40, ostatní moduly po 10; RT před 2–5 lety, 1 dotazník ročně, G3+ nejčastější ve 2. roce po RT). V Kartotéce mají stav Ukončeno, na Dashboardu nejsou.
+- Závažná odpověď v demo dotaznících padá náhodně na otázky podle toho, jak často bývají u RT závažné (kůže, únava, polykání, průjem, bolest…).
 - **Pohledy** pod Dashboardem (Stacionář má výchozí zobrazené všechny boxy příznaků, **Akutní toxicita RT box K lékaři**, **Chronická toxicita RT box Zavolat a výchozí časovou osu Po letech**): **Chronická toxicita RT** (4 chronické šablony, 12 pacientů jen s dotazníkem), **Akutní toxicita RT** (10 pacientů s dotazníkem a laboratoří), **Stacionář** (obě stacionářové šablony, 12 pacientů se všemi 3 zdroji). Filtr Skóre = Vše.
 - **Monitorace**: chronická toxicita sleduje pacienty **1–4 roky** – v dřívějších letech **1 dotazník za rok** (roční kontrola), **letos nejvýš 3** (každé 4 měsíce podle šablony) a 1 plánovaný; ostatní: akutní před 1–7 týdny, stacionář intenzivní před 3–16 týdny, ostatní před 1,5–9 měsíci. Termíny dotazníků se počítají z frekvence šablony (včetně plánovaných do budoucna).
 - **Vyplnění ~75 %**: minulý termín je vyplněný s pravděpodobností 75 % (v den termínu nebo do 2 dnů; dnešní termín 40 %, ráno). Laboratoř: akutní toxicita v den termínu, stacionář den před termínem, k dispozici ~80 %. Wearables (stacionář): posledních 8 týdnů, výpadky synchronizace po 1–3 dnech (~75 % dní).
@@ -637,7 +639,26 @@ Otevírá se kliknutím na odznak „N/A“ nebo na budoucí termín. Je to **ce
 
 ## Statistiky
 
-**⚠️ Zástupná stránka** (chybí screenshot z produkce). Obsahuje 4 dlaždice (pacienti, aktivní monitorace, vyplněné dotazníky, míra vyplnění) a pruhový přehled dotazníků podle pásma.
+Přepracováno 2026-11-20 (výpočty `src/lib/stats.ts`). Drobečková navigace Statistiky › Přehled, nadpis „Statistiky“.
+
+**Kohorty** = skupiny šablon: Akutní toxicita RT (šablona Akutní toxicita RT), Chronická toxicita RT (4 šablony EORTC), Stacionář (2 šablony). Barvy kohort (kategorické, ověřené validátorem palety): modrá `#2a78d6`, oranžová `#eb6834`, zelenomodrá `#1baf7a`. Barvy pásem = stavové barvy aplikace (zelená, žlutá, červená, modrá).
+
+**Dlaždice** (4 v řadě): *Pacienti v aktivní monitoraci*; *Vyplnění dotazníků* (% z termínů za posledních 30 dní, pod tím počet termínů); *Aktuálně v červeném pásmu* (počet a % pacientů v monitoraci – barva pruhu u jména); *Dotazníky s G3+ příznakem* (posledních 30 dní). U „červených“ dlaždic červená tečka.
+
+**Každý graf je v kartě**: nadpis, jednovětý popis co graf ukazuje, vpravo přepínač **Graf / Tabulka** (tabulka = přístupná podoba se všemi hodnotami), legenda u grafů s více řadami, tooltip při najetí (hodnota tučně, popisek šedě, u řad barevná čárka), mřížka jen vodorovná a světlá, čáry 2 px s body 8 px a bílým okrajem, sloupce max. 28 px se zaoblenou špičkou a bílou mezerou 2 px mezi segmenty.
+
+1. **Akutní toxicita RT – průměrný průběh** – skóre dotazníku OncoReady podle **týdne léčby** (1.–8. týden; dotazník po 1. týdnu = 1. týden): průměr (čára s popisky hodnot) a rozpětí 25.–75. percentilu (světle modrý pás). Tooltip: průměr, percentily, počet dotazníků.
+2. **Akutní toxicita RT – pásma podle týdne léčby** – 100% skládané sloupce: podíl dotazníků v zeleném / žlutém / červeném pásmu / vyžádal kontrolu.
+3. **Chronická toxicita RT – vývoj G3+ toxicity (EORTC)** (přes celou šířku):
+   - nahoře přepínač modulu: **Prostata · QLQ-PR25** (výchozí), Prs · QLQ-BR45, Hlava a krk · QLQ-H&N43, Plíce · QLQ-LC29;
+   - vlevo čára: **podíl dotazníků s G3+ podle roku po radioterapii** (1. rok … 5.+ rok; rok se počítá od začátku monitorace chronické toxicity), popisky hodnot, pod grafem počty dotazníků za každý rok;
+   - vpravo **teplotní mapa** otázek modulu (bez obecných otázek) × rok po RT: podíl odpovědí „Velmi“ / red flag, jedna barva od světle po tmavě červenou, hodnota v buňce, tooltip „x z n“, škála pod mapou;
+   - **G3+** = aspoň jedna odpověď s nejvyšší závažností (EORTC „Velmi“, OncoReady 3–4 body) nebo red flag. ⚠️ OVĚŘIT mapování na stupně CTCAE.
+4. **Vyplňování dotazníků** (přes celou šířku) – podíl vyplněných z termínů v měsíci, 3 čáry podle kohort, posledních 12 měsíců (měsíc bez termínu = mezera). Tooltip s n.
+5. **Akutní toxicita RT – nejčastější závažné příznaky** – vodorovné sloupce seřazené od nejčastějšího: podíl dotazníků s odpovědí za 3–4 body u každé otázky (s popiskem %).
+6. **Stacionář – laboratoř mimo meze** – vodorovné skládané sloupce po parametrech: podíl odběrů ve žluté a červené mezi.
+- Dole šedě: „⚠️ Statistiky počítají z demo dat (smyšlení pacienti). Definice G3+ … a kohorty podle šablon je potřeba ověřit s klinikem.“
+- ⚠️ OVĚŘIT: filtry (období, šablona, diagnóza), export (PDF / CSV) a srovnání s referenčními daty zatím nejsou.
 
 ## e-Skill (test digitální gramotnosti) – NOVÉ
 
@@ -734,6 +755,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | **Statistiky** přepracovány: dlaždice, průměrný průběh akutní toxicity podle týdne léčby (průměr + 25.–75. percentil), pásma podle týdne, vývoj G3+ toxicity v modulech EORTC podle roku po RT (čára + teplotní mapa otázek), vyplňování dotazníků podle kohort, nejčastější závažné příznaky, laboratoř ve stacionáři; u každého grafu přepínač Graf / Tabulka. Demo: historická kohorta ukončených pacientů; Dashboard jen s aktivní monitorací; úložiště v13. |
 | 2026-11-20 | Menu: podstránky Kartotéky (pohledy) a Šablon jsou vidět jen v jejich sekci, vždy jen u Dashboardu. Zpětná vazba: moderní ikony a karta s efektem matného skla. |
 | 2026-11-20 | **Kartotéka**: panel se záložkami Filtr / Řazení / Zobrazení (sloupce) a **pohledy Kartotéky** v levém menu (Uložit jako pohled, + Nový pohled, menu ⋯ Přejmenovat / Smazat); demo pohledy Stacionář – aktivní, Bez e-Skillu. |
 | 2026-11-20 | **Kartotéka** a **Šablony**: panel Filtr vpravo (Kartotéka: stav monitorace, šablona, data ze zdroje, e-Skill; Šablony: zdroje, frekvence, druh dotazníku, pacienti). |

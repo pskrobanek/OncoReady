@@ -1,3 +1,5 @@
+import { Dotazniky } from './pages/Dotazniky'
+import { Laborator } from './pages/Laborator'
 import { HashRouter, MemoryRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ToastProvider } from './components/ui'
@@ -36,6 +38,9 @@ export function App() {
               <Route index element={<Dashboard />} />
               <Route path="pohledy/:id" element={<ViewPage />} />
               <Route path="sablony" element={<Sablony />} />
+              <Route path="sablony/dotazniky" element={<Dotazniky />} />
+              <Route path="sablony/dotazniky/:tab" element={<Dotazniky />} />
+              <Route path="sablony/laborator" element={<Laborator />} />
               <Route path="sablony/vytvorit" element={<ProgramForm key="new" mode="create" />} />
               <Route path="sablony/:id/upravit" element={<EditProgram />} />
               {/* Dřívější adresy stránky „Monitorace“ */}

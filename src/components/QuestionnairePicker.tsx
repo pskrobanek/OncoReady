@@ -3,7 +3,7 @@
 import { ArrowLeftIcon, CheckIcon, FlagIcon as FlagSolid, LockClosedIcon, PlusIcon } from '@heroicons/react/20/solid'
 import { DocumentDuplicateIcon, FlagIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
-import { LIBRARY, type LibraryQuestionnaire } from '../data/questionnaireLibrary'
+import { KIND_META, LIBRARY, type LibraryQuestionnaire } from '../data/questionnaireLibrary'
 import { useStore } from '../lib/store'
 import type { QAnswerDef, QQuestionDef, QuestionnaireDef } from '../lib/types'
 import { Button, CloseButton, ConfirmModal, cx, Field, Modal, TextInput, useToast } from './ui'
@@ -94,51 +94,21 @@ function ListView({
   onEdit: (q: QuestionnaireDef) => void
   onClose: () => void
 }) {
-  const { db, deleteCustomQuestionnaire } = useStore()
-  const toast = useToast()
-  const [deleting, setDeleting] = useState<string | null>(null)
   return (
     <>
       <Header title="Dotazník" subtitle="Vyberte předpřipravený dotazník, nebo založte vlastní s otázkami, odpověďmi, body a red flagy." onClose={onClose} />
       <div className="flex flex-col gap-8 overflow-y-auto px-6 py-6">
-        <section>
-          <h3 className="text-sm font-semibold text-gray-950">Předpřipravené</h3>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {LIBRARY.map((q) => (
-              <div key={q.id} className={cx('flex flex-col gap-3 rounded-lg p-4 ring-1', value === q.id ? 'ring-2 ring-primary-600' : 'ring-gray-950/10')}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-950">{q.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {q.publisher}
-                      {q.items > 0 && ` · ${questionsText(q.items)}`}
-                    </div>
-                  </div>
-                  {q.licensed && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20" title="Znění je chráněné licencí – vloží se po jejím získání">
-                      <LockClosedIcon className="h-3.5 w-3.5" />
-                      Licence
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">{q.description}</p>
-                <ul className="list-disc pl-5 text-xs text-gray-500">
-                  {q.scales.map((s) => (
-                    <li key={s}>{s}</li>
-                  ))}
-                </ul>
-                <div className="mt-auto flex flex-wrap items-center gap-3 pt-1">
-                  <SelectButton selected={value === q.id} onClick={() => onSelect(q.id)} />
-                  {!q.licensed && (
-                    <button type="button" onClick={() => onView(q)} className="text-sm font-semibold text-primary-600 hover:underline">
-                      Zobrazit otázky
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        {(['static', 'dynamic'] as const).map((kind) => (
+          <section key={kind}>
+            <h3 className="text-sm font-semibold text-gray-950">{KIND_META[kind].label}</h3>
+            <p className="text-sm text-gray-500">{KIND_META[kind].hint}</p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {LIBRARY.filter((q) => q.kind === kind).map((q) => (
+                <LibraryCard key={q.id} q={q} selected={value === q.id} onSelect={() => onSelect(q.id)} onView={() => onView(q)} />
+              ))}
+            </div>
+          </section>
+        ))}
 
         <section>
           <div className="flex items-center justify-between gap-3">
@@ -148,58 +118,15 @@ function ListView({
               Nový dotazník
             </Button>
           </div>
-          {db.customQuestionnaires.length === 0 ? (
-            <p className="mt-3 rounded-lg px-4 py-6 text-center text-sm text-gray-500 ring-1 ring-dashed ring-gray-300">
-              Zatím žádný vlastní dotazník. Založte nový, nebo zkopírujte předpřipravený (Zobrazit otázky → Duplikovat jako vlastní).
-            </p>
-          ) : (
-            <ul className="mt-3 divide-y divide-gray-100 rounded-lg ring-1 ring-gray-950/10">
-              {db.customQuestionnaires.map((q) => {
-                const st = stats(q)
-                return (
-                  <li key={q.id} className={cx('flex flex-wrap items-center gap-3 px-4 py-3', value === q.id && 'bg-primary-50/50')}>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-gray-950">{q.name}</div>
-                      <div className="text-xs text-gray-500">
-                        {questionsText(q.questions.length)} · max. {st.max} b
-                        {st.flags > 0 && (
-                          <span className="ml-1 inline-flex items-center gap-0.5 text-red-600">
-                            · <FlagSolid className="h-3 w-3" /> {st.flags} red flag
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button type="button" title="Upravit" onClick={() => onEdit(q)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-gray-600">
-                      <PencilSquareIcon className="h-5 w-5" />
-                    </button>
-                    <button type="button" title="Smazat" onClick={() => setDeleting(q.id)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-red-600">
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                    <SelectButton selected={value === q.id} onClick={() => onSelect(q.id)} />
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+          <CustomList value={value} onSelect={onSelect} onEdit={onEdit} />
         </section>
       </div>
-      <ConfirmModal
-        open={!!deleting}
-        title="Smazat dotazník"
-        onCancel={() => setDeleting(null)}
-        onConfirm={() => {
-          deleteCustomQuestionnaire(deleting!)
-          if (value === deleting) onSelect(LIBRARY[0].id)
-          setDeleting(null)
-          toast('Smazáno')
-        }}
-      />
     </>
   )
 }
 
 /** Náhled předpřipraveného dotazníku (jen pro čtení). */
-function PreviewView({ q, selected, onSelect, onCopy, onBack, onClose }: { q: LibraryQuestionnaire; selected: boolean; onSelect: (id: string) => void; onCopy: () => void; onBack: () => void; onClose: () => void }) {
+export function PreviewView({ q, selected = false, onSelect, onCopy, onBack, onClose }: { q: LibraryQuestionnaire; selected?: boolean; onSelect?: (id: string) => void; onCopy: () => void; onBack?: () => void; onClose: () => void }) {
   const st = stats(q)
   return (
     <>
@@ -228,7 +155,7 @@ function PreviewView({ q, selected, onSelect, onCopy, onBack, onClose }: { q: Li
         ))}
       </ol>
       <div className="flex flex-wrap items-center gap-3 border-t border-gray-200 px-6 py-4">
-        <SelectButton selected={selected} onClick={() => onSelect(q.id)} />
+        {onSelect && <SelectButton selected={selected} onClick={() => onSelect(q.id)} />}
         <Button color="gray" onClick={onCopy}>
           <DocumentDuplicateIcon className="h-4 w-4" />
           Duplikovat jako vlastní
@@ -239,7 +166,7 @@ function PreviewView({ q, selected, onSelect, onCopy, onBack, onClose }: { q: Li
 }
 
 /** Editor vlastního dotazníku: název, popis, otázky → odpovědi s body a red flagem. */
-function EditorView({ initial, onSaved, onBack, onClose }: { initial: QuestionnaireDef; onSaved: (id: string) => void; onBack: () => void; onClose: () => void }) {
+export function EditorView({ initial, onSaved, onBack, onClose, saveLabel = 'Uložit a vybrat' }: { initial: QuestionnaireDef; onSaved: (id: string) => void; onBack?: () => void; onClose: () => void; saveLabel?: string }) {
   const { saveCustomQuestionnaire } = useStore()
   const toast = useToast()
   const [q, setQ] = useState<QuestionnaireDef>(initial)
@@ -336,8 +263,8 @@ function EditorView({ initial, onSaved, onBack, onClose }: { initial: Questionna
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-3 border-t border-gray-200 px-6 py-4">
-        <Button onClick={save}>Uložit a vybrat</Button>
-        <Button color="gray" onClick={onBack}>
+        <Button onClick={save}>{saveLabel}</Button>
+        <Button color="gray" onClick={onBack ?? onClose}>
           Zrušit
         </Button>
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -370,3 +297,101 @@ function AnswerRow({ a, tried, onChange, onRemove }: { a: QAnswerDef; tried: boo
     </>
   )
 }
+
+const usageText = (n: number) => (n === 0 ? 'Nepoužito v žádné šabloně' : `Použito v ${n} ${plural(n, ['šabloně', 'šablonách', 'šablonách'])}`)
+
+/** Karta předpřipraveného dotazníku. S `onSelect` má tlačítko Vybrat (okno šablony), jinak ukazuje použití (stránka Dotazníky). */
+export function LibraryCard({ q, selected = false, onSelect, onView, usage }: { q: LibraryQuestionnaire; selected?: boolean; onSelect?: () => void; onView: () => void; usage?: number }) {
+  return (
+    <div className={cx('flex flex-col gap-3 rounded-lg p-4 ring-1', selected ? 'ring-2 ring-primary-600' : 'ring-gray-950/10')}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-semibold text-gray-950">{q.name}</div>
+          <div className="text-xs text-gray-500">
+            {q.publisher}
+            {q.items > 0 && ` · ${questionsText(q.items)}`}
+          </div>
+        </div>
+        {q.licensed && (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20" title="Znění je chráněné licencí – vloží se po jejím získání">
+            <LockClosedIcon className="h-3.5 w-3.5" />
+            Licence
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-gray-600">{q.description}</p>
+      <ul className="list-disc pl-5 text-xs text-gray-500">
+        {q.scales.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ul>
+      <div className="mt-auto flex flex-wrap items-center gap-3 pt-1">
+        {onSelect ? <SelectButton selected={selected} onClick={onSelect} /> : usage !== undefined && <span className="text-sm text-gray-500">{usageText(usage)}</span>}
+        {!q.licensed && (
+          <button type="button" onClick={onView} className="text-sm font-semibold text-primary-600 hover:underline">
+            Zobrazit otázky
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Seznam vlastních dotazníků (Upravit, Smazat; s `onSelect` i Vybrat). */
+export function CustomList({ value, onSelect, onEdit }: { value?: string; onSelect?: (id: string) => void; onEdit: (q: QuestionnaireDef) => void }) {
+  const { db, deleteCustomQuestionnaire } = useStore()
+  const toast = useToast()
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const usage = (id: string) => db.programs.filter((p) => p.questionnaireId === id).length
+  return (
+    <>
+      {db.customQuestionnaires.length === 0 ? (
+        <p className="mt-3 rounded-lg px-4 py-6 text-center text-sm text-gray-500 ring-1 ring-dashed ring-gray-300">
+          Zatím žádný vlastní dotazník. Založte nový, nebo zkopírujte předpřipravený (Zobrazit otázky → Duplikovat jako vlastní).
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-gray-100 rounded-lg ring-1 ring-gray-950/10">
+          {db.customQuestionnaires.map((q) => {
+            const st = stats(q)
+            return (
+              <li key={q.id} className={cx('flex flex-wrap items-center gap-3 px-4 py-3', value === q.id && 'bg-primary-50/50')}>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-gray-950">{q.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {questionsText(q.questions.length)} · max. {st.max} b
+                    {st.flags > 0 && (
+                      <span className="ml-1 inline-flex items-center gap-0.5 text-red-600">
+                        · <FlagSolid className="h-3 w-3" /> {st.flags} red flag
+                      </span>
+                    )}
+                    {!onSelect && ` · ${usageText(usage(q.id))}`}
+                  </div>
+                </div>
+                <button type="button" title="Upravit" onClick={() => onEdit(q)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-gray-600">
+                  <PencilSquareIcon className="h-5 w-5" />
+                </button>
+                <button type="button" title="Smazat" onClick={() => setDeleting(q.id)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-red-600">
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+                {onSelect && <SelectButton selected={value === q.id} onClick={() => onSelect(q.id)} />}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <ConfirmModal
+        open={!!deleting}
+        title="Smazat dotazník"
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          deleteCustomQuestionnaire(deleting!)
+          if (onSelect && value === deleting) onSelect(LIBRARY[0].id)
+          setDeleting(null)
+          toast('Smazáno')
+        }}
+      />
+    </>
+  )
+}
+
+export { newQuestion, copyOf }

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { LATER_DEMO_PATIENTS, seedDB } from '../data/seed'
 import { DEFAULT_ACTIONS } from '../data/programs'
 import { DEFAULT_QUESTIONNAIRE_ID } from '../data/questionnaireLibrary'
-import { DEFAULT_END, DEFAULT_START, planDates, scheduleFromDays } from './schedule'
+import { DEFAULT_END, planDates, scheduleFromDays } from './schedule'
 import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, Questionnaire, QuestionnaireDef } from './types'
 import { todayIso } from './format'
 
@@ -68,7 +68,6 @@ function migrate(stored: Partial<DB>): DB {
         schedule: p.schedule ?? scheduleFromDays(p.frequencyDays ?? 7),
         sources: p.sources ?? ['questionnaire', 'lab', 'wearables'],
         questionnaireId: p.questionnaireId ?? DEFAULT_QUESTIONNAIRE_ID,
-        start: p.start ?? DEFAULT_START(),
         ending: p.ending ?? DEFAULT_END(),
       }
     }),

@@ -5,7 +5,7 @@ import { SourceIcon } from '../components/Readiness'
 import { Button, Card, ConfirmModal, LinkAction, PageHeader, PerPage, resultsLabel, SearchInput, useToast } from '../components/ui'
 import { sourceMeta } from '../lib/readiness'
 import { questionnaireName } from '../data/questionnaireLibrary'
-import { endLabel, scheduleLabel, startLabel } from '../lib/schedule'
+import { endLabel, scheduleLabel } from '../lib/schedule'
 import { useStore } from '../lib/store'
 
 /** Seznam šablon monitorace (programů sledování). */
@@ -70,7 +70,7 @@ export function Sablony() {
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-950">
                     {scheduleLabel(p.schedule)}
-                    <div className="text-gray-500">{[startLabel(p.start), endLabel(p.schedule, p.ending)].filter(Boolean).join(' · ')}</div>
+                    <div className="text-gray-500">{endLabel(p.schedule, p.ending)}</div>
                   </td>
                   <td className="px-3 py-4 text-sm tabular-nums text-gray-950" title="Pacienti s aktivní monitorací podle této šablony">{activePatients(p.id)}</td>
                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>

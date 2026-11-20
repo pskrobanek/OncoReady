@@ -1,7 +1,7 @@
 import { ChartBarIcon, ClipboardDocumentListIcon, CursorArrowRaysIcon, HomeIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
 import { PlusIcon } from '@heroicons/react/20/solid'
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
 import { cx, useToast } from './ui'
 import { NameModal } from '../pages/Dashboard'
@@ -78,6 +78,32 @@ function UserMenu() {
   )
 }
 
+/** Podstránky Šablon – zobrazí se v menu, když je otevřená sekce Šablony. */
+const TEMPLATE_SUBNAV = [
+  { to: '/sablony/dotazniky', label: 'Dotazníky' },
+  { to: '/sablony/laborator', label: 'Laboratoř' },
+]
+const isTemplateSub = (path: string) => TEMPLATE_SUBNAV.some((x) => path.startsWith(x.to))
+
+function TemplatesNav() {
+  return (
+    <ul className="ml-[1.1rem] flex flex-col gap-y-0.5 border-l border-gray-200 pl-3">
+      {TEMPLATE_SUBNAV.map((x) => (
+        <li key={x.to}>
+          <NavLink
+            to={x.to}
+            className={({ isActive }) =>
+              cx('block truncate rounded-lg px-2 py-1.5 text-sm transition duration-75', isActive ? 'bg-gray-100 font-medium text-primary-600' : 'text-gray-600 hover:bg-gray-100')
+            }
+          >
+            {x.label}
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 /** Podstránky Dashboardu = uživatelské pohledy (uložené kombinace filtrů). */
 function ViewsNav() {
   const { db, createView } = useStore()
@@ -128,6 +154,8 @@ function ViewsNav() {
 }
 
 export function Layout() {
+  const { pathname } = useLocation()
+  const inTemplates = pathname.startsWith('/sablony')
   return (
     <div className="min-h-screen bg-gray-50 text-gray-950">
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between bg-white px-4 shadow-sm ring-1 ring-gray-950/5 md:px-6">
@@ -147,7 +175,8 @@ export function Layout() {
                   className={({ isActive }) =>
                     cx(
                       'flex items-center gap-x-3 rounded-lg px-2 py-2 text-sm font-medium outline-none transition duration-75',
-                      isActive ? 'bg-gray-100 text-primary-600' : 'text-gray-700 hover:bg-gray-100',
+                      // Na podstránce Šablon je zvýrazněná jen podstránka
+                      isActive && !(to === '/sablony' && isTemplateSub(pathname)) ? 'bg-gray-100 text-primary-600' : 'text-gray-700 hover:bg-gray-100',
                     )
                   }
                 >
@@ -159,6 +188,7 @@ export function Layout() {
                   )}
                 </NavLink>
                 {to === '/' && <ViewsNav />}
+                {to === '/sablony' && inTemplates && <TemplatesNav />}
               </div>
             ))}
           </nav>
@@ -180,6 +210,16 @@ export function Layout() {
                 {label}
               </NavLink>
             ))}
+            {inTemplates &&
+              TEMPLATE_SUBNAV.map((x) => (
+                <NavLink
+                  key={x.to}
+                  to={x.to}
+                  className={({ isActive }) => cx('rounded-lg px-3 py-1.5 text-sm', isActive ? 'bg-white font-medium text-primary-600 shadow-sm ring-1 ring-gray-950/5' : 'text-gray-500')}
+                >
+                  › {x.label}
+                </NavLink>
+              ))}
           </nav>
           <Outlet />
         </main>

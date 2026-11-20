@@ -13,6 +13,14 @@ export interface LibraryQuestionnaire extends QuestionnaireDef {
   licensed: boolean
   /** Škály / oblasti, které dotazník hodnotí (popis pro výběr). */
   scales: string[]
+  /** Statický = pevná sada otázek; dynamický = otázky se mění podle odpovědí nebo pacienta. */
+  kind: 'static' | 'dynamic'
+}
+
+export const KIND_META: Record<LibraryQuestionnaire['kind'] | 'custom', { label: string; hint: string }> = {
+  static: { label: 'Statické', hint: 'Pevná sada otázek ve stále stejném pořadí – pacient dostane všechny otázky.' },
+  dynamic: { label: 'Dynamické', hint: 'Otázky se mění podle odpovědí nebo podle pacienta – větvení, adaptivní testování, výběr položek podle léčby.' },
+  custom: { label: 'Vlastní', hint: 'Dotazníky založené na pracovišti – vlastní otázky, odpovědi, body a red flagy.' },
 }
 
 export const DEFAULT_QUESTIONNAIRE_ID = 'lib-oncoready'
@@ -42,7 +50,7 @@ const oncoready: QuestionnaireDef = {
   }),
 }
 
-const licensed = (id: string, name: string, items: number, description: string, scales: string[], publisher = 'EORTC'): LibraryQuestionnaire => ({
+const licensed = (id: string, name: string, items: number, description: string, scales: string[], publisher = 'EORTC', kind: LibraryQuestionnaire['kind'] = 'static'): LibraryQuestionnaire => ({
   id,
   name,
   description,
@@ -51,10 +59,11 @@ const licensed = (id: string, name: string, items: number, description: string, 
   items,
   licensed: true,
   scales,
+  kind,
 })
 
 export const LIBRARY: LibraryQuestionnaire[] = [
-  { ...oncoready, publisher: 'OncoReady', items: oncoready.questions.length, licensed: false, scales: ['Akutní toxicita léčby', 'Žádost o kontakt'] },
+  { ...oncoready, publisher: 'OncoReady', items: oncoready.questions.length, licensed: false, scales: ['Akutní toxicita léčby', 'Žádost o kontakt'], kind: 'static' },
   licensed('lib-eortc-c30', 'EORTC QLQ-C30', 30, 'Základní dotazník kvality života onkologických pacientů.', [
     'Fyzické, pracovní, emoční, kognitivní a sociální fungování',
     'Celkový zdravotní stav',
@@ -71,8 +80,18 @@ export const LIBRARY: LibraryQuestionnaire[] = [
     'PRO-CTCAE (výběr položek)',
     0,
     'Knihovna příznaků nežádoucích účinků hlášených pacientem (NCI). Položky se vybírají podle léčby.',
-    ['Výskyt, frekvence, závažnost a vliv příznaku na běžné činnosti'],
+    ['Výskyt, frekvence, závažnost a vliv příznaku na běžné činnosti', 'Doplňující otázky jen u přítomného příznaku'],
     'NCI',
+    'dynamic',
+  ),
+  licensed(
+    'lib-eortc-cat',
+    'EORTC CAT Core',
+    0,
+    'Adaptivní verze QLQ-C30 – další otázka se vybírá podle předchozích odpovědí, pacient odpoví na méně otázek.',
+    ['Stejné škály jako QLQ-C30', 'Počet otázek se liší podle pacienta'],
+    'EORTC',
+    'dynamic',
   ),
 ]
 

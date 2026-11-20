@@ -360,7 +360,7 @@ Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
 | --- | --- |
 | Název | tučně, zalamuje se |
 | Zdroje | pod sebou šedá ikona a název zdroje (Dotazník, Laboratoř, Wearables) |
-| Frekvence | Popis frekvence, např. „Jednorázově“, „Každých 7 dní“, „Každé 2 týdny ve středu“, „Každý měsíc, 15. den“, „Každý rok v březnu“, „Vlastní (3 termíny)“. Pod ním šedě zahájení a konec: „Zahájení 7.12.2026 · celkem 10 dotazníků“ / „Zahájení ručně · po dobu 3 měsíců“. |
+| Frekvence | Popis frekvence, např. „Jednorázově“, „Každých 7 dní“, „Každé 2 týdny ve středu“, „Každý měsíc, 15. den“, „Každý rok v březnu“, „Vlastní (3 termíny)“. Pod ním šedě konec, pokud je nastavený: „celkem 10 dotazníků“ / „po dobu 3 měsíců“. |
 | Pacienti | počet pacientů s aktivní monitorací podle této šablony (tooltip) |
 | akce | Upravit, Smazat (s potvrzením) |
 
@@ -377,11 +377,7 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zdroje**. Karty Zař
 
 **Karta 2 – Frekvence** (NOVÉ 2026-11-20; nahrazuje výběr „Frekvence odesílání“ s počtem dní):
 - Nadpis „Frekvence“, popis „Jak často se pacientovi automaticky odešle dotazník.“
-- **Zahájení monitorace** (NOVÉ 2026-11-20, první část boxu, oddělená čárou) – přepínač (radio):
-  - **Datum** + pole s kalendářem (výchozí: dnešek). Klik do pole volbu rovnou vybere. Bez data: „Vyberte datum zahájení.“
-  - **Aktivovat ručně** – šedý doplněk „– monitorace se spustí, až ji u pacienta zapnete“.
-  - Náhled termínů dole počítá od zvoleného data („při zahájení 7.12.2026“), při ručním zahájení od dneška.
-  - Napojení na pacienta: v dialogu *Nová monitorace* výběr šablony s datem zahájení **předvyplní Start** (jen datum dnes nebo budoucí, minulé se nepřebírá) a nechá **Aktivní zapnuté**; šablona s ručním zahájením **vypne přepínač Aktivní** – monitoraci zapne uživatel. ⚠️ OVĚŘIT: má šablona vůbec nést pevné datum (spíš u studie se společným startem), a co přesně znamená ruční aktivace v produkci (kdo a kde ji zapne).
+- ~~Zahájení monitorace~~ – **odebráno 2026-11-20** (v šabloně nedává smysl; začátek monitorace se volí u pacienta v kalendáři dialogu Nová monitorace).
 - Tři přepínací tlačítka (vzhled jako Klasifikace) s vysvětlivkou pod nimi:
   - **Jednorázově** – „Jeden dotazník v den začátku monitorace.“ (⚠️ OVĚŘIT: v den začátku, nebo za zvolenou dobu?)
   - **Pravidelně** (výchozí) – „Dotazník se opakuje po zvoleném intervalu.“
@@ -448,12 +444,37 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zdroje**. Karty Zař
 
 Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 
+### Podstránky Šablon v menu (NOVÉ 2026-11-20)
+
+- Když je otevřená sekce Šablony (`/sablony…`), v levém menu se pod položkou **Šablony** rozbalí podstránky (stejný styl jako pohledy pod Dashboardem): **Dotazníky** a **Laboratoř**.
+- Na podstránce je zvýrazněná jen podstránka, ne položka Šablony. Na mobilu se v horní navigaci objeví „› Dotazníky“ a „› Laboratoř“.
+
+### Dotazníky (`/sablony/dotazniky`, NOVÉ 2026-11-20)
+
+- Drobečková navigace Šablony › Dotazníky › (záložka), nadpis „Dotazníky“, vpravo **Nový dotazník** (otevře editor vlastního dotazníku).
+- **Vlevo box s menu** (bílá karta, šířka 224 px; na mobilu vodorovně nad obsahem), položky s počtem vpravo:
+  - **Přehled** (`/sablony/dotazniky`) – tři karty Statické / Dynamické / Vlastní (počet + vysvětlení, klik otevře záložku) a tabulka všech dotazníků: Název (🔒 u licencovaných), Druh, Otázky, Red flagy (🚩 počet), Použito v šablonách.
+  - **Statické** (`/staticke`) – „Pevná sada otázek ve stále stejném pořadí – pacient dostane všechny otázky.“ Karty: OncoReady – akutní toxicita, EORTC QLQ-C30, BR45, H&N43, PR25, LC29.
+  - **Dynamické** (`/dynamicke`) – „Otázky se mění podle odpovědí nebo podle pacienta – větvení, adaptivní testování, výběr položek podle léčby.“ Karty: PRO-CTCAE (výběr položek; doplňující otázky jen u přítomného příznaku), EORTC CAT Core (adaptivní verze QLQ-C30). ⚠️ OVĚŘIT zařazení a licence.
+  - **Vlastní** (`/vlastni`) – seznam vlastních dotazníků (Upravit, Smazat, „Použito v N šablonách“).
+- Karty knihovny jsou stejné jako v okně výběru dotazníku v šabloně, jen místo **Vybrat** ukazují „Použito v N šablonách“ / „Nepoužito v žádné šabloně“. **Zobrazit otázky** otevře náhled (s **Duplikovat jako vlastní**).
+- Editor vlastního dotazníku se otevírá v okně; tlačítko **Uložit** (bez výběru do šablony).
+- V okně výběru dotazníku v šabloně jsou předpřipravené dotazníky rozdělené na **Statické** a **Dynamické** (s vysvětlením).
+- ⚠️ OVĚŘIT: vlastní dotazník zatím nejde označit jako dynamický (podmíněné otázky).
+
+### Laboratoř (`/sablony/laborator`, NOVÉ 2026-11-20)
+
+- Drobečková navigace Šablony › Laboratoř, nadpis „Laboratoř“.
+- Karta **Parametry a meze**: „Podle těchto mezí se barví zdroj Laboratoř u pacientů. Výsledek se počítá jako aktuální 7 dní od odběru. Barva laboratoře = nejhorší parametr.“
+- Tabulka (jen pro čtení): Parametr, Zkratka, Jednotka, Žlutá (žlutá tečka, např. „< 2,0“), Červená (červená tečka, „< 1,5“) – neutrofily, trombocyty, hemoglobin, kreatinin, bilirubin.
+- Dole: „⚠️ Meze jsou předpoklad pro prototyp – ověřit s klinikem. Úpravy mezí a výběr parametrů zatím nejsou.“
+
 ### Napojení na pacienta
 
 - Dialog *Nová monitorace / Upravit monitoraci* v Kartotéce má pole **Šablona** (výběr, nebo „— bez šablony —“).
 - Dotazníky se naplánují podle **frekvence a konce** zvolené šablony, nejpozději do konce monitorace pacienta (zvolené v kalendáři). Bez šablony se posílají každých 7 dní.
   - Text pod dialogem: „Naplánuje se N dotazníků (každé 2 týdny ve středu, celkem 10 dotazníků).“
-- Šablony uložené před 2026-11-20 (jen počet dní) se převedou na **Pravidelně – každých N dní, konec Nikdy, zahájení Datum = den převodu**.
+- Šablony uložené před 2026-11-20 (jen počet dní) se převedou na **Pravidelně – každých N dní, konec Nikdy**.
 - Pro stáří dotazníku na Dashboardu se z frekvence počítá přibližný interval ve dnech (týden = 7, měsíc = 30, rok = 365; Vlastní = nejkratší mezera mezi termíny; Jednorázově = 7).
 - Tabulka Monitorace pacienta má první sloupec **Šablona**.
 
@@ -659,6 +680,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Šablona: odebráno **Zahájení monitorace**. Menu: pod Šablonami podstránky **Dotazníky** a **Laboratoř**. Dotazníky: levý box s menu Přehled / Statické / Dynamické / Vlastní (nový druh dotazníku dynamický – PRO-CTCAE, EORTC CAT Core). Laboratoř: tabulka parametrů a mezí. |
 | 2026-11-20 | Šablona › Frekvence: u týdne volba **Od data zahájení** (vedle dnů v týdnu); Konec monitorace má volby jen jako text a pole (počet / doba) se nabídnou až pod zvolenou volbou. |
 | 2026-11-20 | Šablona › Zdroje › Dotazník: tlačítko **Vybrat dotazník** otevře detail – knihovna předpřipravených (OncoReady, EORTC QLQ-C30 / BR45 / H&N43 / PR25 / LC29, PRO-CTCAE – licencované jen jako metadata), náhled otázek, **vlastní dotazníky** s otázkami, odpověďmi, body a red flagem (nový, upravit, smazat, duplikovat). |
 | 2026-11-20 | Šablona › Frekvence › Pravidelně: číslo a tlačítka jednotky (den / týden / měsíc / rok, skloňované podle čísla) v jednom řádku „Opakovat každých“. |

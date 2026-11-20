@@ -235,7 +235,7 @@ export function Layout() {
                 </NavLink>
                 {to === '/' && <ViewsNav />}
                 {to === '/sablony' && inTemplates && <TemplatesNav />}
-                {to === '/kartoteka' && <PatientViewsNav />}
+                {to === '/kartoteka' && pathname.startsWith('/kartoteka') && <PatientViewsNav />}
               </div>
             ))}
           </nav>

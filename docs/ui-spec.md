@@ -21,16 +21,17 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
 ### Zpětná vazba (NOVÉ 2026-11-19)
 
 Okno pro připomínky testerů, dostupné na každé stránce s menu.
-- **Počítač (≥ 1024 px)**: **nenápadný blok pevně dole v levém menu** – od 2026-11-20 bez karty a bez bílého pozadí (průhledný na šedém pozadí menu), oddělený jen tenkou šedou čárou nahoře. Je vidět bez klikání a bez posouvání.
-  - **Ostré rohy**: textové pole i tlačítka mají zaoblení jen 2 px, bez stínů, rámeček tenký šedý.
-  - Nadpis „Zpětná vazba“ tmavě šedý se šedou ikonou bubliny (14 px, tučně).
+- **Počítač (≥ 1024 px)**: blok **pevně dole v levém menu** s efektem **matného skla** (od 2026-11-20; dříve bez pozadí): průsvitná bílá karta (přechod bílé 60 → 20 % krytí), rozostření pozadí, bílý okraj 1 px, zaoblení 8 px, jemný stín a světlá horní hrana. Za kartou jsou rozmazané barevné skvrny (modrá, světle modrá, fialová, nízké krytí), aby bylo sklo vidět. Je vidět bez klikání a bez posouvání.
+  - **Ikony** (od 2026-11-20 moderní lineární, zaoblené, tah 1,75 px; vlastní SVG): nadpis = bublina zprávy s řádky, snímek = rohy výřezu obrazovky s kruhem, Odeslat = šipka nahoru, poděkování = kroužek s fajfkou, odebrání snímku = křížek.
+  - Nadpis „Zpětná vazba“ tmavě šedý se šedou ikonou (14 px, tučně).
+  - Textové pole a tlačítko snímku jsou poloprůhledné bílé (zaoblení 6 px), tlačítko Odeslat modré (bez textu šedé).
   - **Textové pole** (5 řádků, roztahovatelné; průhledné, při psaní bílé s modrým rámečkem), zástupný text „Co nefunguje, chybí nebo by šlo udělat lépe?“.
   - Průhledné tlačítko s tenkým rámečkem přes celou šířku **Pořídit snímek obrazovky** (ikona fotoaparátu).
     - Klik vyfotí aktuální stránku bez okna zpětné vazby (během focení text „Pořizuji snímek…“).
     - Místo tlačítka se pak ukáže příloha: náhled snímku, text „Snímek obrazovky · Dashboard“ (název stránky) a křížek na odebrání.
   - Modré tlačítko přes celou šířku **Odeslat** (ikona papírového letadla). Bez textu je neaktivní a nenápadně šedé (modré je až po napsání textu). Odeslat jde i zkratkou Ctrl+Enter (v okně se nezobrazuje).
   - Po odeslání: zelená ikona ✓, „Děkujeme, připomínka odeslána.“ a tlačítko **Napsat další**.
-- **Mobil a tablet (< 1024 px)**: vpravo dole plovoucí modré tlačítko **Zpětná vazba**. Otevře stejný formulář v panelu zespodu (s ztmaveným pozadím a křížkem Zavřít).
+- **Mobil a tablet (< 1024 px)**: vpravo dole plovoucí modré tlačítko **Zpětná vazba** (mírně průsvitné se sklem). Otevře stejný formulář v panelu zespodu (s ztmaveným pozadím a křížkem Zavřít).
 - K připomínce se automaticky ukládá stránka (cesta), čas, autor (přihlášený uživatel) a snímek (JPEG, šířka nejvýš 1200 px).
 - Typ připomínky (Chyba / Nápad / …) ani pomocné texty se nezobrazují – formulář je záměrně co nejjednodušší.
 - **⚠️ OVĚŘIT**: kam mají připomínky v produkci chodit (e-mail, databáze, nástroj na úkoly). Replika je ukládá jen v prohlížeči (`feedback` v localStorage) a zatím je nikde nezobrazuje.
@@ -572,7 +573,7 @@ Otevírá se kliknutím na odznak „N/A“ nebo na budoucí termín. Je to **ce
   - **Řazení**: *Řadit podle* Jména (výchozí), Rodného čísla, Stavu monitorace (Aktivní → Naplánováno → Ukončeno → Bez plánu), Konce monitorace, Skóre e-Skill; *Pořadí* s popisky podle zvoleného řazení (např. „A → Z / Z → A“, „Aktivní nahoře / Bez plánu nahoře“, „Nejbližší konec nahoře“). „Obnovit výchozí řazení“. Řazení se neukládá do pohledu.
   - **Zobrazení**: *Sloupce* (zaškrtávací) – Rodné číslo, Datum narození, Kontakt (e-mail, telefon), Aktivní plán, e-Skill, Rychlá akce; Celé jméno je vždy („Celé jméno je vidět vždy.“). Výchozí: Rodné číslo, Aktivní plán, e-Skill, Rychlá akce. Pamatuje se v prohlížeči zvlášť pro Kartotéku a každý pohled; „Obnovit výchozí zobrazení“.
 - **Pohledy Kartotéky** (NOVÉ 2026-11-20) – stejně jako pohledy Dashboardu:
-  - v levém menu pod položkou **Kartotéka** jsou vždy vidět uložené pohledy a **+ Nový pohled** (dialog „Nový pohled Kartotéky“ → pohled s výchozím filtrem, otevře se);
+  - v levém menu pod položkou **Kartotéka** jsou uložené pohledy a **+ Nový pohled** – **jen když je otevřená sekce Kartotéka** (od 2026-11-20; vždy viditelné podstránky má jen Dashboard) (dialog „Nový pohled Kartotéky“ → pohled s výchozím filtrem, otevře se);
   - **Uložit jako pohled** na Kartotéce uloží aktuální filtr (dialog s názvem) a pohled otevře;
   - stránka pohledu `/kartoteka/pohledy/:id`: drobečková navigace Kartotéka › Pohledy, nadpis = název pohledu, vedle něj ikona **⋯** s menu Přejmenovat / Smazat (s potvrzením → zpět na Kartotéku); na pohledu je v menu zvýrazněný jen pohled;
   - pohled ukládá **jen filtr** (řazení a zobrazení ne);
@@ -733,6 +734,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Menu: podstránky Kartotéky (pohledy) a Šablon jsou vidět jen v jejich sekci, vždy jen u Dashboardu. Zpětná vazba: moderní ikony a karta s efektem matného skla. |
 | 2026-11-20 | **Kartotéka**: panel se záložkami Filtr / Řazení / Zobrazení (sloupce) a **pohledy Kartotéky** v levém menu (Uložit jako pohled, + Nový pohled, menu ⋯ Přejmenovat / Smazat); demo pohledy Stacionář – aktivní, Bez e-Skillu. |
 | 2026-11-20 | **Kartotéka** a **Šablony**: panel Filtr vpravo (Kartotéka: stav monitorace, šablona, data ze zdroje, e-Skill; Šablony: zdroje, frekvence, druh dotazníku, pacienti). |
 | 2026-11-20 | Demo: každý pohled má jen své příznaky – **Chronická toxicita RT: Zavolat**, **Akutní toxicita RT: K lékaři** (Čekárna z demo šablon zmizela), Stacionář: K aplikaci, K lékaři; box Zavolat zapnutý v pohledu Chronická toxicita; úložiště v12. |

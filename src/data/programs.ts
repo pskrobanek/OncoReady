@@ -103,7 +103,8 @@ export const seedPrograms = (): MonitoringProgram[] => [
 
 /** Výchozí filtr Dashboardu (podle produkce). */
 export const DEFAULT_FILTERS: DashboardFilters = {
-  scores: ['red', 'blue', 'na'],
+  // Výchozí je Vše – všechna pásma (od 2026-11-20; dříve jen červené, vyžádaná kontrola a nevyplněno)
+  scores: ['green', 'yellow', 'red', 'blue', 'na'],
   date: 'all',
   programIds: [],
 }

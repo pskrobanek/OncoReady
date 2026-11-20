@@ -717,6 +717,12 @@ function PatientsBoard({
           )}
 
           <FilterGroup title="Skóre">
+            {/* Vše = všechna pásma zaškrtnutá (výchozí); odškrtnutí zruší výběr – prázdná skupina nefiltruje */}
+            <Checkbox
+              checked={SCORE_FILTERS.every((s) => filters.scores.includes(s))}
+              onChange={(v) => onChange({ ...filters, scores: v ? [...SCORE_FILTERS] : [] })}
+              label="Vše"
+            />
             {SCORE_FILTERS.map((s) => (
               <Checkbox
                 key={s}

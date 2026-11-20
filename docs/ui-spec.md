@@ -102,7 +102,7 @@ Stránka má dvě části: vlevo **boxy s pacienty** pod sebou, vpravo samostatn
 
 **Boxy** (od 2026-11-19; dříve jedna společná tabulka) – každý box je samostatná bílá karta (zaoblené rohy, jemný rámeček), mezi boxy je mezera 24 px:
 1. **Pacienti** – nadpis, vpravo počet pacientů, pod ním hledání (jméno a rodné číslo) přes celou šířku.
-   - **Hledání prohledává všechny pacienty** – při zadaném textu se filtry (Skóre, Datum vyplnění, Šablona) nepoužijí. Sestra tak najde i zeleného pacienta, kterého výchozí filtr skrývá.
+   - **Hledání prohledává všechny pacienty** – při zadaném textu se filtry (Skóre, Datum vyplnění, Šablona) nepoužijí. Sestra tak najde i pacienta, kterého aktuální filtr skrývá.
 2. **Čekárna** – pacienti, kteří mají **dnešní značku z tlačítka označeného v šabloně jako Čekárna** (viz *Další postup*).
    - Seřazeni podle času, kdy do čekárny přišli (nejdéle čekající nahoře).
    - Box je vidět vždy, **nezávisle na filtrech**; hledání ho zužuje. Prázdný ukazuje „V čekárně teď nikdo není.“
@@ -250,7 +250,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 - Rodná čísla pacientů jsou **smyšlená, ale formálně platná** (ženy: měsíc +50, platné datum, 10 číslic dělitelných 11), např. Dvořáková 7061233652. Datum narození v kartě pacienta je dopočítané z rodného čísla.
 - Stavy v demu:
   - Šťastná = Připraveno;
-  - **Horáková, Veselý, Marková, Bartoš = Připraveno** (NOVÉ 2026-11-19) – zelení pacienti, kteří mohou k aplikaci: dotazník dnes / včera v zeleném pásmu, čerstvá laboratoř v mezích, u Horákové a Bartoše i wearables bez odchylek. Šablony Prs, Prostata, Hlava a krk, Plíce. Na Dashboardu jsou vidět po zaškrtnutí „Zelené pásmo“ ve filtru nebo hledáním;
+  - **Horáková, Veselý, Marková, Bartoš = Připraveno** (NOVÉ 2026-11-19) – zelení pacienti, kteří mohou k aplikaci: dotazník dnes / včera v zeleném pásmu, čerstvá laboratoř v mezích, u Horákové a Bartoše i wearables bez odchylek. Šablony Prs, Prostata, Hlava a krk, Plíce. Na Dashboardu jsou vidět ve výchozím filtru (Vše);
   - Dlouhá = K posouzení (pokles kroků);
   - Krokerová = Nepřipraveno (neutrofily, horečka);
   - Dvořáková = Nepřipraveno (trombocyty);
@@ -294,8 +294,9 @@ Pravidla se vyhodnocují v tomto pořadí:
 
 **Záložka Filtr**
 - Odkaz „Obnovit výchozí“ (v pohledu „Zahodit změny“) je vpravo nahoře, jen při změně.
-- *Skóre* (zaškrtávací pole s barevnou tečkou): Zelené pásmo, Žluté pásmo, Červené pásmo, Vyžádal kontrolu, Nevyplněno.
-  - Výchozí stav: zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno.
+- *Skóre* (zaškrtávací pole): **Vše** (NOVÉ 2026-11-20, bez tečky, první), pak s barevnou tečkou Zelené pásmo, Žluté pásmo, Červené pásmo, Vyžádal kontrolu, Nevyplněno.
+  - **Vše** je zaškrtnuté, když jsou zaškrtnutá všechna pásma. Zaškrtnutí Vše zaškrtne všechna pásma, odškrtnutí všechna odškrtne (prázdná skupina nefiltruje, takže se ukážou všichni). Odškrtnutí kteréhokoli pásma odškrtne i Vše.
+  - **Výchozí stav: Vše** (od 2026-11-20; dříve zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno). Platí i pro nový pohled.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
 - *Šablona* (od 2026-10-26 **rozbalovací výběr více možností** místo zaškrtávacích polí, Filament Select multiple):
   - prázdné pole ukazuje šedě „Všechny šablony“ a nefiltruje;
@@ -612,6 +613,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Filtr Skóre: nová volba **Vše** nahoře, je výchozí (Dashboard i nový pohled) – na Dashboardu jsou tak vidět všichni pacienti včetně zelených a žlutých. |
 | 2026-11-19 | Demo data: 4 noví zelení pacienti (Horáková, Veselý, Marková, Bartoš) – všechny aktuální zdroje v pořádku, mohou k aplikaci; doplní se i do uložených dat. |
 | 2026-11-19 | Zrušena tlačítka a boxy **Ke kontrole sestrou** a **Ke kontrole lékařem** – odeberou se i ze šablon a značek uložených v prohlížeči (šablona bez tlačítek dostane výchozí Čekárna / K aplikaci). |
 | 2026-11-19 | Dashboard: skupiny pacientů jsou **samostatné boxy s odstupem** – Pacienti (hledání), Čekárna, K aplikaci, Všichni pacienti; barevné nadpisové pruhy zrušeny. Boxy značek jsou vidět i prázdné, „Všichni pacienti“ obsahuje i pacienty se značkou. Panel nástrojů je samostatná karta vpravo. |

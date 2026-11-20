@@ -57,6 +57,8 @@ function migrate(stored: Partial<DB>): DB {
     wearables: db.wearables ?? seed.wearables,
     feedback: db.feedback ?? [],
     customQuestionnaires: db.customQuestionnaires ?? [],
+    // Pohledy uložené před filtrem Příznak
+    views: (db.views ?? seed.views).map((v) => ({ ...v, filters: { ...v.filters, tags: v.filters.tags ?? [] } })),
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
     // Zrušená tlačítka (Ke kontrole sestrou / lékařem) se odeberou; zůstane-li šablona bez tlačítek, dostane výchozí (Čekárna / K aplikaci).
     programs: (db.programs ?? seed.programs).map((p) => {

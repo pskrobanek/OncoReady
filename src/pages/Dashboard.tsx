@@ -2,7 +2,7 @@ import { Fragment, useMemo, useRef, useState, type ReactNode, type UIEvent } fro
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
-import { ArrowRightCircleIcon, ArrowsUpDownIcon, ClockIcon, FunnelIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { ArrowsUpDownIcon, ClockIcon, FunnelIcon, TagIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
 import { activeStep, NextStepButtons } from '../components/NextStep'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
@@ -13,7 +13,7 @@ import { addDays, agoText, shortDate, tableName, todayIso } from '../lib/format'
 import { evalLab, monthName, periodsBack, readinessOf, sourceMeta, timelineOf, weekOf, worstCurrent, type Level, type PatientTimeline, type Readiness, type SourceKey, type TimelineMode } from '../lib/readiness'
 import { BAND_META, type Band } from '../lib/scoring'
 import { currentMonitoring, questionnairesOf, sortPatients, useStore } from '../lib/store'
-import type { DashboardFilters, DateFilter, Questionnaire } from '../lib/types'
+import type { DashboardFilters, DateFilter, MonitoringProgram, Questionnaire } from '../lib/types'
 
 const SCORE_FILTERS: DashboardFilters['scores'] = ['green', 'yellow', 'red', 'blue', 'na']
 
@@ -57,6 +57,17 @@ const GROUP_BY: { key: GroupBy; label: string; hint: string }[] = [
   { key: 'program', label: 'Šablony', hint: 'Podle šablony monitorace pacienta' },
 ]
 const GROUP_KEY = 'oncoready-dashboard-seskupeni'
+const HIDDEN_TAGS_KEY = 'oncoready-dashboard-skryte-priznaky'
+function loadHiddenTags(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(HIDDEN_TAGS_KEY) ?? '[]')
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+/** Všechny příznaky: tlačítka ze šablon v jejich pořadí + příznaky pacientů, jejichž tlačítko už v šabloně není. */
+const allTagLabels = (programs: MonitoringProgram[], extra: string[] = []) => [...new Set([...programs.flatMap((p) => p.actions.map((a) => a.label)), ...extra])]
 const loadGroupBy = (): GroupBy => {
   try {
     const v = localStorage.getItem(GROUP_KEY)
@@ -96,7 +107,7 @@ const DATE_FILTERS: { key: DateFilter; label: string; days: number | null }[] = 
 
 const sameFilters = (a: DashboardFilters, b: DashboardFilters) => {
   const norm = (f: DashboardFilters) =>
-    JSON.stringify({ ...f, scores: [...f.scores].sort(), programIds: [...f.programIds].sort() })
+    JSON.stringify({ ...f, scores: [...f.scores].sort(), programIds: [...f.programIds].sort(), tags: [...(f.tags ?? [])].sort() })
   return norm(a) === norm(b)
 }
 
@@ -320,6 +331,16 @@ function PatientsBoard({
       /* ignorovat */
     }
   }
+  // Boxy příznaků skryté v Zobrazení (ukládá se skryté, aby nový příznak byl vidět hned)
+  const [hiddenTags, setHiddenTags] = useState<string[]>(loadHiddenTags)
+  const changeHiddenTags = (h: string[]) => {
+    setHiddenTags(h)
+    try {
+      localStorage.setItem(HIDDEN_TAGS_KEY, JSON.stringify(h))
+    } catch {
+      /* ignorovat */
+    }
+  }
   // Pacient, jehož detail souhrnu je otevřený
   const [detail, setDetail] = useState<string | null>(null)
   // Posuvné oblasti tabulek jednotlivých boxů (kvůli společnému vodorovnému posunu)
@@ -364,6 +385,8 @@ function PatientsBoard({
         // Hledání prohledává všechny pacienty – filtry se při něm nepoužijí (sestra musí najít i zeleného pacienta).
         // Šablona: pacient se zobrazí, pokud jeho monitorace vychází z některé ze zaškrtnutých šablon.
         .filter((r) => !!term || filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
+        // Příznak: dnešní příznak pacienta je mezi zaškrtnutými ('' = bez příznaku).
+        .filter((r) => !!term || !filters.tags?.length || filters.tags.includes(r.step?.label ?? ''))
         // Datum vyplnění: pacient má v časovém okně aspoň jeden dotazník (vyplněný, nebo nevyplněný po termínu).
         .filter((r) => {
           if (!since || term) return true
@@ -387,8 +410,8 @@ function PatientsBoard({
     }
   }, [db, search, filters, sort, desc, mode, today])
 
-  // Pacienti jsou ve třech samostatných boxech pod sebou: Čekárna, další značky ze šablon (K aplikaci…) a Všichni pacienti.
-  // Boxy značek jsou vidět vždy (i prázdné). Všichni pacienti = celý seznam podle filtrů, včetně pacientů se značkou.
+  // Pacienti jsou v samostatných boxech pod sebou: box pro každý příznak zvolený v Zobrazení (Čekárna, K aplikaci…) a Všichni pacienti.
+  // Boxy příznaků jsou vidět i prázdné. Všichni pacienti = celý seznam podle filtrů, včetně pacientů s příznakem.
   const shown = rows.slice(0, perPage)
   type Part = { key: string; label: string | null; dot: string | null; rows: typeof rows }
   type Box = { key: string; label: string; kind: 'waiting' | 'tag' | 'all'; count: number; parts: Part[] }
@@ -402,17 +425,17 @@ function PatientsBoard({
             .sort((a, b) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'cs')))
             .map((name) => ({ key: name || '-', label: name || 'Bez šablony', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
         : []
-  // Značky mimo čekárnu: všechna tlačítka ze šablon (v jejich pořadí) + značky, jejichž tlačítko už v šabloně není.
-  const tagLabels = [
-    ...new Set([...db.programs.flatMap((p) => p.actions.filter((a) => !a.waiting).map((a) => a.label)), ...tagged.filter((r) => !r.inWaitingRoom).map((r) => r.step!.label)]),
-  ]
-  const waiting = tagged.filter((r) => r.inWaitingRoom)
+  // Box pro každý příznak (tlačítka ze šablon v jejich pořadí + příznaky, jejichž tlačítko už v šabloně není),
+  // jen ty, které nejsou skryté v Zobrazení. Čekárna (tlačítko s volbou čekárna) má ikonu hodin.
+  const tagLabels = allTagLabels(db.programs, tagged.map((r) => r.step!.label))
+  const waitingLabels = new Set(db.programs.flatMap((p) => p.actions.filter((a) => a.waiting).map((a) => a.label)))
   const boxes: Box[] = [
-    { key: 'tag:cekarna', label: 'Čekárna', kind: 'waiting', count: waiting.length, parts: single(waiting) },
-    ...tagLabels.map((label) => {
-      const list = tagged.filter((r) => !r.inWaitingRoom && r.step!.label === label)
-      return { key: `tag:${label}`, label, kind: 'tag' as const, count: list.length, parts: single(list) }
-    }),
+    ...tagLabels
+      .filter((label) => !hiddenTags.includes(label))
+      .map((label) => {
+        const list = tagged.filter((r) => r.step!.label === label)
+        return { key: `tag:${label}`, label, kind: waitingLabels.has(label) ? ('waiting' as const) : ('tag' as const), count: list.length, parts: single(list) }
+      }),
     { key: 'all', label: 'Všichni pacienti', kind: 'all', count: rows.length, parts: subGroups.length ? subGroups.filter((g) => g.rows.length > 0) : single(shown) },
   ]
   // Boxy mají vlastní tabulky – vodorovný posun časové osy se mezi nimi drží společný.
@@ -455,7 +478,7 @@ function PatientsBoard({
             <BadgeLegend dashboard />
           </span>
         </th>
-        <th className="w-px min-w-[7.75rem] border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">Další postup</th>
+        <th className="w-px min-w-[7.75rem] border-r border-gray-200 px-3 py-3 text-start text-sm font-semibold text-gray-950">Příznak</th>
         {groups.map((g, gi) => (
           <th key={g.key} colSpan={g.count} className={cx('py-3 pr-0.5 text-start text-sm font-semibold text-gray-950', gi === 0 ? 'pl-3' : 'pl-5')}>
             {g.label}
@@ -514,7 +537,7 @@ function PatientsBoard({
               <CurrentCell line={line} ready={ready} onOpenReport={setReport} onOpenDetail={() => setDetail(patient.id)} />
             </td>
             {i === 0 && (
-              // Další postup: tlačítka ze šablony pacienta nastaví jeho dnešní značku (např. Čekárna, K aplikaci)
+              // Příznak: tlačítka ze šablony pacienta nastaví jeho dnešní příznak (např. Čekárna, K aplikaci)
               <td rowSpan={lines.length} className="w-px border-r border-gray-200 px-3 py-2.5 align-top group-hover:bg-gray-50">
                 <NextStepButtons patientId={patient.id} />
               </td>
@@ -554,7 +577,7 @@ function PatientsBoard({
             <Card key={box.key} className="overflow-hidden">
               <div className="flex items-center gap-2 px-6 py-4">
                 {box.kind === 'waiting' && <ClockIcon className="h-5 w-5 text-gray-400" />}
-                {box.kind === 'tag' && <ArrowRightCircleIcon className="h-5 w-5 text-gray-400" />}
+                {box.kind === 'tag' && <TagIcon className="h-5 w-5 text-gray-400" />}
                 {box.kind === 'all' && <UsersIcon className="h-5 w-5 text-gray-400" />}
                 <h3 className="text-base font-semibold leading-6 text-gray-950">{box.label}</h3>
                 <span className="text-sm tabular-nums text-gray-500">{box.count}</span>
@@ -562,7 +585,7 @@ function PatientsBoard({
               {box.count === 0 ? (
                 // Prázdný box značky zůstává vidět, aby bylo jasné, že v něm nikdo není
                 <p className="border-t border-gray-200 px-6 py-4 text-sm text-gray-500">
-                  {box.kind === 'waiting' ? 'V čekárně teď nikdo není.' : box.kind === 'tag' ? 'Zatím nikdo.' : 'Žádní pacienti neodpovídají filtru'}
+                  {box.kind === 'all' ? 'Žádní pacienti neodpovídají filtru' : 'Dnes zatím nikdo.'}
                 </p>
               ) : (
                 <div
@@ -611,7 +634,7 @@ function PatientsBoard({
           <div className="flex border-b border-gray-200 px-3" role="tablist">
             {TOOLS.map(({ key, label, icon: Icon }) => {
               const active = tool === key
-              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none'
+              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none' || hiddenTags.length > 0
               return (
                 <button
                   key={key}
@@ -693,11 +716,19 @@ function PatientsBoard({
                   />
                 ))}
               </FilterGroup>
-              {(mode !== 'week' || groupBy !== 'none') && (
+              <FilterGroup title="Boxy příznaků">
+                {/* Které příznaky mají v hlavním okně vlastní box (nad boxem Všichni pacienti) */}
+                {tagLabels.map((label) => (
+                  <Checkbox key={label} checked={!hiddenTags.includes(label)} onChange={(v) => changeHiddenTags(v ? hiddenTags.filter((x) => x !== label) : [...hiddenTags, label])} label={label} />
+                ))}
+                {tagLabels.length === 0 && <p className="text-sm text-gray-500">Šablony nemají žádné příznaky.</p>}
+              </FilterGroup>
+              {(mode !== 'week' || groupBy !== 'none' || hiddenTags.length > 0) && (
                 <button
                   onClick={() => {
                     changeMode('week')
                     changeGroupBy('none')
+                    changeHiddenTags([])
                   }}
                   className="mt-6 self-start text-sm font-medium text-primary-600 hover:underline"
                 >
@@ -741,6 +772,18 @@ function PatientsBoard({
           <FilterGroup title="Datum vyplnění">
             {DATE_FILTERS.map((d) => (
               <Radio key={d.key} name="date" checked={filters.date === d.key} onChange={() => onChange({ ...filters, date: d.key })} label={d.label} />
+            ))}
+          </FilterGroup>
+
+          <FilterGroup title="Příznak">
+            {/* Dnešní příznak pacienta; nic nezaškrtnuto = nefiltruje */}
+            {[...tagLabels, ''].map((label) => (
+              <Checkbox
+                key={label || '-'}
+                checked={(filters.tags ?? []).includes(label)}
+                onChange={(v) => onChange({ ...filters, tags: toggleIn(filters.tags ?? [], label, v) })}
+                label={label || <span className="text-gray-500">Bez příznaku</span>}
+              />
             ))}
           </FilterGroup>
 

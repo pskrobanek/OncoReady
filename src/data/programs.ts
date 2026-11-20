@@ -129,6 +129,7 @@ export const DEFAULT_FILTERS: DashboardFilters = {
   scores: ['green', 'yellow', 'red', 'blue', 'na'],
   date: 'all',
   programIds: [],
+  tags: [],
 }
 
 export const seedViews = (): DashboardView[] => [

@@ -106,6 +106,8 @@ export interface DashboardFilters {
   scores: ('green' | 'yellow' | 'red' | 'blue' | 'na')[]
   date: DateFilter
   programIds: string[]
+  /** Příznaky (dnešní, z tlačítek šablony); '' = bez příznaku. Prázdné = nefiltruje. */
+  tags: string[]
 }
 
 /** Uživatelský pohled = pojmenovaná kombinace filtrů (podstránka Dashboardu). */

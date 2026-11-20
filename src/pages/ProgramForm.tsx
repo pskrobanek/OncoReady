@@ -10,7 +10,7 @@ import { DEFAULT_QUESTIONNAIRE_ID, questionnaireName } from '../data/questionnai
 import { fullDate, todayIso } from '../lib/format'
 import { approxDays, DEFAULT_END, DEFAULT_SCHEDULE, MAX_COUNT, MONTHS, planDates, UNIT_LABEL, UNITS, unitWord, WEEKDAYS } from '../lib/schedule'
 import { useStore } from '../lib/store'
-import type { MonitoringProgram, SourceKey, Schedule, ScheduleEnd, ScheduleUnit } from '../lib/types'
+import type { MonitoringProgram, NextStepAction, SourceKey, Schedule, ScheduleEnd, ScheduleUnit } from '../lib/types'
 
 const SELECT =
   'block w-full rounded-lg border-none bg-white px-3 py-1.5 text-sm leading-6 text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600'
@@ -23,13 +23,14 @@ const EMPTY: Omit<MonitoringProgram, 'id'> = {
   frequencyDays: 7,
   schedule: DEFAULT_SCHEDULE(),
   ending: DEFAULT_END(),
-  // Diagnózy, klasifikace, tag, pásma a tlačítka Další postup se ve formuláři od 2026-11-20 nezadávají – zůstávají výchozí.
+  // Diagnózy, klasifikace, tag a pásma se ve formuláři od 2026-11-20 nezadávají – zůstávají výchozí.
   bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
   actions: DEFAULT_ACTIONS(),
   sources: ['questionnaire'],
   questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
 }
 
+const tagId = () => `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 const stepId = () => `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 /** Vytvořit / upravit šablonu monitorace (program sledování). */
@@ -49,6 +50,8 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
     const e: Record<string, string> = {}
     if (!form.name.trim()) e.name = 'Toto pole je povinné.'
     if (form.sources.length === 0) e.sources = 'Přidejte alespoň jeden zdroj.'
+    if (form.actions.some((a) => !a.label.trim())) e.actions = 'Vyplňte název příznaku, nebo ho odeberte.'
+    else if (new Set(form.actions.map((a) => a.label.trim().toLowerCase())).size < form.actions.length) e.actions = 'Dva příznaky mají stejný název.'
     const inRange = (n: number) => Number.isInteger(n) && n >= 1 && n <= MAX_COUNT
     const sc = form.schedule
     if (sc.kind === 'regular' && !inRange(sc.every)) e.frequency = `Zadejte číslo od 1 do ${MAX_COUNT}.`
@@ -62,7 +65,7 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
 
   const save = () => {
     if (!validate()) return
-    const data = { ...form, frequencyDays: approxDays(form.schedule), name: form.name.trim(), }
+    const data = { ...form, frequencyDays: approxDays(form.schedule), name: form.name.trim(), actions: form.actions.map((a) => ({ ...a, label: a.label.trim() })) }
     if (existing) {
       store.updateProgram({ ...data, id: existing.id })
       toast('Uloženo')
@@ -109,6 +112,8 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
           questionnaireId={form.questionnaireId}
           onQuestionnaire={(questionnaireId) => setForm({ ...form, questionnaireId })}
         />
+
+        <TagsCard value={form.actions} error={errors.actions} onChange={(actions) => setForm({ ...form, actions })} />
 
         <div className="flex gap-3">
           <Button type="submit">{existing ? 'Uložit' : 'Vytvořit'}</Button>
@@ -451,6 +456,58 @@ function SourcesCard({
       )}
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       <QuestionnairePicker open={picker} value={questionnaireId} onSelect={onQuestionnaire} onClose={() => setPicker(false)} />
+    </Card>
+  )
+}
+
+/** Box Příznaky: tlačítka, která u pacienta nastaví příznak (na Dashboardu sloupec Příznak, boxy a filtr). */
+function TagsCard({ value, error, onChange }: { value: NextStepAction[]; error?: string; onChange: (v: NextStepAction[]) => void }) {
+  const set = (id: string, label: string) => onChange(value.map((x) => (x.id === id ? { ...x, label } : x)))
+  return (
+    <Card className="p-6">
+      <h2 className="text-base font-semibold text-gray-950">Příznaky</h2>
+      <p className="mt-1 text-sm text-gray-500">
+        Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Příznak. Klik pacientovi nastaví příznak pro dnešní den. Podle příznaku lze
+        filtrovat a každý příznak může mít na Dashboardu vlastní box (Zobrazení › Boxy příznaků).
+      </p>
+      <div className="mt-6 flex flex-col gap-3">
+        {value.map((a, i) => (
+          <div key={a.id} className="flex items-center gap-3">
+            <span className="w-5 shrink-0 text-right text-sm tabular-nums text-gray-400">{i + 1}.</span>
+            <TextInput value={a.label} placeholder="Název příznaku, např. K aplikaci" invalid={!!error && !a.label.trim()} onChange={(e) => set(a.id, e.target.value)} />
+            <button
+              type="button"
+              title="Odebrat příznak"
+              onClick={() => onChange(value.filter((x) => x.id !== a.id))}
+              className="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-red-600"
+            >
+              <TrashIcon className="h-5 w-5" />
+            </button>
+          </div>
+        ))}
+        {value.length === 0 && <p className="text-sm text-gray-500">Šablona nemá žádné příznaky – sloupec Příznak bude u jejích pacientů prázdný.</p>}
+        <button
+          type="button"
+          onClick={() => onChange([...value, { id: tagId(), label: '' }])}
+          className="inline-flex items-center gap-1 self-start text-sm font-semibold text-primary-600 hover:underline"
+        >
+          <PlusIcon className="h-4 w-4" />
+          Přidat příznak
+        </button>
+      </div>
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {value.some((a) => a.label.trim()) && (
+        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
+          <span className="text-sm text-gray-500">Náhled:</span>
+          {value
+            .filter((a) => a.label.trim())
+            .map((a) => (
+              <span key={a.id} className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10">
+                {a.label}
+              </span>
+            ))}
+        </div>
+      )}
     </Card>
   )
 }

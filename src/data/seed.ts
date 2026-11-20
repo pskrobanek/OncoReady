@@ -1,15 +1,16 @@
-// Demo data – odpovídají screenshotům z produkce (jména, skóre, data).
-// Rodná čísla jsou smyšlená, ale formálně platná (datum narození + kontrolní číslice, dělitelné 11).
-// Kontakty jsou smyšlené. Nepoužívat skutečné údaje pacientů.
-import type { Answers, DB, Monitoring, Patient, Questionnaire } from '../lib/types'
+// Demo data (od 2026-11-20) – simulují běžný chod kliniky: chronická a akutní toxicita RT a stacionář.
+// Všichni pacienti jsou smyšlení; rodná čísla jsou formálně platná (datum narození + dělitelnost 11), kontakty smyšlené.
+// Data se generují deterministicky vůči dnešku: termíny podle frekvence šablony, vyplnění ~75 %.
+// Nepoužívat skutečné údaje pacientů.
+import type { Answers, DB, LabResult, Monitoring, Patient, Questionnaire, WearableDay } from '../lib/types'
 import { QUESTIONS, scaleValueForPoints } from './questionnaire'
 import { seedPrograms, seedViews } from './programs'
-import { seedEskill } from './eskillSeed'
+import { eskillFor } from './eskillSeed'
 import type { Band } from '../lib/scoring'
-import { addDays, daysBetween, todayIso } from '../lib/format'
-import { seedLabs, seedWearables } from './readinessSeed'
+import { addDays, todayIso } from '../lib/format'
+import { labValues, rng, wearDay } from './readinessSeed'
+import { planDates } from '../lib/schedule'
 
-type Entry = { date: string; time?: string; score: number; band: Band; pinned?: Record<string, number> } | { date: string; na: true }
 
 const SCORABLE = QUESTIONS.filter((q) => q.type !== 'control').map((q) => q.id)
 
@@ -43,214 +44,188 @@ function makeAnswers(score: number, band: Band, pinned: Record<string, number> =
 }
 
 
-/** Datum „dneška“ v demo datech – termíny po něm jsou plánované (nevyplněné). */
-const SEED_TODAY = '2026-10-14'
 
-const addD = (iso: string, days: number) => {
-  const d = new Date(iso + 'T00:00:00')
-  d.setDate(d.getDate() + days)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-/**
- * Pravidelná řada termínů od `from` do `to` po `every` dnech (výstup od nejnovějšího).
- * `pattern` se cyklicky přiřazuje termínům od nejstaršího: [skóre, pásmo] nebo 'na'.
- * Termíny po SEED_TODAY jsou vždy nevyplněné (plánované).
- */
-function series(from: string, to: string, every: number, pattern: ([number, Band] | 'na')[]): Entry[] {
-  const out: Entry[] = []
-  let i = 0
-  for (let d = from; d <= to; d = addD(d, every), i++) {
-    const p = pattern[i % pattern.length]
-    out.push(d > SEED_TODAY || p === 'na' ? { date: d, na: true } : { date: d, score: p[0], band: p[1] })
+/** Platné rodné číslo (10 číslic, ženy měsíc +50, číslo dělitelné 11). */
+function rodneCislo(y: number, m: number, d: number, female: boolean, seq: number) {
+  const base = `${String(y % 100).padStart(2, '0')}${String(m + (female ? 50 : 0)).padStart(2, '0')}${String(d).padStart(2, '0')}`
+  for (let s = seq; ; s++) {
+    const n = base + String(s % 1000).padStart(3, '0')
+    const c = Number(BigInt(n) % 11n)
+    if (c < 10) return n + c
   }
-  return out.reverse()
 }
-
-let qSeq = 0
-function monitoring(
-  patientId: string,
-  id: string,
-  programId: string,
-  start: string,
-  end: string,
-  active: boolean,
-  entries: Entry[],
-): { m: Monitoring; qs: Questionnaire[] } {
-  const qs = entries.map<Questionnaire>((e) => {
-    qSeq++
-    if ('na' in e) return { id: `q${qSeq}`, monitoringId: id, scheduledFor: e.date, filledAt: null, answers: null }
-    return {
-      id: `q${qSeq}`,
-      monitoringId: id,
-      scheduledFor: e.date,
-      filledAt: `${e.date}T${e.time ?? '09:' + String(10 + (qSeq * 7) % 50)}:00`,
-      answers: makeAnswers(e.score, e.band, e.pinned),
-    }
-  })
-  return { m: { id, patientId, programId, start, end, active }, qs }
-}
-
-/** Datum narození z 10místného rodného čísla (ženy mají k měsíci +50). */
 const birthDate = (rc: string) => {
   const yy = Number(rc.slice(0, 2))
   const mm = Number(rc.slice(2, 4)) % 50
   return `${yy >= 54 ? 1900 + yy : 2000 + yy}-${String(mm).padStart(2, '0')}-${rc.slice(4, 6)}`
 }
+const ascii = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
-const P = (id: string, prijmeni: string, jmeno: string, rodneCislo: string, email: string, telefon = ''): Patient => ({
-  id,
-  prijmeni,
-  jmeno,
-  rodneCislo,
-  datumNarozeni: birthDate(rodneCislo),
-  telefon,
-  email,
-})
+/** Profil pacienta = jak se mu daří (pravděpodobnost pásem dotazníku a odchylek laboratoře / wearables). */
+type Profile = 'good' | 'moderate' | 'poor'
+const BAND_ODDS: Record<Profile, [Band, number][]> = {
+  good: [['green', 0.82], ['yellow', 0.13], ['blue', 0.03], ['red', 0.02]],
+  moderate: [['green', 0.5], ['yellow', 0.33], ['blue', 0.07], ['red', 0.1]],
+  poor: [['green', 0.25], ['yellow', 0.35], ['blue', 0.1], ['red', 0.3]],
+}
+/** Skóre podle pásma (pásmo určuje nejvyšší body jedné odpovědi, skóre je součet). */
+const SCORE_RANGE: Record<Band, [number, number]> = { green: [1, 7], yellow: [8, 13], red: [12, 20], blue: [5, 11] }
 
-// Pozn.: v produkci jsou některá jména zadaná obráceně (např. Příjmení „Anna“, Jméno „Malá“) – replikováno.
-const patients: Patient[] = [
-  P('p1', 'Anna', 'Malá', '5853144187', 'anna.mala@example.com', '420603277036'),
-  P('p2', 'Dlouhá', 'Eva', '6257022079', 'eva.dlouha@example.com'),
-  P('p3', 'Dvořáková', 'Dáša', '7061233652', 'dasa.dvorakova@example.com'),
-  P('p4', 'Kokošková', 'Ema', '8455091293', 'ema.kokoskova@example.com'),
-  P('p5', 'Kristýna', 'Dušková', '7951304823', 'kristyna.duskova@example.com'),
-  P('p6', 'Krokerová', 'Petra', '6659172520', 'petra.krokerova@example.com'),
-  P('p7', 'Krutá', 'Daniela', '5562053365', 'daniela.kruta@example.com'),
-  P('p8', 'Nová', 'Pavla', '7354281748', 'pavla.nova@example.com'),
-  P('p9', 'Plyšová', 'Adéla', '8158112930', 'adela.plysova@example.com'),
-  P('p10', 'Šťastná', 'Lucie', '6852211586', 'lucie.stastna@example.com'),
-  // Zelení pacienti – všechny aktuální zdroje v pořádku, mohou k aplikaci (přidáno 2026-11-19)
-  P('p11', 'Horáková', 'Jana', '6457141240', 'jana.horakova@example.com'),
-  P('p12', 'Veselý', 'Tomáš', '5803221237', 'tomas.vesely@example.com'),
-  P('p13', 'Marková', 'Ivana', '7161091234', 'ivana.markova@example.com'),
-  P('p14', 'Bartoš', 'Jiří', '5511301235', 'jiri.bartos@example.com'),
-]
-
-/** Demo pacienti přidaní později – doplní se jednou i do dat uložených v prohlížeči (viz migrate ve store). */
-export const LATER_DEMO_PATIENTS = ['p11', 'p12', 'p13', 'p14']
-
-// Pořadí záznamů = pořadí odznaků v tabulce (nejnovější termín vlevo).
-const mons = [
-  monitoring('p1', 'm1', 'pr1', '2026-03-19', '2026-04-16', true, [
-    { date: '2026-04-16', na: true },
-    { date: '2026-04-12', time: '08:41', score: 20, band: 'red', pinned: { health: 1, fatigue: 2, symptoms: 4, skin: 2 } },
-    { date: '2026-04-06', na: true },
-    { date: '2026-03-30', score: 9, band: 'red' },
-    { date: '2026-03-23', score: 22, band: 'blue' },
-  ]),
-  // Dlouhá Eva – dlouhodobé sledování po 14 dnech od listopadu 2025 (ukázka roků 2025 / 2026)
-  monitoring('p2', 'm2', 'pr2', '2025-11-04', '2026-12-29', true,
-    series('2025-11-04', '2026-12-29', 14, [
-      [5, 'green'], [7, 'green'], [9, 'yellow'], [12, 'red'], [8, 'yellow'], 'na', [6, 'green'], [4, 'green'],
-      [3, 'green'], [10, 'blue'], [6, 'green'], [5, 'green'], 'na', [7, 'green'], [8, 'yellow'], [4, 'green'],
-    ]),
-  ),
-  monitoring('p3', 'm3', 'pr3', '2026-08-05', '2026-09-30', true, [
-    { date: '2026-09-02', score: 23, band: 'red' },
-    { date: '2026-08-26', na: true },
-    { date: '2026-08-19', na: true },
-    { date: '2026-08-12', na: true },
-  ]),
-  monitoring('p5', 'm5', 'pr1', '2026-03-25', '2026-05-10', true, [
-    { date: '2026-05-03', score: 7, band: 'blue' },
-    { date: '2026-04-26', score: 8, band: 'blue' },
-    { date: '2026-04-19', score: 13, band: 'red' },
-    { date: '2026-04-12', score: 6, band: 'green' },
-    { date: '2026-04-05', score: 5, band: 'green' },
-    { date: '2026-03-29', score: 4, band: 'blue' },
-  ]),
-  // Krokerová Petra – týdenní akutní toxicita, zhoršení v posledním měsíci
-  monitoring('p6', 'm6', 'pr4', '2026-07-01', '2026-11-11', true,
-    series('2026-07-01', '2026-11-11', 7, [
-      [3, 'green'], [4, 'green'], [6, 'green'], [8, 'yellow'], [7, 'green'], 'na', [9, 'yellow'],
-      [11, 'yellow'], [13, 'red'], [10, 'yellow'], [12, 'blue'], [15, 'red'], [9, 'yellow'], [8, 'yellow'], [14, 'red'],
-    ]),
-  ),
-  monitoring('p7', 'm7', 'pr1', '2026-03-04', '2026-04-30', true, [
-    { date: '2026-04-26', score: 14, band: 'red' },
-    { date: '2026-04-19', score: 2, band: 'green' },
-    { date: '2026-04-12', score: 5, band: 'red' },
-    { date: '2026-04-05', score: 4, band: 'green' },
-    { date: '2026-03-29', score: 4, band: 'green' },
-    { date: '2026-03-22', score: 3, band: 'green' },
-    { date: '2026-03-16', score: 1, band: 'green' },
-    { date: '2026-03-12', na: true },
-    { date: '2026-03-08', score: 5, band: 'green' },
-  ]),
-  monitoring('p8', 'm8', 'pr3', '2026-05-10', '2026-06-14', true, [
-    { date: '2026-06-07', na: true },
-    { date: '2026-05-31', score: 7, band: 'green' },
-    { date: '2026-05-24', score: 14, band: 'red' },
-    { date: '2026-05-17', score: 13, band: 'blue' },
-    { date: '2026-05-10', na: true },
-  ]),
-  monitoring('p9', 'm9', 'pr4', '2026-10-01', '2026-11-12', true, [
-    { date: '2026-11-12', na: true },
-    { date: '2026-11-05', na: true },
-    { date: '2026-10-29', na: true },
-    { date: '2026-10-22', na: true },
-    { date: '2026-10-15', na: true },
-    { date: '2026-10-08', na: true },
-  ]),
-  // Šťastná Lucie – pozdní toxicita, měsíčně od září 2025
-  monitoring('p10', 'm10', 'pr5', '2025-09-15', '2027-03-15', true,
-    series('2025-09-15', '2027-03-15', 30, [[2, 'green'], [4, 'green'], [3, 'green'], 'na', [6, 'green'], [5, 'green'], [9, 'yellow'], [2, 'green']]),
-  ),
-  // Kokošková Ema – nově zahájená monitorace, jedno upozornění v posledním měsíci
-  monitoring('p4', 'm4', 'pr1', '2026-08-20', '2026-12-03', true,
-    series('2026-08-20', '2026-12-03', 7, [[4, 'green'], [6, 'green'], 'na', [7, 'green'], [9, 'yellow'], [5, 'green'], [16, 'red'], [8, 'blue'], [6, 'green']]),
-  ),
-  // Zelení pacienti – poslední dotazník dnes nebo včera v zeleném pásmu
-  // Horáková Jana – týdně, vše zelené, poslední dotazník dnes
-  monitoring('p11', 'm11', 'pr1', '2026-09-02', '2026-11-25', true,
-    series('2026-09-02', '2026-11-25', 7, [[3, 'green'], [5, 'green'], [4, 'green'], [2, 'green']]),
-  ),
-  // Veselý Tomáš – po 14 dnech, poslední dotazník včera
-  monitoring('p12', 'm12', 'pr2', '2026-08-04', '2026-12-15', true,
-    series('2026-08-04', '2026-12-15', 14, [[4, 'green'], [6, 'green'], [3, 'green']]),
-  ),
-  // Marková Ivana – týdně, jednou žlutá, poslední dotazník včera zelený
-  monitoring('p13', 'm13', 'pr3', '2026-08-25', '2026-11-24', true,
-    series('2026-08-25', '2026-11-24', 7, [[3, 'green'], [5, 'green'], [8, 'yellow'], [4, 'green'], [2, 'green'], [5, 'green'], [3, 'green'], [4, 'green']]),
-  ),
-  // Bartoš Jiří – po 3 dnech, jednou nevyplněno, poslední dotazník dnes
-  monitoring('p14', 'm14', 'pr5', '2026-09-20', '2026-11-30', true,
-    series('2026-09-20', '2026-11-30', 3, [[4, 'green'], [6, 'green'], 'na', [3, 'green'], [5, 'green']]),
-  ),
-]
-
-/** Posune všechna data o `days` dní (datum i datum s časem). */
-function shiftDates(db: DB, days: number): DB {
-  if (days === 0) return db
-  const sh = (iso: string) => addDays(iso.slice(0, 10), days) + iso.slice(10)
-  return {
-    ...db,
-    monitorings: db.monitorings.map((m) => ({ ...m, start: sh(m.start), end: sh(m.end) })),
-    questionnaires: db.questionnaires.map((q) => ({ ...q, scheduledFor: sh(q.scheduledFor), filledAt: q.filledAt && sh(q.filledAt) })),
-    eskillResults: db.eskillResults.map((r) => ({ ...r, takenAt: sh(r.takenAt) })),
-    labs: db.labs.map((l) => ({ ...l, date: sh(l.date) })),
-    wearables: db.wearables.map((w) => ({ ...w, date: sh(w.date) })),
-  }
+type Spec = {
+  prijmeni: string
+  jmeno: string
+  female: boolean
+  born: [number, number, number]
+  program: string
+  /** Kolik týdnů zpět monitorace začala. */
+  startWeeksAgo: number
+  profile: Profile
 }
 
-/**
- * Demo data jsou vztažená k SEED_TODAY a při vytvoření se posunou tak, aby SEED_TODAY = skutečný dnešek.
- * Laboratoř, wearables i dotazníky jsou tak v demu vždy aktuální.
- */
-export const seedDB = (): DB =>
-  shiftDates(
-    {
-      patients: structuredClone(patients),
-      monitorings: mons.map((x) => ({ ...x.m })),
-      questionnaires: structuredClone(mons.flatMap((x) => x.qs)),
-      programs: seedPrograms(),
-      views: seedViews(),
-      eskillResults: seedEskill(),
-      labs: seedLabs(SEED_TODAY),
-      wearables: seedWearables(SEED_TODAY),
-      feedback: [],
-      customQuestionnaires: [],
-    },
-    daysBetween(SEED_TODAY, todayIso()),
-  )
+const F = true
+const M = false
+// Rozdělení: chronická toxicita (jen dotazník, EORTC), akutní toxicita (dotazník + laboratoř), stacionář (všechny 3 zdroje).
+const SPECS: Spec[] = [
+  // Chronická toxicita RT – prs (QLQ-BR45)
+  { prijmeni: 'Horáková', jmeno: 'Jana', female: F, born: [1964, 7, 14], program: 'pr-ch-br', startWeeksAgo: 46, profile: 'good' },
+  { prijmeni: 'Svobodová', jmeno: 'Hana', female: F, born: [1958, 3, 2], program: 'pr-ch-br', startWeeksAgo: 30, profile: 'moderate' },
+  { prijmeni: 'Fialová', jmeno: 'Martina', female: F, born: [1971, 11, 23], program: 'pr-ch-br', startWeeksAgo: 18, profile: 'good' },
+  // Chronická toxicita RT – hlava a krk (QLQ-H&N43)
+  { prijmeni: 'Král', jmeno: 'Josef', female: M, born: [1955, 5, 9], program: 'pr-ch-hn', startWeeksAgo: 40, profile: 'poor' },
+  { prijmeni: 'Kučerová', jmeno: 'Věra', female: F, born: [1962, 1, 27], program: 'pr-ch-hn', startWeeksAgo: 26, profile: 'moderate' },
+  { prijmeni: 'Holub', jmeno: 'Karel', female: M, born: [1960, 9, 15], program: 'pr-ch-hn', startWeeksAgo: 14, profile: 'good' },
+  // Chronická toxicita RT – prostata (QLQ-PR25)
+  { prijmeni: 'Veselý', jmeno: 'Tomáš', female: M, born: [1958, 3, 22], program: 'pr-ch-pr', startWeeksAgo: 48, profile: 'good' },
+  { prijmeni: 'Mareš', jmeno: 'Jaroslav', female: M, born: [1954, 12, 4], program: 'pr-ch-pr', startWeeksAgo: 34, profile: 'moderate' },
+  { prijmeni: 'Pospíšil', jmeno: 'František', female: M, born: [1957, 6, 30], program: 'pr-ch-pr', startWeeksAgo: 22, profile: 'good' },
+  // Chronická toxicita RT – plíce (QLQ-LC29)
+  { prijmeni: 'Bartoš', jmeno: 'Jiří', female: M, born: [1955, 11, 30], program: 'pr-ch-lc', startWeeksAgo: 36, profile: 'moderate' },
+  { prijmeni: 'Pokorná', jmeno: 'Zdeňka', female: F, born: [1961, 4, 18], program: 'pr-ch-lc', startWeeksAgo: 24, profile: 'poor' },
+  { prijmeni: 'Tichý', jmeno: 'Vladimír', female: M, born: [1959, 8, 6], program: 'pr-ch-lc', startWeeksAgo: 16, profile: 'good' },
+  // Akutní toxicita RT
+  { prijmeni: 'Marková', jmeno: 'Ivana', female: F, born: [1971, 11, 9], program: 'pr-ak', startWeeksAgo: 7, profile: 'moderate' },
+  { prijmeni: 'Novák', jmeno: 'Jan', female: M, born: [1963, 2, 11], program: 'pr-ak', startWeeksAgo: 6, profile: 'good' },
+  { prijmeni: 'Černá', jmeno: 'Lenka', female: F, born: [1975, 10, 3], program: 'pr-ak', startWeeksAgo: 5, profile: 'poor' },
+  { prijmeni: 'Růžička', jmeno: 'Pavel', female: M, born: [1956, 7, 21], program: 'pr-ak', startWeeksAgo: 5, profile: 'good' },
+  { prijmeni: 'Veselá', jmeno: 'Kateřina', female: F, born: [1980, 5, 16], program: 'pr-ak', startWeeksAgo: 4, profile: 'good' },
+  { prijmeni: 'Šimek', jmeno: 'Milan', female: M, born: [1961, 12, 28], program: 'pr-ak', startWeeksAgo: 4, profile: 'moderate' },
+  { prijmeni: 'Procházková', jmeno: 'Alena', female: F, born: [1966, 3, 8], program: 'pr-ak', startWeeksAgo: 3, profile: 'good' },
+  { prijmeni: 'Hájek', jmeno: 'Stanislav', female: M, born: [1959, 9, 1], program: 'pr-ak', startWeeksAgo: 3, profile: 'moderate' },
+  { prijmeni: 'Benešová', jmeno: 'Monika', female: F, born: [1978, 8, 25], program: 'pr-ak', startWeeksAgo: 2, profile: 'good' },
+  { prijmeni: 'Kříž', jmeno: 'Václav', female: M, born: [1954, 6, 13], program: 'pr-ak', startWeeksAgo: 1, profile: 'good' },
+  // Stacionář – intenzivní léčba (každý týden)
+  { prijmeni: 'Krokerová', jmeno: 'Petra', female: F, born: [1966, 9, 17], program: 'pr-st-int', startWeeksAgo: 16, profile: 'poor' },
+  { prijmeni: 'Dvořák', jmeno: 'Petr', female: M, born: [1962, 4, 4], program: 'pr-st-int', startWeeksAgo: 12, profile: 'moderate' },
+  { prijmeni: 'Sedláčková', jmeno: 'Jitka', female: F, born: [1970, 2, 19], program: 'pr-st-int', startWeeksAgo: 10, profile: 'good' },
+  { prijmeni: 'Beneš', jmeno: 'Miroslav', female: M, born: [1957, 10, 10], program: 'pr-st-int', startWeeksAgo: 8, profile: 'moderate' },
+  { prijmeni: 'Doležalová', jmeno: 'Renata', female: F, born: [1973, 12, 1], program: 'pr-st-int', startWeeksAgo: 6, profile: 'good' },
+  { prijmeni: 'Vlček', jmeno: 'Zdeněk', female: M, born: [1960, 1, 24], program: 'pr-st-int', startWeeksAgo: 3, profile: 'good' },
+  // Stacionář – ostatní (každé 3 týdny)
+  { prijmeni: 'Dlouhá', jmeno: 'Eva', female: F, born: [1962, 7, 2], program: 'pr-st-ost', startWeeksAgo: 36, profile: 'moderate' },
+  { prijmeni: 'Šťastná', jmeno: 'Lucie', female: F, born: [1968, 2, 21], program: 'pr-st-ost', startWeeksAgo: 30, profile: 'good' },
+  { prijmeni: 'Novotná', jmeno: 'Marie', female: F, born: [1955, 6, 12], program: 'pr-st-ost', startWeeksAgo: 24, profile: 'good' },
+  { prijmeni: 'Bureš', jmeno: 'Ladislav', female: M, born: [1958, 11, 7], program: 'pr-st-ost', startWeeksAgo: 18, profile: 'poor' },
+  { prijmeni: 'Zemanová', jmeno: 'Dagmar', female: F, born: [1964, 3, 29], program: 'pr-st-ost', startWeeksAgo: 12, profile: 'good' },
+  { prijmeni: 'Kolářová', jmeno: 'Blanka', female: F, born: [1976, 9, 14], program: 'pr-st-ost', startWeeksAgo: 6, profile: 'moderate' },
+]
+
+/** Podíl vyplnění / dostupnosti dat (dotazníky, odběry, dny z hodinek). */
+const FILL_RATE = 0.75
+
+/** Dnešní příznaky (pro ukázku boxů): [příjmení, akce, čas]. Platí jen dnes. */
+const TODAY_TAGS: [string, string, string, string][] = [
+  ['Dvořák', 'a-cekarna', 'Čekárna', '07:52'],
+  ['Sedláčková', 'a-cekarna', 'Čekárna', '08:14'],
+  ['Zemanová', 'a-aplikace', 'K aplikaci', '07:40'],
+  ['Černá', 'a-lekar', 'K lékaři', '08:31'],
+  ['Král', 'a-telefon', 'Zavolat', '09:05'],
+]
+
+/** Vygeneruje celou databázi demo dat vůči dnešku. */
+function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | 'customQuestionnaires'> {
+  const programs = seedPrograms()
+  const r = rng(20261120)
+  const pick = <T,>(odds: [T, number][]) => {
+    let x = r()
+    for (const [v, p] of odds) if ((x -= p) <= 0) return v
+    return odds[odds.length - 1][0]
+  }
+  const int = (a: number, b: number) => a + Math.floor(r() * (b - a + 1))
+  const time = (from = 7, to = 21) => `${String(int(from, to)).padStart(2, '0')}:${String(int(0, 59)).padStart(2, '0')}`
+
+  const patients: Patient[] = []
+  const monitorings: Monitoring[] = []
+  const questionnaires: Questionnaire[] = []
+  const labs: LabResult[] = []
+  const wearables: WearableDay[] = []
+  let q = 0
+
+  SPECS.forEach((sp, i) => {
+    const id = `p${i + 1}`
+    const rc = rodneCislo(sp.born[0], sp.born[1], sp.born[2], sp.female, 100 + i * 37)
+    patients.push({ id, prijmeni: sp.prijmeni, jmeno: sp.jmeno, rodneCislo: rc, datumNarozeni: birthDate(rc), telefon: '', email: `${ascii(sp.jmeno)}.${ascii(sp.prijmeni)}@example.com` })
+
+    const program = programs.find((p) => p.id === sp.program)!
+    const start = addDays(today, -7 * sp.startWeeksAgo - int(0, 3))
+    const end = program.ending.kind === 'duration' ? addDays(start, 7 * program.ending.amount) : addDays(start, sp.program.startsWith('pr-ch') ? 365 * 2 : 365)
+    const mon: Monitoring = { id: `m${i + 1}`, patientId: id, programId: program.id, start, end, active: true, nextStep: null }
+    const tag = TODAY_TAGS.find((t) => t[0] === sp.prijmeni)
+    if (tag) mon.nextStep = { actionId: tag[1], label: tag[2], at: `${today}T${tag[3]}:00` }
+    monitorings.push(mon)
+
+    // Dotazníky: termíny podle frekvence šablony; minulé vyplněné s pravděpodobností ~75 % (v den termínu nebo do 2 dnů).
+    const dates = planDates(program.schedule, program.ending, start, end)
+    for (const date of dates) {
+      q++
+      const filled = date < today ? r() < FILL_RATE : date === today && r() < 0.4
+      if (!filled) {
+        questionnaires.push({ id: `q${q}`, monitoringId: mon.id, scheduledFor: date, filledAt: null, answers: null })
+        continue
+      }
+      const band = pick(BAND_ODDS[sp.profile])
+      const [lo, hi] = SCORE_RANGE[band]
+      const later = addDays(date, int(0, 2)) // vyplní v den termínu nebo do 2 dnů, nejpozději dnes
+      const day = later > today ? today : later
+      const at = day === today ? `${today}T${time(7, 9)}:00` : `${day}T${time()}:00`
+      questionnaires.push({ id: `q${q}`, monitoringId: mon.id, scheduledFor: date, filledAt: at, answers: makeAnswers(int(lo, hi), band) })
+    }
+
+    // Laboratoř: akutní toxicita každý týden, stacionář den před každým termínem; ~75 % odběrů je k dispozici.
+    if (program.sources.includes('lab')) {
+      const labDates = program.id === 'pr-ak' ? dates.filter((d) => d <= today) : dates.filter((d) => d <= addDays(today, 1)).map((d) => addDays(d, -1))
+      for (const d of labDates) {
+        if (d > today || r() > FILL_RATE + 0.05) continue
+        const odds: [string, number][] =
+          sp.profile === 'poor' ? [['ok', 0.55], ['yellow', 0.25], ['red', 0.2]] : sp.profile === 'moderate' ? [['ok', 0.72], ['yellow', 0.2], ['red', 0.08]] : [['ok', 0.9], ['yellow', 0.08], ['red', 0.02]]
+        labs.push({ id: `lab${labs.length + 1}`, patientId: id, date: d, values: labValues(r, pick(odds) as 'ok' | 'yellow' | 'red', program.id !== 'pr-ak') })
+      }
+    }
+
+    // Wearables: stacionář, posledních 8 týdnů; hodinky se synchronizují ~75 % dní (výpadky po blocích).
+    if (program.sources.includes('wearables')) {
+      const from = addDays(today, -55) > start ? addDays(today, -55) : start
+      let off = 0
+      for (let d = from; d <= today; d = addDays(d, 1)) {
+        if (off > 0) {
+          off--
+          continue
+        }
+        if (r() > 0.92) {
+          off = int(1, 3) // výpadek synchronizace na 1–3 dny
+          continue
+        }
+        wearables.push({ id: `w${wearables.length + 1}`, patientId: id, ...wearDay(r, d, sp.profile) })
+      }
+    }
+  })
+
+  return { patients, monitorings, questionnaires, labs, wearables, eskillResults: eskillFor(patients.slice(0, 12).map((p) => p.id), today) }
+}
+
+export const seedDB = (): DB => ({
+  ...generate(todayIso()),
+  programs: seedPrograms(),
+  views: seedViews(),
+  feedback: [],
+  customQuestionnaires: [],
+})

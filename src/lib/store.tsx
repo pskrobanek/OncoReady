@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { LATER_DEMO_PATIENTS, seedDB } from '../data/seed'
+import { seedDB } from '../data/seed'
 import { DEFAULT_ACTIONS } from '../data/programs'
 import { DEFAULT_QUESTIONNAIRE_ID } from '../data/questionnaireLibrary'
 import { DEFAULT_END, planDates, scheduleFromDays } from './schedule'
@@ -7,7 +7,7 @@ import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, Mo
 import { todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
-const KEY = 'oncoready-mvp-db-v6' // při změně struktury dat zvýšit verzi
+const KEY = 'oncoready-mvp-db-v7' // při změně struktury dat zvýšit verzi (v7 = nová demo data 2026-11-20)
 
 function load(): DB {
   try {
@@ -24,31 +24,9 @@ const REMOVED_ACTION_IDS = ['a-sestra', 'a-lekar']
 const REMOVED_ACTION_LABELS = ['ke kontrole sestrou', 'ke kontrole lékařem']
 const isRemovedAction = (a: { id: string; label: string }) => REMOVED_ACTION_IDS.includes(a.id) || REMOVED_ACTION_LABELS.includes(a.label.trim().toLowerCase())
 
-/**
- * Demo pacienti přidaní do seedu později se doplní (i s monitorací, dotazníky, laboratoří a wearables)
- * jednou i do dat uložených v prohlížeči. Kdo je pak smaže, už se nevrátí (seznam v `demoAdded`).
- */
-function addLaterDemo(db: Partial<DB>, seed: DB): Partial<DB> {
-  if (!db.patients) return db
-  const done = new Set(db.demoAdded ?? [])
-  const have = new Set(db.patients.map((p) => p.id))
-  const ids = LATER_DEMO_PATIENTS.filter((id) => !done.has(id) && !have.has(id))
-  const monIds = new Set(seed.monitorings.filter((m) => ids.includes(m.patientId)).map((m) => m.id))
-  return {
-    ...db,
-    demoAdded: [...done, ...LATER_DEMO_PATIENTS],
-    patients: [...db.patients, ...seed.patients.filter((p) => ids.includes(p.id))],
-    monitorings: [...(db.monitorings ?? []), ...seed.monitorings.filter((m) => monIds.has(m.id))],
-    questionnaires: [...(db.questionnaires ?? []), ...seed.questionnaires.filter((q) => monIds.has(q.monitoringId))],
-    labs: db.labs && [...db.labs, ...seed.labs.filter((l) => ids.includes(l.patientId))],
-    wearables: db.wearables && [...db.wearables, ...seed.wearables.filter((w) => ids.includes(w.patientId))],
-  }
-}
-
 /** Doplní kolekce přidané v novějších verzích, aby uložená data zůstala zachována. */
-function migrate(stored: Partial<DB>): DB {
+function migrate(db: Partial<DB>): DB {
   const seed = seedDB()
-  const db = addLaterDemo(stored, seed)
   return {
     ...seed,
     ...db,

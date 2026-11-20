@@ -1,5 +1,5 @@
 import { DEFAULT_QUESTIONNAIRE_ID } from './questionnaireLibrary'
-import { DEFAULT_END, scheduleFromDays } from '../lib/schedule'
+import { approxDays, DEFAULT_END, DEFAULT_SCHEDULE } from '../lib/schedule'
 // Číselníky a demo data pro stránku „Šablony“ (šablony monitorace) a uživatelské pohledy.
 import type { Classification, DashboardFilters, DashboardView, MonitoringProgram, NextStepAction } from '../lib/types'
 
@@ -50,80 +50,68 @@ export const DEFAULT_ACTIONS = (): NextStepAction[] => [
   { id: 'a-aplikace', label: 'K aplikaci', icon: 'arrow' },
 ]
 
-export const seedPrograms = (): MonitoringProgram[] => [
-  {
-    id: 'pr1',
-    name: 'Prs – adjuvantní RT',
-    diagnoses: ['C50', 'D05'],
-    tag: 'Prs',
+/** Šablona pro demo data: frekvence „každých N týdnů od zahájení“, frequencyDays se dopočítá. */
+const tpl = (
+  id: string,
+  name: string,
+  diagnoses: string[],
+  sources: MonitoringProgram['sources'],
+  questionnaireId: string,
+  everyWeeks: number,
+  ending: MonitoringProgram['ending'],
+  actions: NextStepAction[],
+): MonitoringProgram => {
+  const schedule = { ...DEFAULT_SCHEDULE(), unit: 'week' as const, every: everyWeeks, weekday: 0 }
+  return {
+    id,
+    name,
+    diagnoses,
+    tag: '',
     classification: 'MD',
-    frequencyDays: 7,
-    schedule: scheduleFromDays(7),
-    sources: ['questionnaire', 'lab', 'wearables'],
-    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
-    ending: DEFAULT_END(),
+    frequencyDays: approxDays(schedule),
+    schedule,
+    ending,
     bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
-    actions: DEFAULT_ACTIONS(),
-  },
-  {
-    id: 'pr2',
-    name: 'Prostata – kurativní RT',
-    diagnoses: ['C61'],
-    tag: 'Urologie',
-    classification: 'nonMD',
-    frequencyDays: 14,
-    schedule: scheduleFromDays(14),
-    sources: ['questionnaire', 'lab', 'wearables'],
-    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
-    ending: DEFAULT_END(),
-    bands: { green: { min: 0, max: 9 }, yellow: { min: 10, max: 16 }, red: { min: 17, max: null } },
-    actions: DEFAULT_ACTIONS(),
-  },
-  {
-    id: 'pr3',
-    name: 'Hlava a krk – chemoradioterapie',
-    diagnoses: ['C01', 'C09', 'C10', 'C32'],
-    tag: 'ORL',
-    classification: 'MD',
-    frequencyDays: 7,
-    schedule: scheduleFromDays(7),
-    sources: ['questionnaire', 'lab', 'wearables'],
-    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
-    ending: DEFAULT_END(),
-    bands: { green: { min: 0, max: 6 }, yellow: { min: 7, max: 12 }, red: { min: 13, max: null } },
-    actions: DEFAULT_ACTIONS(),
-  },
-  {
-    id: 'pr4',
-    name: 'Studie PRO-RT 2026',
-    diagnoses: ['C20', 'C53'],
-    tag: 'Studie',
-    classification: 'research',
-    frequencyDays: 14,
-    schedule: scheduleFromDays(14),
-    sources: ['questionnaire', 'lab', 'wearables'],
-    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
-    ending: DEFAULT_END(),
-    bands: { green: { min: 0, max: 8 }, yellow: { min: 9, max: 15 }, red: { min: 16, max: null } },
-    actions: DEFAULT_ACTIONS(),
-  },
-  {
-    id: 'pr5',
-    name: 'Plíce – paliativní RT',
-    diagnoses: ['C34', 'C79.5'],
-    tag: 'Plíce',
-    classification: 'other',
-    frequencyDays: 3,
-    schedule: scheduleFromDays(3),
-    sources: ['questionnaire', 'lab', 'wearables'],
-    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
-    ending: DEFAULT_END(),
-    bands: { green: { min: 0, max: 10 }, yellow: { min: 11, max: 18 }, red: { min: 19, max: null } },
-    actions: DEFAULT_ACTIONS(),
-  },
+    actions,
+    sources,
+    questionnaireId,
+  }
+}
+const ACT = {
+  cekarna: (): NextStepAction => ({ id: 'a-cekarna', label: 'Čekárna', waiting: true, icon: 'clock' }),
+  aplikace: (): NextStepAction => ({ id: 'a-aplikace', label: 'K aplikaci', icon: 'arrow' }),
+  lekar: (): NextStepAction => ({ id: 'a-lekar', label: 'K lékaři', icon: 'user' }),
+  telefon: (): NextStepAction => ({ id: 'a-telefon', label: 'Zavolat', icon: 'phone' }),
+}
+const NEVER = DEFAULT_END()
+
+/**
+ * Demo šablony (2026-11-20) – pořadí určuje i pořadí příznaků (boxů) na Dashboardu:
+ * - Chronická toxicita RT – 4 šablony s moduly EORTC, jen dotazník, každé 4 týdny;
+ * - Akutní toxicita RT – dotazník OncoReady + laboratoř, každý týden po dobu 8 týdnů;
+ * - Stacionář – intenzivní léčba (každý týden) a ostatní (každé 3 týdny), dotazník + laboratoř + wearables.
+ */
+export const seedPrograms = (): MonitoringProgram[] => [
+  tpl('pr-st-int', 'Stacionář – intenzivní léčba', ['C15', 'C20', 'C34', 'C50'], ['questionnaire', 'lab', 'wearables'], DEFAULT_QUESTIONNAIRE_ID, 1, NEVER, [
+    ACT.cekarna(),
+    ACT.aplikace(),
+    ACT.lekar(),
+  ]),
+  tpl('pr-st-ost', 'Stacionář – ostatní', ['C50', 'C53', 'C61', 'C67'], ['questionnaire', 'lab', 'wearables'], DEFAULT_QUESTIONNAIRE_ID, 3, NEVER, [
+    ACT.cekarna(),
+    ACT.aplikace(),
+    ACT.lekar(),
+  ]),
+  tpl('pr-ak', 'Akutní toxicita RT', ['C50', 'C61', 'C20', 'C53', 'C32'], ['questionnaire', 'lab'], DEFAULT_QUESTIONNAIRE_ID, 1, { ...NEVER, kind: 'duration', amount: 8, unit: 'week' }, [
+    ACT.cekarna(),
+    ACT.lekar(),
+  ]),
+  tpl('pr-ch-br', 'Chronická toxicita RT – prs', ['C50'], ['questionnaire'], 'lib-eortc-br45', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
+  tpl('pr-ch-hn', 'Chronická toxicita RT – hlava a krk', ['C01', 'C09', 'C32'], ['questionnaire'], 'lib-eortc-hn43', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
+  tpl('pr-ch-pr', 'Chronická toxicita RT – prostata', ['C61'], ['questionnaire'], 'lib-eortc-pr25', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
+  tpl('pr-ch-lc', 'Chronická toxicita RT – plíce', ['C34'], ['questionnaire'], 'lib-eortc-lc29', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
 ]
 
-/** Výchozí filtr Dashboardu (podle produkce). */
 export const DEFAULT_FILTERS: DashboardFilters = {
   // Výchozí je Vše – všechna pásma (od 2026-11-20; dříve jen červené, vyžádaná kontrola a nevyplněno)
   scores: ['green', 'yellow', 'red', 'blue', 'na'],
@@ -132,15 +120,9 @@ export const DEFAULT_FILTERS: DashboardFilters = {
   tags: [],
 }
 
+/** Demo pohledy pod Dashboardem: Chronická toxicita RT, Akutní toxicita RT, Stacionář. */
 export const seedViews = (): DashboardView[] => [
-  {
-    id: 'v1',
-    name: 'Prs – vyžaduje akci',
-    filters: { ...DEFAULT_FILTERS, scores: ['red', 'blue'], programIds: ['pr1'] },
-  },
-  {
-    id: 'v2',
-    name: 'Studie – nevyplněné',
-    filters: { ...DEFAULT_FILTERS, scores: ['na'], programIds: ['pr4'] },
-  },
+  { id: 'v-chron', name: 'Chronická toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ch-br', 'pr-ch-hn', 'pr-ch-pr', 'pr-ch-lc'] } },
+  { id: 'v-akut', name: 'Akutní toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ak'] } },
+  { id: 'v-stac', name: 'Stacionář', filters: { ...DEFAULT_FILTERS, programIds: ['pr-st-int', 'pr-st-ost'] } },
 ]

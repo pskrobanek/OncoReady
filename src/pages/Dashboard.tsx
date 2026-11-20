@@ -386,9 +386,12 @@ function PatientsBoard({
       })
 
     return {
-      // Pacienti s dnešní značkou: vždy nahoře v boxu své značky, nezávisle na filtrech (hledání platí);
-      // řazeno podle času označení.
-      tagged: base.filter((r) => r.step).sort((a, b) => a.step!.at.localeCompare(b.step!.at)),
+      // Pacienti s dnešním příznakem: nahoře v boxu svého příznaku, řazeno podle času označení.
+      // Platí jen filtr Šablona (v pohledu např. Stacionář jsou jen jeho pacienti) a hledání; skóre ani datum je neskryjí.
+      tagged: base
+        .filter((r) => r.step)
+        .filter((r) => !!term || filters.programIds.length === 0 || (!!r.program && filters.programIds.includes(r.program.id)))
+        .sort((a, b) => a.step!.at.localeCompare(b.step!.at)),
       rows: base
         // Hledání prohledává všechny pacienty – filtry se při něm nepoužijí (sestra musí najít i zeleného pacienta).
         // Šablona: pacient se zobrazí, pokud jeho monitorace vychází z některé ze zaškrtnutých šablon.

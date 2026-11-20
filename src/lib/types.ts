@@ -203,6 +203,4 @@ export interface DB {
   feedback: Feedback[]
   /** Vlastní dotazníky založené uživatelem (předpřipravené jsou v kódu, src/data/questionnaireLibrary.ts). */
   customQuestionnaires: QuestionnaireDef[]
-  /** Demo pacienti přidaní později, kteří už byli do uložených dat doplněni (aby se smazaní nevraceli). */
-  demoAdded?: string[]
 }

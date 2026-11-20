@@ -106,7 +106,7 @@ Stránka má dvě části: vlevo **boxy s pacienty** pod sebou, vpravo samostatn
    - **Hledání prohledává všechny pacienty** – při zadaném textu se filtry (Skóre, Datum vyplnění, Šablona) nepoužijí. Sestra tak najde i pacienta, kterého aktuální filtr skrývá.
 2. **Boxy příznaků** (od 2026-11-20) – jeden box pro každý **příznak** ze šablon (tlačítka v boxu *Příznaky* šablony, viz *Šablony*), v pořadí podle šablon; výchozí **Čekárna** a **K aplikaci**.
    - **Které boxy jsou vidět, se volí v Zobrazení › Boxy příznaků** – tím se určuje, kolik boxů v hlavním okně je. Výchozí: všechny.
-   - V boxu jsou pacienti s tímto **dnešním příznakem**, seřazení podle času označení (nejdéle čekající nahoře), **nezávisle na filtrech**; hledání je zužuje.
+   - V boxu jsou pacienti s tímto **dnešním příznakem**, seřazení podle času označení (nejdéle čekající nahoře). Uplatní se jen **filtr Šablona** (od 2026-11-20 – v pohledu Stacionář jsou jen jeho pacienti) a hledání; Skóre, Datum ani Příznak je neskryjí.
    - Box je vidět i prázdný: „Dnes zatím nikdo.“
    - Pacient z boxu zmizí, když dostane jiný příznak, když se příznak zruší, nebo další den.
    - Ikona v hlavičce boxu = **ikona příznaku** ze šablony (šedá, 20 px). Má-li příznak se stejným názvem v různých šablonách různé ikony, použije se z první šablony.
@@ -242,20 +242,28 @@ Pravidla se vyhodnocují v tomto pořadí:
 - Bez dat: „Pacient zatím nevyplnil žádný dotazník.“, „Žádný výsledek laboratoře.“, „Pacient nemá připojené zařízení.“
   - Zdroj, který pacient nemá, má šedý štítek **„Nesleduje se“** a do souhrnu se nepočítá.
 
-**Demo data připravenosti**
-- Laboratoř a wearables jsou smyšlené (`src/data/readinessSeed.ts`).
-- Všechna demo data se při vytvoření posunou tak, aby „dnešek“ dema odpovídal skutečnému dni. Data jsou tak vždy aktuální.
-- Verze úložiště je v6, takže starší lokální data se nahradí demem.
-- Demo pacienti přidaní později (zatím Horáková, Veselý, Marková, Bartoš) se **jednou doplní i do dat uložených v prohlížeči**, včetně dotazníků, laboratoře a wearables. Kdo je smaže, tomu se už nevrátí.
-- Rodná čísla pacientů jsou **smyšlená, ale formálně platná** (ženy: měsíc +50, platné datum, 10 číslic dělitelných 11), např. Dvořáková 7061233652. Datum narození v kartě pacienta je dopočítané z rodného čísla.
-- Stavy v demu:
-  - Šťastná = Připraveno;
-  - **Horáková, Veselý, Marková, Bartoš = Připraveno** (NOVÉ 2026-11-19) – zelení pacienti, kteří mohou k aplikaci: dotazník dnes / včera v zeleném pásmu, čerstvá laboratoř v mezích, u Horákové a Bartoše i wearables bez odchylek. Šablony Prs, Prostata, Hlava a krk, Plíce. Na Dashboardu jsou vidět ve výchozím filtru (Vše);
-  - Dlouhá = K posouzení (pokles kroků);
-  - Krokerová = Nepřipraveno (neutrofily, horečka);
-  - Dvořáková = Nepřipraveno (trombocyty);
-  - Kokošková = Neúplné (laboratoř před 24 dny);
-  - ostatní = Neúplné (skončená monitorace / neaktuální dotazník nebo laboratoř, Plyšová bez vyplněného dotazníku).
+**Demo data** (přepracováno 2026-11-20 – simulují běžný chod kliniky; generátor `src/data/seed.ts`, laboratoř a wearables `src/data/readinessSeed.ts`)
+- Všichni pacienti jsou **smyšlení**. Rodná čísla jsou formálně platná (ženy měsíc +50, platné datum, 10 číslic dělitelných 11), datum narození se dopočítá. E-maily `jmeno.prijmeni@example.com`.
+- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v7** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
+- **Šablony** (pořadí určuje i pořadí příznaků / boxů):
+
+| Šablona | Zdroje | Dotazník | Frekvence | Konec | Příznaky | Pacienti |
+| --- | --- | --- | --- | --- | --- | --- |
+| Stacionář – intenzivní léčba | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každý týden od zahájení | nikdy | Čekárna, K aplikaci, K lékaři | 6 |
+| Stacionář – ostatní | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každé 3 týdny od zahájení | nikdy | Čekárna, K aplikaci, K lékaři | 6 |
+| Akutní toxicita RT | dotazník, laboratoř | OncoReady – akutní toxicita | každý týden od zahájení | po dobu 8 týdnů | Čekárna, K lékaři | 10 |
+| Chronická toxicita RT – prs | dotazník | EORTC QLQ-BR45 | každé 4 týdny od zahájení | nikdy | K lékaři, Zavolat | 3 |
+| Chronická toxicita RT – hlava a krk | dotazník | EORTC QLQ-H&N43 | každé 4 týdny | nikdy | K lékaři, Zavolat | 3 |
+| Chronická toxicita RT – prostata | dotazník | EORTC QLQ-PR25 | každé 4 týdny | nikdy | K lékaři, Zavolat | 3 |
+| Chronická toxicita RT – plíce | dotazník | EORTC QLQ-LC29 | každé 4 týdny | nikdy | K lékaři, Zavolat | 3 |
+
+- **Pohledy** pod Dashboardem: **Chronická toxicita RT** (4 chronické šablony, 12 pacientů jen s dotazníkem), **Akutní toxicita RT** (10 pacientů s dotazníkem a laboratoří), **Stacionář** (obě stacionářové šablony, 12 pacientů se všemi 3 zdroji). Filtr Skóre = Vše.
+- **Monitorace**: chronická toxicita začala před 3–11 měsíci, akutní před 1–7 týdny, stacionář intenzivní před 3–16 týdny, ostatní před 1,5–9 měsíci. Termíny dotazníků se počítají z frekvence šablony (včetně plánovaných do budoucna).
+- **Vyplnění ~75 %**: minulý termín je vyplněný s pravděpodobností 75 % (v den termínu nebo do 2 dnů; dnešní termín 40 %, ráno). Laboratoř: akutní toxicita v den termínu, stacionář den před termínem, k dispozici ~80 %. Wearables (stacionář): posledních 8 týdnů, výpadky synchronizace po 1–3 dnech (~75 % dní).
+- **Profil pacienta** určuje pásma: dobrý (82 % zelená), střední (50 % zelená, 33 % žlutá, 10 % červená), horší (30 % červená). Laboratoř u stacionáře hlavně neutropenie a trombocytopenie, u RT hemoglobin a kreatinin; wearables občas zvýšená teplota u horšího profilu.
+- **Dnešní příznaky** pro ukázku boxů: Čekárna – Dvořák (7:52), Sedláčková (8:14); K aplikaci – Zemanová (7:40); K lékaři – Černá (8:31); Zavolat – Král (9:05).
+- e-Skill: 5 výsledků u pacientů chronické toxicity.
+- ⚠️ OVĚŘIT: dotazníky chronické toxicity jsou v šabloně EORTC, ale vyplnění a vyhodnocení v demu zatím používá model dotazníku OncoReady (znění EORTC není v aplikaci kvůli licenci).
 
 **Panel nástrojů** (pravý sloupec, NOVÉ)
 - Nahoře jsou záložky s ikonou (16 px) a názvem: **Filtr** (ikona trychtýře), **Řazení** (ikona šipek ↑↓) a **Zobrazení** (ikona sloupců, NOVÉ 2026-10-26).
@@ -691,6 +699,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | **Nová demo data**: 34 smyšlených pacientů, 7 šablon (Stacionář – intenzivní / ostatní, Akutní toxicita RT, 4× Chronická toxicita RT s EORTC moduly), pohledy Chronická toxicita RT / Akutní toxicita RT / Stacionář, vyplnění ~75 %, dnešní příznaky. Úložiště v7. Boxy příznaků respektují filtr Šablona. |
 | 2026-11-20 | Příznaky: **výběr ikony** u každého příznaku v šabloně (20 ikon); ikona se ukazuje na tlačítku ve sloupci Příznak (zvolené tlačítko místo ✓ bílou ikonou), v hlavičce boxu, ve filtru i v Zobrazení. |
 | 2026-11-20 | **Příznaky**: v šabloně nová karta Příznaky (tlačítka, která pacientovi nastaví příznak); na Dashboardu sloupec **Příznak** (dříve Další postup), boxy pro každý příznak volitelné v **Zobrazení › Boxy příznaků**, nový filtr **Příznak** (včetně Bez příznaku, ukládá se do pohledu). |
 | 2026-11-20 | Šablona: odebráno **Zahájení monitorace**. Menu: pod Šablonami podstránky **Dotazníky** a **Laboratoř**. Dotazníky: levý box s menu Přehled / Statické / Dynamické / Vlastní (nový druh dotazníku dynamický – PRO-CTCAE, EORTC CAT Core). Laboratoř: tabulka parametrů a mezí. |

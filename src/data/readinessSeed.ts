@@ -1,92 +1,56 @@
-// Ukázková data laboratoře a wearables (smyšlená). Data jsou vztažená k „dnešku“ demo dat (SEED_TODAY)
-// a posouvají se spolu s ostatními demo daty, aby byla aktuální vždy, když se demo otevře.
-import { addDays } from '../lib/format'
-import type { LabParam, LabResult, WearableDay } from '../lib/types'
+// Generátory demo dat laboratoře a wearables (smyšlená, deterministická). Používá je src/data/seed.ts.
+import type { LabParam, WearableDay } from '../lib/types'
 
 /** Deterministický generátor náhodných čísel – demo data jsou při každém načtení stejná. */
-function rng(seed: number) {
+export function rng(seed: number) {
   let s = seed
   return () => (s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296
 }
 
+/** [střed, rozptyl] – rozptyl nikdy nepřekročí žlutou mez. */
 const NORMAL: Record<LabParam, [number, number]> = {
-  // [střed, rozptyl] – rozptyl nikdy nepřekročí žlutou mez
-  neu: [3.4, 0.4],
-  plt: [235, 25],
-  hb: [128, 6],
-  krea: [76, 8],
-  bili: [9, 3],
+  neu: [3.6, 0.9],
+  plt: [240, 50],
+  hb: [128, 8],
+  krea: [78, 12],
+  bili: [10, 4],
 }
-
-type LabSpec = [patientId: string, when: number | string, overrides?: Partial<Record<LabParam, number>>]
-
-/** Odběry: `when` = počet dní před dneškem nebo pevné datum (starší monitorace). */
-const LABS: LabSpec[] = [
-  // Šťastná – vše v pořádku
-  ['p10', 1], ['p10', 22], ['p10', 43], ['p10', 64],
-  // Krokerová – neutropenie v posledním odběru
-  ['p6', 1, { neu: 1.2, hb: 104 }], ['p6', 22, { neu: 2.4 }], ['p6', 43], ['p6', 64],
-  // Dlouhá – laboratoř v pořádku
-  ['p2', 3], ['p2', 24, { hb: 112 }], ['p2', 45],
-  // Kokošková – poslední odběr před 24 dny (neaktuální)
-  ['p4', 24], ['p4', 45, { plt: 190 }],
-  // Dvořáková – trombocytopenie
-  ['p3', 2, { plt: 85, hb: 96 }], ['p3', 23, { plt: 128 }], ['p3', 44],
-  // Plyšová – čerstvý odběr, ale zatím žádný dotazník ani wearables
-  ['p9', 5],
-  // Starší monitorace
-  ['p1', '2026-03-20'], ['p1', '2026-04-10', { hb: 97 }],
-  ['p7', '2026-03-05'], ['p7', '2026-03-26', { krea: 118 }], ['p7', '2026-04-16', { krea: 162 }],
-  // Zelení pacienti – čerstvý odběr v mezích
-  ['p11', 1], ['p11', 22], ['p11', 43],
-  ['p12', 2], ['p12', 30],
-  ['p13', 1], ['p13', 8], ['p13', 15],
-  ['p14', 3], ['p14', 24],
-]
-
-export function seedLabs(today: string): LabResult[] {
-  const r = rng(7)
-  return LABS.map(([patientId, when, over = {}], i) => {
-    const values = {} as Record<LabParam, number>
-    for (const [k, [mid, spread]] of Object.entries(NORMAL) as [LabParam, [number, number]][]) {
-      const v = mid + (r() * 2 - 1) * spread
-      values[k] = k === 'neu' ? Math.round(v * 10) / 10 : Math.round(v)
-    }
-    return { id: `lab${i + 1}`, patientId, date: typeof when === 'number' ? addDays(today, -when) : when, values: { ...values, ...over } }
-  })
+/** Hodnoty pro žlutou a červenou odchylku: [žlutá, červená]. */
+const ABNORMAL: Record<LabParam, [number, number]> = {
+  neu: [1.7, 1.1],
+  plt: [122, 78],
+  hb: [93, 76],
+  krea: [126, 168],
+  bili: [26, 38],
 }
+const round = (k: LabParam, v: number) => (k === 'neu' ? Math.round(v * 10) / 10 : Math.round(v))
 
-/** Pacienti s připojeným zařízením a odchylky v konkrétních dnech (počet dní před dneškem). */
-const WEARABLES: Record<string, (daysAgo: number) => Partial<WearableDay>> = {
-  p10: () => ({}),
-  // Krokerová – dnes horečka, předtím zvýšená teplota
-  p6: (n) => (n === 0 ? { temp: 38.1 } : n === 1 ? { temp: 37.6 } : n === 8 ? { temp: 37.7 } : {}),
-  // Dlouhá – posledních 12 dní výrazně méně kroků
-  p2: (n) => (n <= 11 ? { steps: 2400 + ((n * 137) % 400) } : {}),
-  p4: () => ({}),
-  // Zelení pacienti – bez odchylek
-  p11: () => ({}),
-  p14: () => ({}),
-}
-const WEAR_DAYS = 56
-
-export function seedWearables(today: string): WearableDay[] {
-  const out: WearableDay[] = []
-  let i = 0
-  for (const [patientId, override] of Object.entries(WEARABLES)) {
-    const r = rng(patientId.length * 31 + Number(patientId.slice(1)))
-    for (let n = WEAR_DAYS - 1; n >= 0; n--) {
-      out.push({
-        id: `w${++i}`,
-        patientId,
-        date: addDays(today, -n),
-        temp: Math.round((36.5 + r() * 0.5) * 10) / 10,
-        spo2: 96 + Math.floor(r() * 3),
-        hr: 68 + Math.floor(r() * 12),
-        steps: 5500 + Math.floor(r() * 1500),
-        ...override(n),
-      })
-    }
+/**
+ * Jeden odběr. `level` = ok / žlutá / červená odchylka jednoho parametru;
+ * u chemoterapie (stacionář) jsou odchylky hlavně v krevním obrazu (neutrofily, trombocyty), u RT spíš hemoglobin a kreatinin.
+ */
+export function labValues(r: () => number, level: 'ok' | 'yellow' | 'red', chemo: boolean): Partial<Record<LabParam, number>> {
+  const values = {} as Record<LabParam, number>
+  for (const [k, [mid, spread]] of Object.entries(NORMAL) as [LabParam, [number, number]][]) values[k] = round(k, mid + (r() * 2 - 1) * spread)
+  if (level !== 'ok') {
+    const pool: LabParam[] = chemo ? ['neu', 'neu', 'neu', 'plt', 'plt', 'hb', 'bili'] : ['hb', 'hb', 'krea', 'neu', 'plt']
+    const k = pool[Math.floor(r() * pool.length)]
+    const [y, red] = ABNORMAL[k]
+    const base = level === 'yellow' ? y : red
+    values[k] = round(k, base * (0.95 + r() * 0.1))
   }
-  return out
+  return values
+}
+
+/** Den z hodinek; u horšího profilu občas zvýšená teplota nebo nižší saturace. */
+export function wearDay(r: () => number, date: string, profile: 'good' | 'moderate' | 'poor'): Omit<WearableDay, 'id' | 'patientId'> {
+  const fever = profile === 'poor' ? 0.06 : profile === 'moderate' ? 0.03 : 0.01
+  const x = r()
+  return {
+    date,
+    temp: x < fever / 2 ? 38.2 + Math.round(r() * 5) / 10 : x < fever ? 37.6 + Math.round(r() * 3) / 10 : Math.round((36.4 + r() * 0.6) * 10) / 10,
+    spo2: r() < fever / 2 ? 93 + Math.floor(r() * 2) : 96 + Math.floor(r() * 3),
+    hr: 66 + Math.floor(r() * 16),
+    steps: Math.round((profile === 'poor' ? 2800 : profile === 'moderate' ? 4200 : 5800) + r() * 2200),
+  }
 }

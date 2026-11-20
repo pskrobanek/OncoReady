@@ -372,6 +372,11 @@ Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
 - Drobečková navigace Šablony › Přehled, nadpis „Šablony“, vpravo **Vytvořit**.
 - Staré adresy `/monitorace…` přesměrují na `/sablony`.
 - Hledání podle názvu (od 2026-11-20; dříve i tag, klasifikace a diagnózy).
+- **Panel Filtr** vpravo (NOVÉ 2026-11-20; stejný vzhled jako záložka Filtr na Dashboardu, šířka 288 px, na menší obrazovce pod seznamem): nadpis „Filtr“ s ikonou trychtýře (při změně modrá tečka), vpravo odkaz **Obnovit výchozí** jen při změně. Ve skupině zaškrtávacích polí platí NEBO, mezi skupinami A ZÁROVEŇ; nic nezaškrtnuto = nefiltruje. Filtr se neukládá (po opuštění stránky je zase výchozí).
+  - *Zdroje* (zaškrtávací, s ikonou): Dotazník, Laboratoř, Wearables – šablona obsahuje některý ze zaškrtnutých zdrojů.
+  - *Frekvence*: Jednorázově, Pravidelně, Vlastní.
+  - *Dotazník*: Statické, Dynamické, Vlastní – podle druhu dotazníku šablony (jen šablony se zdrojem Dotazník).
+  - *Pacienti* (přepínač): Vše (výchozí) / S aktivními pacienty / Bez pacientů.
 - **Sloupce:**
 
 | Sloupec | Obsah |
@@ -554,8 +559,14 @@ Otevírá se kliknutím na odznak „N/A“ nebo na budoucí termín. Je to **ce
 ## Kartotéka – přehled
 
 - Drobečková navigace: Kartotéka › Přehled. Nadpis „Kartotéka“, vpravo tlačítko **Vytvořit**.
-- V kartě je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`), Rodné číslo, **Aktivní plán**, **e-Skill** (NOVÉ) a rychlá akce. Celý řádek je klikací.
+- V kartě vlevo je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`), Rodné číslo, **Aktivní plán**, **e-Skill** (NOVÉ) a rychlá akce. Celý řádek je klikací.
 - **e-Skill**: poslední výsledek testu (skóre barvou úrovně + štítek Nízká / Střední / Vysoká), jinak „—“.
+- **Panel Filtr** vpravo (NOVÉ 2026-11-20; stejný vzhled jako záložka Filtr na Dashboardu, šířka 288 px, na menší obrazovce pod seznamem): nadpis „Filtr“ s ikonou trychtýře (při změně modrá tečka), vpravo odkaz **Obnovit výchozí** jen při změně. Ve skupině zaškrtávacích polí platí NEBO, mezi skupinami A ZÁROVEŇ; nic nezaškrtnuto = nefiltruje. Filtr se neukládá (po opuštění stránky je zase výchozí).
+  - *Stav monitorace*: Aktivní, Naplánováno, Ukončeno, Bez plánu (jako sloupec Aktivní plán).
+  - *Šablona*: rozbalovací výběr více šablon (stejný jako na Dashboardu, „Všechny šablony“) – šablona monitorace ze sloupce Aktivní plán.
+  - *Data ze zdroje* (s ikonou): Dotazník (aspoň jeden vyplněný), Laboratoř (aspoň jeden odběr), Wearables (aspoň jeden den z hodinek).
+  - *e-Skill* (přepínač): Vše (výchozí) / Má výsledek / Bez výsledku.
+  - Změna filtru vrátí stránkování na 1. stránku. Bez výsledků: „Nenalezeny žádné záznamy“.
 - **Rychlá akce „+ Monitorace“** (NOVÉ, modrý odkaz vpravo v řádku): otevře dialog *Nová monitorace — Příjmení Jméno* (stejný jako v kartě pacienta: kalendář, délka 1–6 týdnů, výběr šablony). Po vytvoření se zobrazí notifikace „Monitorace vytvořena – Příjmení Jméno“ a sloupec Aktivní plán se aktualizuje. Kliknutí na odkaz neotevírá kartu pacienta.
 - **Aktivní plán** ukazuje stav monitorace pacienta k dnešku:
   - 🟢 **Aktivní** + název šablony + „do 11.11.2026“: monitorace je označená jako aktivní a dnešek je mezi startem a koncem;
@@ -712,6 +723,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | **Kartotéka** a **Šablony**: panel Filtr vpravo (Kartotéka: stav monitorace, šablona, data ze zdroje, e-Skill; Šablony: zdroje, frekvence, druh dotazníku, pacienti). |
 | 2026-11-20 | Demo: každý pohled má jen své příznaky – **Chronická toxicita RT: Zavolat**, **Akutní toxicita RT: K lékaři** (Čekárna z demo šablon zmizela), Stacionář: K aplikaci, K lékaři; box Zavolat zapnutý v pohledu Chronická toxicita; úložiště v12. |
 | 2026-11-20 | Demo: Stacionář má příznaky **K aplikaci, K lékaři**; dnešní příznaky podle stavu pacienta (chronická: Zavolat jen červeným/modrým a 2 žlutým; akutní: K lékaři; stacionář: K lékaři / K aplikaci); víc červených pacientů; pohled Akutní toxicita RT má výchozí zapnutý box **K lékaři**; úložiště v11. |
 | 2026-11-20 | Pohled **Chronická toxicita RT** má výchozí časovou osu **Po letech** (časová osa se pamatuje zvlášť pro každý pohled). Demo: chronická toxicita 1–4 roky, dřívější roky 1 dotazník, letos nejvýš 3 (šablony každé 4 měsíce); úložiště v10. |

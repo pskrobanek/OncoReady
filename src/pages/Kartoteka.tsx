@@ -2,11 +2,37 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PlusIcon } from '@heroicons/react/20/solid'
 import { ScorePill } from '../components/eskill'
-import { Button, Card, PageHeader, PerPage, resultsLabel, SearchInput, useToast } from '../components/ui'
+import { Button, Card, Checkbox, MultiSelect, PageHeader, PerPage, Radio, resultsLabel, SearchInput, useToast } from '../components/ui'
+import { FilterGroup, FilterPanel, toggle } from '../components/FilterPanel'
+import { SourceIcon } from '../components/Readiness'
+import { SOURCES } from '../lib/readiness'
 import { MonitoringModal } from './PatientForm'
 import { fullDate, tableName } from '../lib/format'
 import { eskillOf, planStatus, sortPatients, useStore } from '../lib/store'
-import type { DB } from '../lib/types'
+import type { DB, SourceKey } from '../lib/types'
+
+/** Filtry kartotéky (prázdný seznam = nefiltruje). */
+type PlanKind = 'active' | 'planned' | 'ended' | 'none'
+type PatientFilters = { plan: PlanKind[]; programIds: string[]; sources: SourceKey[]; eskill: 'all' | 'yes' | 'no' }
+const EMPTY: PatientFilters = { plan: [], programIds: [], sources: [], eskill: 'all' }
+const PLAN_OPTIONS: { key: PlanKind; label: string }[] = [
+  { key: 'active', label: 'Aktivní' },
+  { key: 'planned', label: 'Naplánováno' },
+  { key: 'ended', label: 'Ukončeno' },
+  { key: 'none', label: 'Bez plánu' },
+]
+const ESKILL_OPTIONS: { key: PatientFilters['eskill']; label: string }[] = [
+  { key: 'all', label: 'Vše' },
+  { key: 'yes', label: 'Má výsledek' },
+  { key: 'no', label: 'Bez výsledku' },
+]
+/** Má pacient nějaká data ze zdroje (vyplněný dotazník, odběr, den z hodinek)? */
+function hasSource(db: DB, patientId: string, s: SourceKey) {
+  if (s === 'lab') return db.labs.some((l) => l.patientId === patientId)
+  if (s === 'wearables') return db.wearables.some((w) => w.patientId === patientId)
+  const mons = new Set(db.monitorings.filter((m) => m.patientId === patientId).map((m) => m.id))
+  return db.questionnaires.some((q) => mons.has(q.monitoringId) && q.filledAt)
+}
 
 export function Kartoteka() {
   const { db, createMonitoring } = useStore()
@@ -17,12 +43,26 @@ export function Kartoteka() {
   const [perPage, setPerPage] = useState(10)
   const [page, setPage] = useState(1)
 
+  const [f, setF] = useState<PatientFilters>(EMPTY)
+  const changeF = (next: PatientFilters) => {
+    setF(next)
+    setPage(1)
+  }
+  const changed = JSON.stringify(f) !== JSON.stringify(EMPTY)
+
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase()
-    return sortPatients(db.patients).filter(
-      (p) => !term || tableName(p).toLowerCase().includes(term) || p.rodneCislo.includes(term),
-    )
-  }, [db.patients, search])
+    return sortPatients(db.patients)
+      .filter((p) => !term || tableName(p).toLowerCase().includes(term) || p.rodneCislo.includes(term))
+      .filter((p) => {
+        const st = planStatus(db, p.id)
+        if (f.plan.length && !f.plan.includes(st.kind)) return false
+        if (f.programIds.length && !(st.kind !== 'none' && st.monitoring.programId && f.programIds.includes(st.monitoring.programId))) return false
+        if (f.sources.length && !f.sources.some((s) => hasSource(db, p.id, s))) return false
+        if (f.eskill !== 'all' && (eskillOf(db, p.id).length > 0) !== (f.eskill === 'yes')) return false
+        return true
+      })
+  }, [db, search, f])
 
   const pages = Math.max(1, Math.ceil(rows.length / perPage))
   const current = Math.min(page, pages)
@@ -36,7 +76,8 @@ export function Kartoteka() {
         breadcrumbs={[{ label: 'Kartotéka', to: '/kartoteka' }, { label: 'Přehled' }]}
         actions={<Button onClick={() => navigate('/kartoteka/vytvorit')}>Vytvořit</Button>}
       />
-      <Card className="overflow-hidden">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <Card className="min-w-0 flex-1 overflow-hidden">
         <div className="flex justify-end px-4 py-3 sm:px-6">
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} className="w-full sm:max-w-xs" />
         </div>
@@ -114,6 +155,43 @@ export function Kartoteka() {
           </div>
         </div>
       </Card>
+
+      <FilterPanel onReset={changed ? () => changeF(EMPTY) : undefined}>
+        <FilterGroup title="Stav monitorace">
+          {PLAN_OPTIONS.map((o) => (
+            <Checkbox key={o.key} checked={f.plan.includes(o.key)} onChange={(v) => changeF({ ...f, plan: toggle(f.plan, o.key, v) })} label={o.label} />
+          ))}
+        </FilterGroup>
+        <FilterGroup title="Šablona">
+          <MultiSelect
+            options={db.programs.map((p) => ({ value: p.id, label: p.name }))}
+            value={f.programIds}
+            onChange={(programIds) => changeF({ ...f, programIds })}
+            placeholder="Všechny šablony"
+          />
+        </FilterGroup>
+        <FilterGroup title="Data ze zdroje">
+          {SOURCES.map((s) => (
+            <Checkbox
+              key={s.key}
+              checked={f.sources.includes(s.key)}
+              onChange={(v) => changeF({ ...f, sources: toggle(f.sources, s.key, v) })}
+              label={
+                <span className="flex items-center gap-2">
+                  <SourceIcon source={s.key} className="h-4 w-4 text-gray-400" />
+                  {s.label}
+                </span>
+              }
+            />
+          ))}
+        </FilterGroup>
+        <FilterGroup title="e-Skill">
+          {ESKILL_OPTIONS.map((o) => (
+            <Radio key={o.key} name="eskill" checked={f.eskill === o.key} onChange={() => changeF({ ...f, eskill: o.key })} label={o.label} />
+          ))}
+        </FilterGroup>
+      </FilterPanel>
+      </div>
 
       {/* Rychlá akce: přidat monitoraci přímo ze seznamu */}
       {addingFor && (

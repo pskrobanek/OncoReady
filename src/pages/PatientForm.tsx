@@ -361,7 +361,16 @@ export function MonitoringModal({
           <Field label="Šablona">
             <select
               value={programId}
-              onChange={(e) => setProgramId(e.target.value)}
+              onChange={(e) => {
+                setProgramId(e.target.value)
+                // Nová monitorace převezme zahájení ze šablony: budoucí datum → Start (minulé se nepřebírá),
+                // ručně → přepínač Aktivní vypnutý (monitoraci zapne uživatel)
+                const p = db.programs.find((x) => x.id === e.target.value)
+                if (!initial && p) {
+                  if (p.start.kind === 'date' && p.start.date >= todayIso()) setStart(p.start.date)
+                  setActive(p.start.kind === 'date')
+                }
+              }}
               className="block w-full rounded-lg border-none bg-white px-3 py-1.5 text-sm leading-6 text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600"
             >
               <option value="">— bez šablony —</option>

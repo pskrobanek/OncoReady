@@ -362,7 +362,7 @@ Stránka se do 2026-10-26 jmenovala „Monitorace“. **Názvosloví:**
 | Diagnózy | štítky s kódem MKN-10 (monospace); název diagnózy je v tooltipu |
 | Tag | šedý štítek |
 | Klasifikace | barevný štítek: nonMD šedá, MD modrá, research fialová, other oranžová |
-| Frekvence | Popis frekvence, např. „Jednorázově“, „Každých 7 dní“, „Každé 2 týdny ve středu“, „Každý měsíc, 15. den“, „Každý rok v březnu“, „Vlastní (3 termíny)“. Pod ním šedě konec, pokud je nastavený: „celkem 10 dotazníků“ / „po dobu 3 měsíců“. |
+| Frekvence | Popis frekvence, např. „Jednorázově“, „Každých 7 dní“, „Každé 2 týdny ve středu“, „Každý měsíc, 15. den“, „Každý rok v březnu“, „Vlastní (3 termíny)“. Pod ním šedě zahájení a konec: „Zahájení 7.12.2026 · celkem 10 dotazníků“ / „Zahájení ručně · po dobu 3 měsíců“. |
 | Pásma (body) | tři štítky s tečkou: zelené `0–7`, žluté `8–14`, červené `15+` |
 | Pacienti | počet pacientů s aktivní monitorací podle této šablony (tooltip) |
 | akce | Upravit, Smazat (s potvrzením) |
@@ -380,6 +380,11 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zařazení → Rozsa
 
 **Karta 2 – Frekvence** (NOVÉ 2026-11-20; nahrazuje výběr „Frekvence odesílání“ s počtem dní):
 - Nadpis „Frekvence“, popis „Jak často se pacientovi automaticky odešle dotazník.“
+- **Zahájení monitorace** (NOVÉ 2026-11-20, první část boxu, oddělená čárou) – přepínač (radio):
+  - **Datum** + pole s kalendářem (výchozí: dnešek). Klik do pole volbu rovnou vybere. Bez data: „Vyberte datum zahájení.“
+  - **Aktivovat ručně** – šedý doplněk „– monitorace se spustí, až ji u pacienta zapnete“.
+  - Náhled termínů dole počítá od zvoleného data („při zahájení 7.12.2026“), při ručním zahájení od dneška.
+  - Napojení na pacienta: v dialogu *Nová monitorace* výběr šablony s datem zahájení **předvyplní Start** (jen datum dnes nebo budoucí, minulé se nepřebírá) a nechá **Aktivní zapnuté**; šablona s ručním zahájením **vypne přepínač Aktivní** – monitoraci zapne uživatel. ⚠️ OVĚŘIT: má šablona vůbec nést pevné datum (spíš u studie se společným startem), a co přesně znamená ruční aktivace v produkci (kdo a kde ji zapne).
 - Tři přepínací tlačítka (vzhled jako Klasifikace) s vysvětlivkou pod nimi:
   - **Jednorázově** – „Jeden dotazník v den začátku monitorace.“ (⚠️ OVĚŘIT: v den začátku, nebo za zvolenou dobu?)
   - **Pravidelně** (výchozí) – „Dotazník se opakuje po zvoleném intervalu.“
@@ -440,7 +445,7 @@ Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
 - Dialog *Nová monitorace / Upravit monitoraci* v Kartotéce má pole **Šablona** (výběr, nebo „— bez šablony —“).
 - Dotazníky se naplánují podle **frekvence a konce** zvolené šablony, nejpozději do konce monitorace pacienta (zvolené v kalendáři). Bez šablony se posílají každých 7 dní.
   - Text pod dialogem: „Naplánuje se N dotazníků (každé 2 týdny ve středu, celkem 10 dotazníků).“
-- Šablony uložené před 2026-11-20 (jen počet dní) se převedou na **Pravidelně – každých N dní, konec Nikdy**.
+- Šablony uložené před 2026-11-20 (jen počet dní) se převedou na **Pravidelně – každých N dní, konec Nikdy, zahájení Datum = den převodu**.
 - Pro stáří dotazníku na Dashboardu se z frekvence počítá přibližný interval ve dnech (týden = 7, měsíc = 30, rok = 365; Vlastní = nejkratší mezera mezi termíny; Jednorázově = 7).
 - Tabulka Monitorace pacienta má první sloupec **Šablona**.
 
@@ -645,6 +650,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Šablona › Frekvence: nová část **Zahájení monitorace** – Datum (kalendář) / Aktivovat ručně. Dialog Nová monitorace podle ní předvyplní Start, nebo vypne Aktivní. V seznamu šablon pod frekvencí „Zahájení …“. |
 | 2026-11-20 | Šablona: první karta jen **Název**; nová karta **Frekvence** – Jednorázově / Pravidelně (den, týden + den v týdnu, měsíc + den v měsíci, rok + měsíc; interval 1–999) / Vlastní (řádky „za N jednotek od začátku“) a **Konec monitorace** (Nikdy / počtem dotazníků / dobou) s náhledem termínů. Diagnózy, Klasifikace a Tag v kartě Zařazení. Dotazníky monitorace se plánují podle nové frekvence. |
 | 2026-11-20 | Zpětná vazba v levém menu je nenápadnější: bez karty a pozadí (jen čára nahoře), ostré rohy (2 px), bez stínů, šedý nadpis a ikona; Odeslat je bez textu šedé. |
 | 2026-11-20 | Filtr Skóre: nová volba **Vše** nahoře, je výchozí (Dashboard i nový pohled) – na Dashboardu jsou tak vidět všichni pacienti včetně zelených a žlutých. |

@@ -6,9 +6,9 @@ import { BandBar } from '../components/programs'
 import { Button, Card, ConfirmModal, cx, Field, PageHeader, Radio, TextInput, useToast } from '../components/ui'
 import { CLASSIFICATIONS, DEFAULT_ACTIONS, DIAGNOSES, diagnosisName, MAX_SCORE } from '../data/programs'
 import { fullDate, todayIso } from '../lib/format'
-import { approxDays, DEFAULT_END, DEFAULT_SCHEDULE, MAX_COUNT, MONTHS, planDates, UNIT_LABEL, UNITS, unitWord, WEEKDAYS } from '../lib/schedule'
+import { approxDays, DEFAULT_END, DEFAULT_SCHEDULE, DEFAULT_START, MAX_COUNT, MONTHS, planDates, UNIT_LABEL, UNITS, unitWord, WEEKDAYS } from '../lib/schedule'
 import { useStore } from '../lib/store'
-import type { Classification, MonitoringProgram, Schedule, ScheduleEnd, ScheduleUnit } from '../lib/types'
+import type { Classification, MonitoringProgram, Schedule, ScheduleEnd, ScheduleStart, ScheduleUnit } from '../lib/types'
 
 const SELECT =
   'block w-full rounded-lg border-none bg-white px-3 py-1.5 text-sm leading-6 text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-600'
@@ -20,6 +20,7 @@ const EMPTY: Omit<MonitoringProgram, 'id'> = {
   classification: 'nonMD',
   frequencyDays: 7,
   schedule: DEFAULT_SCHEDULE(),
+  start: DEFAULT_START(),
   ending: DEFAULT_END(),
   bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
   actions: DEFAULT_ACTIONS(),
@@ -59,6 +60,7 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
     if (sc.kind === 'regular' && !inRange(sc.every)) e.frequency = `Zadejte číslo od 1 do ${MAX_COUNT}.`
     if (sc.kind === 'custom' && sc.steps.length === 0) e.frequency = 'Přidejte alespoň jeden termín.'
     else if (sc.kind === 'custom' && sc.steps.some((x) => !inRange(x.count))) e.frequency = `U každého termínu zadejte číslo od 1 do ${MAX_COUNT}.`
+    if (form.start.kind === 'date' && !form.start.date) e.start = 'Vyberte datum zahájení.'
     if (sc.kind === 'regular' && form.ending.kind === 'count' && !inRange(form.ending.count)) e.ending = `Zadejte počet dotazníků od 1 do ${MAX_COUNT}.`
     if (sc.kind === 'regular' && form.ending.kind === 'duration' && !inRange(form.ending.amount)) e.ending = `Zadejte dobu od 1 do ${MAX_COUNT}.`
     if (greenMax < 0) e.bands = 'Zelené pásmo musí končit na 0 nebo více bodech.'
@@ -109,7 +111,9 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
         <FrequencyCard
           schedule={form.schedule}
           ending={form.ending}
+          start={form.start}
           errors={errors}
+          onStart={(start) => setForm({ ...form, start })}
           onSchedule={(schedule) => setForm({ ...form, schedule })}
           onEnding={(ending) => setForm({ ...form, ending })}
         />
@@ -356,20 +360,26 @@ const UnitSelect = ({ value, count, onChange }: { value: ScheduleUnit; count: nu
 function FrequencyCard({
   schedule: sc,
   ending,
+  start,
   errors,
   onSchedule,
   onEnding,
+  onStart,
 }: {
   schedule: Schedule
   ending: ScheduleEnd
+  start: ScheduleStart
   errors: Record<string, string>
   onSchedule: (s: Schedule) => void
   onEnding: (e: ScheduleEnd) => void
+  onStart: (s: ScheduleStart) => void
 }) {
   const set = (patch: Partial<Schedule>) => onSchedule({ ...sc, ...patch })
   const setStep = (id: string, patch: Partial<Schedule['steps'][number]>) => set({ steps: sc.steps.map((x) => (x.id === id ? { ...x, ...patch } : x)) })
   const today = todayIso()
-  const preview = planDates(sc, ending, today, null, 9)
+  // Náhled počítá od zvoleného data zahájení, při ručním zahájení od dneška.
+  const base = start.kind === 'date' && start.date ? start.date : today
+  const preview = planDates(sc, ending, base, null, 9)
   const endless = sc.kind === 'regular' && ending.kind === 'never'
 
   return (
@@ -378,6 +388,39 @@ function FrequencyCard({
       <p className="mt-1 text-sm text-gray-500">Jak často se pacientovi automaticky odešle dotazník.</p>
 
       <div className="mt-6 flex flex-col gap-6">
+        {/* Zahájení monitorace: datum z kalendáře, nebo ručně */}
+        <div className="flex flex-col gap-3 border-b border-gray-100 pb-5">
+          <h3 className="text-sm font-medium text-gray-950">Zahájení monitorace</h3>
+          <Radio
+            name="start"
+            checked={start.kind === 'date'}
+            onChange={() => onStart({ ...start, kind: 'date' })}
+            label={
+              <span className="flex flex-wrap items-center gap-2">
+                Datum
+                <TextInput
+                  type="date"
+                  className="!w-44"
+                  value={start.date}
+                  invalid={!!errors.start}
+                  onChange={(e) => onStart({ kind: 'date', date: e.target.value })}
+                />
+              </span>
+            }
+          />
+          <Radio
+            name="start"
+            checked={start.kind === 'manual'}
+            onChange={() => onStart({ ...start, kind: 'manual' })}
+            label={
+              <span>
+                Aktivovat ručně <span className="font-normal text-gray-500">– monitorace se spustí, až ji u pacienta zapnete</span>
+              </span>
+            }
+          />
+          {errors.start && <p className="text-sm text-red-600">{errors.start}</p>}
+        </div>
+
         <div className="flex flex-col gap-2">
           <Segmented
             value={sc.kind}
@@ -521,7 +564,7 @@ function FrequencyCard({
         {preview.length > 0 && (
           <div className="flex flex-col gap-2 rounded-lg bg-gray-50 p-4 ring-1 ring-gray-950/5">
             <span className="text-sm text-gray-500">
-              Náhled – při začátku monitorace dnes ({fullDate(today)}) {preview.length === 1 ? 'přijde dotazník' : 'přijdou dotazníky'}:
+              Náhled – při zahájení {base === today ? `dnes (${fullDate(today)})` : fullDate(base)} {preview.length === 1 ? 'přijde dotazník' : 'přijdou dotazníky'}:
             </span>
             <div className="flex flex-wrap gap-1.5">
               {preview.slice(0, 8).map((d) => (
@@ -529,7 +572,7 @@ function FrequencyCard({
                   {fullDate(d)}
                 </span>
               ))}
-              {(preview.length > 8 || endless) && <span className="px-1 py-1 text-xs text-gray-500">{endless ? '… a dál až do konce monitorace pacienta' : `… celkem ${planDates(sc, ending, today, null).length}`}</span>}
+              {(preview.length > 8 || endless) && <span className="px-1 py-1 text-xs text-gray-500">{endless ? '… a dál až do konce monitorace pacienta' : `… celkem ${planDates(sc, ending, base, null).length}`}</span>}
             </div>
           </div>
         )}

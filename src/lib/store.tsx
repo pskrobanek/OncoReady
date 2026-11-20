@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { LATER_DEMO_PATIENTS, seedDB } from '../data/seed'
 import { DEFAULT_ACTIONS } from '../data/programs'
-import { DEFAULT_END, planDates, scheduleFromDays } from './schedule'
+import { DEFAULT_END, DEFAULT_START, planDates, scheduleFromDays } from './schedule'
 import type { Answers, DashboardView, DB, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
 import { todayIso } from './format'
 
@@ -64,6 +64,7 @@ function migrate(stored: Partial<DB>): DB {
         actions: kept.length ? kept : DEFAULT_ACTIONS(),
         // Šablony z doby před volbou frekvence: Pravidelně každých N dní, konec Nikdy
         schedule: p.schedule ?? scheduleFromDays(p.frequencyDays ?? 7),
+        start: p.start ?? DEFAULT_START(),
         ending: p.ending ?? DEFAULT_END(),
       }
     }),

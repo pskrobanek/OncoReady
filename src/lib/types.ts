@@ -46,6 +46,12 @@ export interface Schedule {
   steps: { id: string; count: number; unit: ScheduleUnit }[]
 }
 
+/** Zahájení monitorace: ke zvolenému datu, nebo ručně (aktivuje ji uživatel). */
+export interface ScheduleStart {
+  kind: 'date' | 'manual'
+  date: string
+}
+
 /** Konec monitorace: nikdy / po počtu dotazníků / po době od začátku. */
 export interface ScheduleEnd {
   kind: 'never' | 'count' | 'duration'
@@ -64,6 +70,8 @@ export interface MonitoringProgram {
   frequencyDays: number
   /** Frekvence odesílání dotazníků (od 2026-11-20). */
   schedule: Schedule
+  /** Zahájení monitorace (od 2026-11-20). */
+  start: ScheduleStart
   /** Konec monitorace – uplatní se jen u pravidelné frekvence. */
   ending: ScheduleEnd
   bands: { green: ScoreRange; yellow: ScoreRange; red: ScoreRange }

@@ -1,6 +1,6 @@
 // Frekvence a konec monitorace v šabloně: výpočet termínů dotazníků a čitelné popisy.
-import { addDays } from './format'
-import type { ScheduleEnd, ScheduleUnit, Schedule } from './types'
+import { addDays, fullDate, todayIso } from './format'
+import type { ScheduleEnd, ScheduleStart, ScheduleUnit, Schedule } from './types'
 
 export const UNITS: ScheduleUnit[] = ['day', 'week', 'month', 'year']
 export const MAX_COUNT = 999
@@ -25,6 +25,8 @@ export const MONTHS = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen
 const MONTHS_IN = ['v lednu', 'v únoru', 'v březnu', 'v dubnu', 'v květnu', 'v červnu', 'v červenci', 'v srpnu', 'v září', 'v říjnu', 'v listopadu', 'v prosinci']
 
 export const DEFAULT_SCHEDULE = (): Schedule => ({ kind: 'regular', unit: 'week', every: 1, weekday: 1, monthDay: 1, month: 1, steps: [] })
+/** Výchozí zahájení: datum = dnes (u starších šablon taky). */
+export const DEFAULT_START = (): ScheduleStart => ({ kind: 'date', date: todayIso() })
 export const DEFAULT_END = (): ScheduleEnd => ({ kind: 'never', count: 10, amount: 3, unit: 'month' })
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -133,6 +135,9 @@ export function endLabel(s: Schedule, e: ScheduleEnd): string | null {
   if (e.kind === 'count') return `celkem ${e.count} ${plural(e.count, ['dotazník', 'dotazníky', 'dotazníků'])}`
   return `po dobu ${e.amount} ${unitWord(e.amount, e.unit)}`
 }
+
+/** Popis zahájení, např. „Zahájení 1.12.2026“ / „Zahájení ručně“. */
+export const startLabel = (s: ScheduleStart) => (s.kind === 'date' ? `Zahájení ${fullDate(s.date)}` : 'Zahájení ručně')
 
 /** Šablona uložená před zavedením frekvence (jen počet dní) → Pravidelně každých N dní, konec Nikdy. */
 export const scheduleFromDays = (days: number): Schedule => ({ ...DEFAULT_SCHEDULE(), kind: 'regular', unit: 'day', every: Math.max(1, days) })

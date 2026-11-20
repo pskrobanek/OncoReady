@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { SourceIcon } from '../components/Readiness'
 import { Button, Card, ConfirmModal, LinkAction, PageHeader, PerPage, resultsLabel, SearchInput, useToast } from '../components/ui'
 import { sourceMeta } from '../lib/readiness'
+import { questionnaireName } from '../data/questionnaireLibrary'
 import { endLabel, scheduleLabel, startLabel } from '../lib/schedule'
 import { useStore } from '../lib/store'
 
@@ -62,6 +63,7 @@ export function Sablony() {
                         <span key={k} className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-700">
                           <SourceIcon source={k} className="h-4 w-4 text-gray-400" />
                           {sourceMeta(k).label}
+                          {k === 'questionnaire' && <span className="text-gray-400">· {questionnaireName(db, p.questionnaireId)}</span>}
                         </span>
                       ))}
                     </div>

@@ -1,3 +1,4 @@
+import { DEFAULT_QUESTIONNAIRE_ID } from './questionnaireLibrary'
 import { DEFAULT_END, DEFAULT_START, scheduleFromDays } from '../lib/schedule'
 // Číselníky a demo data pro stránku „Šablony“ (šablony monitorace) a uživatelské pohledy.
 import type { Classification, DashboardFilters, DashboardView, MonitoringProgram, NextStepAction } from '../lib/types'
@@ -59,6 +60,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     frequencyDays: 7,
     schedule: scheduleFromDays(7),
     sources: ['questionnaire', 'lab', 'wearables'],
+    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
     start: DEFAULT_START(),
     ending: DEFAULT_END(),
     bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
@@ -73,6 +75,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     frequencyDays: 14,
     schedule: scheduleFromDays(14),
     sources: ['questionnaire', 'lab', 'wearables'],
+    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
     start: DEFAULT_START(),
     ending: DEFAULT_END(),
     bands: { green: { min: 0, max: 9 }, yellow: { min: 10, max: 16 }, red: { min: 17, max: null } },
@@ -87,6 +90,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     frequencyDays: 7,
     schedule: scheduleFromDays(7),
     sources: ['questionnaire', 'lab', 'wearables'],
+    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
     start: DEFAULT_START(),
     ending: DEFAULT_END(),
     bands: { green: { min: 0, max: 6 }, yellow: { min: 7, max: 12 }, red: { min: 13, max: null } },
@@ -101,6 +105,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     frequencyDays: 14,
     schedule: scheduleFromDays(14),
     sources: ['questionnaire', 'lab', 'wearables'],
+    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
     start: DEFAULT_START(),
     ending: DEFAULT_END(),
     bands: { green: { min: 0, max: 8 }, yellow: { min: 9, max: 15 }, red: { min: 16, max: null } },
@@ -115,6 +120,7 @@ export const seedPrograms = (): MonitoringProgram[] => [
     frequencyDays: 3,
     schedule: scheduleFromDays(3),
     sources: ['questionnaire', 'lab', 'wearables'],
+    questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
     start: DEFAULT_START(),
     ending: DEFAULT_END(),
     bands: { green: { min: 0, max: 10 }, yellow: { min: 11, max: 18 }, red: { min: 19, max: null } },

@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { LATER_DEMO_PATIENTS, seedDB } from '../data/seed'
 import { DEFAULT_ACTIONS } from '../data/programs'
+import { DEFAULT_QUESTIONNAIRE_ID } from '../data/questionnaireLibrary'
 import { DEFAULT_END, DEFAULT_START, planDates, scheduleFromDays } from './schedule'
-import type { Answers, DashboardView, DB, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, Questionnaire } from './types'
+import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, Questionnaire, QuestionnaireDef } from './types'
 import { todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
@@ -55,6 +56,7 @@ function migrate(stored: Partial<DB>): DB {
     labs: db.labs ?? seed.labs,
     wearables: db.wearables ?? seed.wearables,
     feedback: db.feedback ?? [],
+    customQuestionnaires: db.customQuestionnaires ?? [],
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
     // Zrušená tlačítka (Ke kontrole sestrou / lékařem) se odeberou; zůstane-li šablona bez tlačítek, dostane výchozí (Čekárna / K aplikaci).
     programs: (db.programs ?? seed.programs).map((p) => {
@@ -65,6 +67,7 @@ function migrate(stored: Partial<DB>): DB {
         // Šablony z doby před volbou frekvence: Pravidelně každých N dní, konec Nikdy
         schedule: p.schedule ?? scheduleFromDays(p.frequencyDays ?? 7),
         sources: p.sources ?? ['questionnaire', 'lab', 'wearables'],
+        questionnaireId: p.questionnaireId ?? DEFAULT_QUESTIONNAIRE_ID,
         start: p.start ?? DEFAULT_START(),
         ending: p.ending ?? DEFAULT_END(),
       }
@@ -192,6 +195,24 @@ function useDBState() {
       deleteEskillResult: (id: string) => setDb((s) => ({ ...s, eskillResults: s.eskillResults.filter((r) => r.id !== id) })),
 
       // --- Zpětná vazba ---
+      /** Uloží vlastní dotazník (nový dostane id, existující se přepíše). Vrací uložený dotazník. */
+      saveCustomQuestionnaire: (q: QuestionnaireDef) => {
+        const saved = q.id ? q : { ...q, id: uid('cq') }
+        setDb((s) => ({
+          ...s,
+          customQuestionnaires: s.customQuestionnaires.some((x) => x.id === saved.id)
+            ? s.customQuestionnaires.map((x) => (x.id === saved.id ? saved : x))
+            : [...s.customQuestionnaires, saved],
+        }))
+        return saved
+      },
+      /** Smaže vlastní dotazník; šablony, které ho používaly, se vrátí na výchozí dotazník. */
+      deleteCustomQuestionnaire: (id: string) =>
+        setDb((s) => ({
+          ...s,
+          customQuestionnaires: s.customQuestionnaires.filter((x) => x.id !== id),
+          programs: s.programs.map((p) => (p.questionnaireId === id ? { ...p, questionnaireId: DEFAULT_QUESTIONNAIRE_ID } : p)),
+        })),
       addFeedback: (f: Omit<Feedback, 'id'>) => setDb((s) => ({ ...s, feedback: [...s.feedback, { ...f, id: uid('fb') }] })),
 
       submitQuestionnaire: (id: string, answers: Answers) =>

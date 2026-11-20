@@ -28,6 +28,27 @@ export interface NextStepAction {
 }
 
 /** Šablona monitorace = program sledování (stránka „Šablony“). Pacientům se přiřazuje v kartotéce. */
+/** Odpověď otázky v definici dotazníku. */
+export interface QAnswerDef {
+  id: string
+  text: string
+  points: number
+  /** Varovná odpověď – vyžaduje pozornost bez ohledu na součet bodů. */
+  redFlag: boolean
+}
+export interface QQuestionDef {
+  id: string
+  text: string
+  answers: QAnswerDef[]
+}
+/** Definice dotazníku (předpřipravený z knihovny nebo vlastní). */
+export interface QuestionnaireDef {
+  id: string
+  name: string
+  description: string
+  questions: QQuestionDef[]
+}
+
 /** Zdroj dat pro připravenost pacienta. */
 export type SourceKey = 'questionnaire' | 'lab' | 'wearables'
 
@@ -75,6 +96,8 @@ export interface MonitoringProgram {
   schedule: Schedule
   /** Zdroje, ze kterých se počítá připravenost pacientů s touto šablonou (od 2026-11-20). */
   sources: SourceKey[]
+  /** Dotazník zdroje Dotazník – id z knihovny (`lib-…`) nebo vlastního dotazníku (od 2026-11-20). */
+  questionnaireId: string
   /** Zahájení monitorace (od 2026-11-20). */
   start: ScheduleStart
   /** Konec monitorace – uplatní se jen u pravidelné frekvence. */
@@ -182,6 +205,8 @@ export interface DB {
   labs: LabResult[]
   wearables: WearableDay[]
   feedback: Feedback[]
+  /** Vlastní dotazníky založené uživatelem (předpřipravené jsou v kódu, src/data/questionnaireLibrary.ts). */
+  customQuestionnaires: QuestionnaireDef[]
   /** Demo pacienti přidaní později, kteří už byli do uložených dat doplněni (aby se smazaní nevraceli). */
   demoAdded?: string[]
 }

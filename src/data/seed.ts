@@ -250,6 +250,7 @@ export const seedDB = (): DB =>
       labs: seedLabs(SEED_TODAY),
       wearables: seedWearables(SEED_TODAY),
       feedback: [],
+      customQuestionnaires: [],
     },
     daysBetween(SEED_TODAY, todayIso()),
   )

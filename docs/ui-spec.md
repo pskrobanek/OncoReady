@@ -412,11 +412,35 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zdroje**. Karty Zař
   - **Dotazník** – „Odpovědi pacienta – pásmo podle bodů. Termíny podle frekvence výše.“
   - **Laboratoř** – „Krevní obraz a biochemie (neutrofily, trombocyty, hemoglobin, kreatinin, bilirubin).“
   - **Wearables** – „Teplota, saturace, tep a kroky z chytrých hodinek nebo náramku.“
+- U zdroje **Dotazník** je pod popisem řádek „Dotazník: **název vybraného dotazníku**“ a vpravo tlačítko **Vybrat dotazník**, které otevře detail (viz *Detail zdroje Dotazník*). Výchozí dotazník: OncoReady – akutní toxicita.
 - Pod seznamem bílá tlačítka **+ Laboratoř**, **+ Wearables**… pro zdroje, které ještě nejsou přidané (pořadí zdrojů je vždy Dotazník, Laboratoř, Wearables). Prázdný seznam: „Zatím žádný zdroj.“
 - Nová šablona má předvyplněný jen **Dotazník**. Validace: aspoň jeden zdroj („Přidejte alespoň jeden zdroj.“).
 - **Dopad na Dashboard:** u pacienta se zobrazují a do barvy pruhu počítají **jen zdroje z šablony jeho aktuální monitorace** (bez šablony všechny). Pacient, který zdroj ze šablony nemá vůbec (např. nemá hodinky), ho nevidí – ⚠️ OVĚŘIT: má se chybějící povinný zdroj ukazovat jako „bez dat“ (šedá → Neúplné)?
 - ⚠️ OVĚŘIT: Frekvence se týká jen dotazníku – má se při odebrání Dotazníku skrýt / přesunout pod zdroj Dotazník?
 - Návrhy dalších zdrojů (zatím neimplementováno, k diskusi): viz *Otevřené otázky*.
+
+**Detail zdroje Dotazník** (NOVÉ 2026-11-20) – velké okno (max. šířka 1024 px) nad formulářem šablony, aby se neztratily neuložené změny šablony. Má tři pohledy:
+
+1. **Výběr** – nadpis „Dotazník“, podnadpis „Vyberte předpřipravený dotazník, nebo založte vlastní s otázkami, odpověďmi, body a red flagy.“
+   - **Předpřipravené** – karty ve dvou sloupcích: název, vydavatel · počet otázek, popis, odrážky se škálami, tlačítko **Vybrat** (vybraný: „✓ Vybráno“ a modrý rámeček karty).
+     - **OncoReady – akutní toxicita** (11 otázek, výchozí) – má odkaz **Zobrazit otázky**.
+     - **EORTC QLQ-C30** (30), **QLQ-BR45** (prs, 45), **QLQ-H&N43** (hlava a krk, 43), **QLQ-PR25** (prostata, 25), **QLQ-LC29** (plíce, 29), **PRO-CTCAE (výběr položek)** (NCI) – oranžový štítek **🔒 Licence**: znění je chráněné, otázky se nezobrazují a nejde je kopírovat; vloží se po získání licence. ⚠️ OVĚŘIT licence, oficiální české verze a bodování (EORTC se vyhodnocuje škálami 0–100, ne body a red flagy).
+   - **Vlastní dotazníky** – vpravo tlačítko **+ Nový dotazník**. Seznam: název, „N otázek · max. X b · 🚩 Y red flag“, ikony Upravit a Smazat (s potvrzením) a **Vybrat**. Prázdný stav: „Zatím žádný vlastní dotazník. Založte nový, nebo zkopírujte předpřipravený (Zobrazit otázky → Duplikovat jako vlastní).“
+   - Klik na **Vybrat** dotazník vybere pro šablonu a okno zavře.
+2. **Náhled** předpřipraveného dotazníku (jen pro čtení) – odkaz „← Zpět na výběr“, název, „vydavatel · N otázek · max. X b · Y red flag“. Otázky v rámečcích, pod každou odpovědi „0 b Text“ a u varovných vpravo červeně „🚩 Red flag“. Dole **Vybrat** a **Duplikovat jako vlastní** (otevře editor s kopií „… (kopie)“).
+   - U OncoReady jsou red flagem odpovědi za 4 body (odpovídá pravidlu červeného pásma).
+3. **Editor vlastního dotazníku** – „Nový dotazník“ / „Upravit dotazník“, v podnadpisu živě „N otázek · max. X b · Y red flag“.
+   - **Název\*** a **Popis** vedle sebe.
+   - Otázky jako šedé karty: číslo, pole „Znění otázky“, koš (Odebrat otázku).
+   - Pod otázkou tabulka odpovědí se sloupci **Odpověď** | **Body** (celé číslo 0–99) | **Red flag** | koš:
+     - Red flag je přepínací tlačítko: vypnuté šedé „🏳 Ne“, zapnuté červené „🚩 Ano“.
+     - **+ Přidat odpověď** (nová odpověď má body o 1 vyšší než pořadí).
+   - Nová otázka má dvě prázdné odpovědi (0 b a 1 b). Pod otázkami čárkované tlačítko **+ Přidat otázku**.
+   - Dole **Uložit a vybrat** (uloží dotazník, vybere ho pro šablonu a zavře okno) a **Zrušit** (zpět na výběr).
+   - Validace (zobrazí se po prvním pokusu o uložení vedle tlačítek a přepočítává se živě; prázdná pole červeně): název, aspoň jedna otázka, znění všech otázek, aspoň dvě odpovědi u každé otázky, text všech odpovědí, body 0–99.
+   - Vlastní dotazník se ukládá hned (nezávisle na uložení šablony) a je dostupný ve všech šablonách. Smazání vrátí šablony, které ho používaly, na výchozí dotazník.
+- V seznamu šablon je u zdroje Dotazník šedě název dotazníku („Dotazník · Kontrola před chemo“).
+- ⚠️ OVĚŘIT / zatím neimplementováno: vyplňování a vyhodnocení na Dashboardu stále používá výchozí dotazník OncoReady. Pro vlastní dotazníky navrhujeme: **red flag → červené pásmo**, jinak součet bodů do pásem (rozsahy pásem by se pak vrátily do detailu dotazníku). Detail pro Laboratoř (výběr parametrů a mezí) a Wearables zatím chybí.
 
 **Odebrané z formuláře** (data u stávajících šablon zůstávají, nové šablony dostanou výchozí hodnoty):
 - Diagnózy, Klasifikace a Tag.
@@ -636,6 +660,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Šablona › Zdroje › Dotazník: tlačítko **Vybrat dotazník** otevře detail – knihovna předpřipravených (OncoReady, EORTC QLQ-C30 / BR45 / H&N43 / PR25 / LC29, PRO-CTCAE – licencované jen jako metadata), náhled otázek, **vlastní dotazníky** s otázkami, odpověďmi, body a red flagem (nový, upravit, smazat, duplikovat). |
 | 2026-11-20 | Šablona › Frekvence › Pravidelně: číslo a tlačítka jednotky (den / týden / měsíc / rok, skloňované podle čísla) v jednom řádku „Opakovat každých“. |
 | 2026-11-20 | Šablona: z formuláře odebrány karty Zařazení (diagnózy, klasifikace, tag), Rozsah pásem a Další postup; nová karta **Zdroje** (Dotazník / Laboratoř / Wearables, přidat / odebrat). Dashboard počítá jen zdroje ze šablony pacienta. Seznam šablon: sloupce Název, Zdroje, Frekvence, Pacienti. |
 | 2026-11-20 | Šablona › Frekvence: nová část **Zahájení monitorace** – Datum (kalendář) / Aktivovat ručně. Dialog Nová monitorace podle ní předvyplní Start, nebo vypne Aktivní. V seznamu šablon pod frekvencí „Zahájení …“. |

@@ -5,6 +5,8 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, ConfirmModal, cx, Field, PageHeader, Radio, TextInput, useToast } from '../components/ui'
 import { DEFAULT_ACTIONS } from '../data/programs'
 import { SourceIcon } from '../components/Readiness'
+import { QuestionnairePicker } from '../components/QuestionnairePicker'
+import { DEFAULT_QUESTIONNAIRE_ID, questionnaireName } from '../data/questionnaireLibrary'
 import { fullDate, todayIso } from '../lib/format'
 import { approxDays, DEFAULT_END, DEFAULT_SCHEDULE, DEFAULT_START, MAX_COUNT, MONTHS, planDates, UNIT_LABEL, UNITS, unitWord, WEEKDAYS } from '../lib/schedule'
 import { useStore } from '../lib/store'
@@ -26,6 +28,7 @@ const EMPTY: Omit<MonitoringProgram, 'id'> = {
   bands: { green: { min: 0, max: 7 }, yellow: { min: 8, max: 14 }, red: { min: 15, max: null } },
   actions: DEFAULT_ACTIONS(),
   sources: ['questionnaire'],
+  questionnaireId: DEFAULT_QUESTIONNAIRE_ID,
 }
 
 const stepId = () => `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -103,7 +106,13 @@ export function ProgramForm({ mode }: { mode: 'create' | 'edit' }) {
           onEnding={(ending) => setForm({ ...form, ending })}
         />
 
-        <SourcesCard value={form.sources} error={errors.sources} onChange={(sources) => setForm({ ...form, sources })} />
+        <SourcesCard
+          value={form.sources}
+          error={errors.sources}
+          onChange={(sources) => setForm({ ...form, sources })}
+          questionnaireId={form.questionnaireId}
+          onQuestionnaire={(questionnaireId) => setForm({ ...form, questionnaireId })}
+        />
 
         <div className="flex gap-3">
           <Button type="submit">{existing ? 'Uložit' : 'Vytvořit'}</Button>
@@ -409,8 +418,23 @@ const SOURCE_OPTIONS: { key: SourceKey; label: string; hint: string }[] = [
 ]
 
 /** Box Zdroje: seznam zvolených zdrojů a tlačítka pro přidání dalších. */
-function SourcesCard({ value, error, onChange }: { value: SourceKey[]; error?: string; onChange: (v: SourceKey[]) => void }) {
+function SourcesCard({
+  value,
+  error,
+  onChange,
+  questionnaireId,
+  onQuestionnaire,
+}: {
+  value: SourceKey[]
+  error?: string
+  onChange: (v: SourceKey[]) => void
+  questionnaireId: string
+  onQuestionnaire: (id: string) => void
+}) {
+  const { db } = useStore()
+  const [picker, setPicker] = useState(false)
   const rest = SOURCE_OPTIONS.filter((o) => !value.includes(o.key))
+  const qName = questionnaireName(db, questionnaireId)
   return (
     <Card className="p-6">
       <h2 className="text-base font-semibold text-gray-950">Zdroje</h2>
@@ -423,7 +447,18 @@ function SourcesCard({ value, error, onChange }: { value: SourceKey[]; error?: s
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium text-gray-950">{o.label}</div>
               <div className="text-sm text-gray-500">{o.hint}</div>
+              {/* Dotazník: který dotazník se posílá – detail s knihovnou a vlastními dotazníky */}
+              {o.key === 'questionnaire' && (
+                <div className="mt-1.5 text-sm text-gray-950">
+                  Dotazník: <span className="font-semibold">{qName}</span>
+                </div>
+              )}
             </div>
+            {o.key === 'questionnaire' && (
+              <Button color="gray" onClick={() => setPicker(true)}>
+                Vybrat dotazník
+              </Button>
+            )}
             <button
               type="button"
               title="Odebrat zdroj"
@@ -453,6 +488,7 @@ function SourcesCard({ value, error, onChange }: { value: SourceKey[]; error?: s
         </div>
       )}
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      <QuestionnairePicker open={picker} value={questionnaireId} onSelect={onQuestionnaire} onClose={() => setPicker(false)} />
     </Card>
   )
 }

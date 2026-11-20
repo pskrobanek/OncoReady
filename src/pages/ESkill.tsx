@@ -2,9 +2,11 @@ import { PlayIcon } from '@heroicons/react/20/solid'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ESkillResultModal, ScorePill } from '../components/eskill'
-import { Button, Card, PageHeader, PerPage, resultsLabel, SearchInput } from '../components/ui'
-import { fullDate, tableName } from '../lib/format'
-import { eskillOf, sortPatients, useStore } from '../lib/store'
+import { Button, Card, Checkbox, cx, PageHeader, PerPage, Radio, resultsLabel, SearchInput } from '../components/ui'
+import { FilterGroup, FilterPanel, toggle } from '../components/FilterPanel'
+import { TIER_META, tierFor, type Tier } from '../data/eskill'
+import { daysBetween, fullDate, tableName, todayIso } from '../lib/format'
+import { eskillOf, planStatus, sortPatients, useStore } from '../lib/store'
 import type { ESkillResult } from '../lib/types'
 
 /**
@@ -22,6 +24,27 @@ export function useOpenESkillTest() {
   }
 }
 
+/** Filtry e-Skill (prázdný seznam = nefiltruje). */
+type EskillFilters = { tested: 'all' | 'yes' | 'no'; tiers: Tier[]; when: 'all' | '30' | '180' | 'old'; plan: ('active' | 'planned' | 'ended' | 'none')[] }
+const EMPTY: EskillFilters = { tested: 'all', tiers: [], when: 'all', plan: [] }
+const TESTED: { key: EskillFilters['tested']; label: string }[] = [
+  { key: 'all', label: 'Vše' },
+  { key: 'yes', label: 'Testovaní' },
+  { key: 'no', label: 'Bez testu' },
+]
+const WHEN: { key: EskillFilters['when']; label: string }[] = [
+  { key: 'all', label: 'Kdykoli' },
+  { key: '30', label: 'Posledních 30 dní' },
+  { key: '180', label: 'Posledních 6 měsíců' },
+  { key: 'old', label: 'Starší než rok (k opakování)' },
+]
+const PLAN: { key: EskillFilters['plan'][number]; label: string }[] = [
+  { key: 'active', label: 'Aktivní' },
+  { key: 'planned', label: 'Naplánováno' },
+  { key: 'ended', label: 'Ukončeno' },
+  { key: 'none', label: 'Bez plánu' },
+]
+
 /** e-Skill – test digitální gramotnosti u pacientů z kartotéky nebo bez registrace. */
 export function ESkill() {
   const { db } = useStore()
@@ -31,12 +54,35 @@ export function ESkill() {
   const [page, setPage] = useState(1)
   const [detail, setDetail] = useState<ESkillResult | null>(null)
 
+  const [f, setF] = useState<EskillFilters>(EMPTY)
+  const changeF = (next: EskillFilters) => {
+    setF(next)
+    setPage(1)
+  }
+  const changed = JSON.stringify(f) !== JSON.stringify(EMPTY)
+
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase()
+    const today = todayIso()
     return sortPatients(db.patients)
       .filter((p) => !term || tableName(p).toLowerCase().includes(term) || p.rodneCislo.includes(term))
       .map((p) => ({ patient: p, results: eskillOf(db, p.id) }))
-  }, [db, search])
+      .filter(({ patient, results }) => {
+        const last = results[0]
+        if (f.tested === 'yes' && !last) return false
+        if (f.tested === 'no' && last) return false
+        if (f.tiers.length && !(last && f.tiers.includes(tierFor(last.literacyScore)))) return false
+        if (f.when !== 'all') {
+          if (!last) return false
+          const age = daysBetween(last.takenAt.slice(0, 10), today)
+          if (f.when === '30' && age > 30) return false
+          if (f.when === '180' && age > 180) return false
+          if (f.when === 'old' && age <= 365) return false
+        }
+        if (f.plan.length && !f.plan.includes(planStatus(db, patient.id).kind)) return false
+        return true
+      })
+  }, [db, search, f])
 
   const pages = Math.max(1, Math.ceil(rows.length / perPage))
   const current = Math.min(page, pages)
@@ -55,7 +101,8 @@ export function ESkill() {
         }
       />
 
-      <Card className="overflow-hidden">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <Card className="min-w-0 flex-1 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <p className="text-sm text-gray-500">Test digitální gramotnosti: dotazník + 9 úkolů na obrazovce, asi 5 minut. Skóre 0–100.</p>
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} className="w-full sm:max-w-xs" />
@@ -125,6 +172,35 @@ export function ESkill() {
           </div>
         </div>
       </Card>
+
+      <FilterPanel onReset={changed ? () => changeF(EMPTY) : undefined}>
+        <FilterGroup title="Test">
+          {TESTED.map((o) => (
+            <Radio key={o.key} name="tested" checked={f.tested === o.key} onChange={() => changeF({ ...f, tested: o.key })} label={o.label} />
+          ))}
+        </FilterGroup>
+        <FilterGroup title="Digitální gramotnost (poslední výsledek)">
+          {(['Low', 'Medium', 'High'] as Tier[]).map((t) => (
+            <Checkbox
+              key={t}
+              checked={f.tiers.includes(t)}
+              onChange={(v) => changeF({ ...f, tiers: toggle(f.tiers, t, v) })}
+              label={<span className={cx('inline-flex rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset', TIER_META[t].badge)}>{TIER_META[t].label}</span>}
+            />
+          ))}
+        </FilterGroup>
+        <FilterGroup title="Datum posledního testu">
+          {WHEN.map((o) => (
+            <Radio key={o.key} name="when" checked={f.when === o.key} onChange={() => changeF({ ...f, when: o.key })} label={o.label} />
+          ))}
+        </FilterGroup>
+        <FilterGroup title="Stav monitorace">
+          {PLAN.map((o) => (
+            <Checkbox key={o.key} checked={f.plan.includes(o.key)} onChange={(v) => changeF({ ...f, plan: toggle(f.plan, o.key, v) })} label={o.label} />
+          ))}
+        </FilterGroup>
+      </FilterPanel>
+      </div>
 
       <ESkillResultModal result={detail} onClose={() => setDetail(null)} />
     </div>

@@ -679,6 +679,11 @@ Modul je převzatý z repozitáře `pskrobanek/digital_literacy` (Django aplikac
   - Datum;
   - Testů (počet);
   - tlačítko **▶ Zahájit test**.
+- **Panel Filtr** vpravo (NOVÉ 2026-11-20; stejný jako v Kartotéce a Šablonách – nadpis „Filtr“, při změně „Obnovit výchozí“, změna vrátí stránkování na 1. stránku):
+  - *Test* (přepínač): Vše (výchozí) / Testovaní / Bez testu;
+  - *Digitální gramotnost (poslední výsledek)* (zaškrtávací, štítky v barvě úrovně): Nízká, Střední, Vysoká;
+  - *Datum posledního testu* (přepínač): Kdykoli (výchozí) / Posledních 30 dní / Posledních 6 měsíců / **Starší než rok (k opakování)**;
+  - *Stav monitorace* (zaškrtávací): Aktivní, Naplánováno, Ukončeno, Bez plánu.
 - Hledání, „na stránku“ a stránkování jako v Kartotéce.
 
 ### Průběh testu (nové okno)
@@ -755,6 +760,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | **e-Skill**: panel Filtr vpravo (test ano/ne, úroveň digitální gramotnosti, datum posledního testu vč. „starší než rok“, stav monitorace). Demo: jeden výsledek starší než rok. |
 | 2026-11-20 | **Statistiky** přepracovány: dlaždice, průměrný průběh akutní toxicity podle týdne léčby (průměr + 25.–75. percentil), pásma podle týdne, vývoj G3+ toxicity v modulech EORTC podle roku po RT (čára + teplotní mapa otázek), vyplňování dotazníků podle kohort, nejčastější závažné příznaky, laboratoř ve stacionáři; u každého grafu přepínač Graf / Tabulka. Demo: historická kohorta ukončených pacientů; Dashboard jen s aktivní monitorací; úložiště v13. |
 | 2026-11-20 | Menu: podstránky Kartotéky (pohledy) a Šablon jsou vidět jen v jejich sekci, vždy jen u Dashboardu. Zpětná vazba: moderní ikony a karta s efektem matného skla. |
 | 2026-11-20 | **Kartotéka**: panel se záložkami Filtr / Řazení / Zobrazení (sloupce) a **pohledy Kartotéky** v levém menu (Uložit jako pohled, + Nový pohled, menu ⋯ Přejmenovat / Smazat); demo pohledy Stacionář – aktivní, Bez e-Skillu. |

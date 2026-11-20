@@ -95,11 +95,11 @@ function FeedbackForm({ autoFocus = false }: { autoFocus?: boolean }) {
           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send()
         }}
         placeholder="Co nefunguje, chybí nebo by šlo udělat lépe?"
-        className="block w-full resize-y rounded-lg border-none bg-white px-3 py-2 text-sm text-gray-950 shadow-sm outline-none ring-1 ring-gray-950/10 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-600"
+        className="block w-full resize-y rounded-sm border-none bg-transparent px-3 py-2 text-sm text-gray-950 outline-none ring-1 ring-gray-950/15 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-primary-600"
       />
       {shot ? (
-        <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1.5 pr-2 text-xs text-gray-700 ring-1 ring-gray-950/10">
-          <img src={shot.url} alt="" className="h-8 w-12 shrink-0 rounded object-cover object-top ring-1 ring-gray-950/10" />
+        <div className="flex items-center gap-2 rounded-sm p-1.5 pr-2 text-xs text-gray-700 ring-1 ring-gray-950/15">
+          <img src={shot.url} alt="" className="h-8 w-12 shrink-0 rounded-sm object-cover object-top ring-1 ring-gray-950/10" />
           <span className="min-w-0 flex-1 truncate">Snímek obrazovky · {shot.page}</span>
           <button type="button" title="Odebrat snímek" onClick={() => setShot(null)} className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <XMarkIcon className="h-4 w-4" />
@@ -110,7 +110,7 @@ function FeedbackForm({ autoFocus = false }: { autoFocus?: boolean }) {
           type="button"
           onClick={capture}
           disabled={capturing}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10 transition hover:bg-gray-50 disabled:cursor-wait disabled:text-gray-400"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-sm px-3 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-950/15 transition hover:bg-gray-950/5 disabled:cursor-wait disabled:text-gray-400"
         >
           <CameraIcon className="h-5 w-5 text-gray-500" />
           {capturing ? 'Pořizuji snímek…' : 'Pořídit snímek obrazovky'}
@@ -119,7 +119,7 @@ function FeedbackForm({ autoFocus = false }: { autoFocus?: boolean }) {
       <button
         type="submit"
         disabled={!text.trim()}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:cursor-not-allowed disabled:bg-primary-400/60"
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-sm bg-primary-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-500 disabled:cursor-not-allowed disabled:bg-gray-950/5 disabled:text-gray-400"
       >
         <PaperAirplaneIcon className="h-4 w-4" />
         Odeslat
@@ -129,16 +129,16 @@ function FeedbackForm({ autoFocus = false }: { autoFocus?: boolean }) {
 }
 
 const Heading = () => (
-  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-950">
-    <ChatBubbleLeftEllipsisIcon className="h-5 w-5 text-primary-600" />
+  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+    <ChatBubbleLeftEllipsisIcon className="h-5 w-5 text-gray-400" />
     Zpětná vazba
   </h2>
 )
 
-/** Karta dole v levém menu (od šířky 1024 px). Nepřibírá se do snímku obrazovky. */
+/** Nenápadný blok dole v levém menu (od šířky 1024 px) – bez karty a pozadí, jen tenká čára nad ním. Nepřibírá se do snímku obrazovky. */
 export function FeedbackSidebar() {
   return (
-    <section data-feedback className="mt-auto flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5">
+    <section data-feedback className="mt-auto flex flex-col gap-3 border-t border-gray-200 px-1 pt-5">
       <Heading />
       <FeedbackForm />
     </section>

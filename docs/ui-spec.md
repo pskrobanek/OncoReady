@@ -21,13 +21,14 @@ Produkce běží na Laravel Filament, a proto replika přebírá jeho vzhled (ko
 ### Zpětná vazba (NOVÉ 2026-11-19)
 
 Okno pro připomínky testerů, dostupné na každé stránce s menu.
-- **Počítač (≥ 1024 px)**: bílá karta **pevně dole v levém menu** (zaoblení 12 px, jemný rámeček). Je vidět bez klikání a bez posouvání.
-  - Nadpis „Zpětná vazba“ s modrou ikonou bubliny (14 px, tučně).
-  - **Textové pole** (5 řádků, roztahovatelné), zástupný text „Co nefunguje, chybí nebo by šlo udělat lépe?“.
-  - Šedé tlačítko přes celou šířku **Pořídit snímek obrazovky** (ikona fotoaparátu).
+- **Počítač (≥ 1024 px)**: **nenápadný blok pevně dole v levém menu** – od 2026-11-20 bez karty a bez bílého pozadí (průhledný na šedém pozadí menu), oddělený jen tenkou šedou čárou nahoře. Je vidět bez klikání a bez posouvání.
+  - **Ostré rohy**: textové pole i tlačítka mají zaoblení jen 2 px, bez stínů, rámeček tenký šedý.
+  - Nadpis „Zpětná vazba“ tmavě šedý se šedou ikonou bubliny (14 px, tučně).
+  - **Textové pole** (5 řádků, roztahovatelné; průhledné, při psaní bílé s modrým rámečkem), zástupný text „Co nefunguje, chybí nebo by šlo udělat lépe?“.
+  - Průhledné tlačítko s tenkým rámečkem přes celou šířku **Pořídit snímek obrazovky** (ikona fotoaparátu).
     - Klik vyfotí aktuální stránku bez okna zpětné vazby (během focení text „Pořizuji snímek…“).
     - Místo tlačítka se pak ukáže příloha: náhled snímku, text „Snímek obrazovky · Dashboard“ (název stránky) a křížek na odebrání.
-  - Modré tlačítko přes celou šířku **Odeslat** (ikona papírového letadla). Bez textu je neaktivní. Odeslat jde i zkratkou Ctrl+Enter (v okně se nezobrazuje).
+  - Modré tlačítko přes celou šířku **Odeslat** (ikona papírového letadla). Bez textu je neaktivní a nenápadně šedé (modré je až po napsání textu). Odeslat jde i zkratkou Ctrl+Enter (v okně se nezobrazuje).
   - Po odeslání: zelená ikona ✓, „Děkujeme, připomínka odeslána.“ a tlačítko **Napsat další**.
 - **Mobil a tablet (< 1024 px)**: vpravo dole plovoucí modré tlačítko **Zpětná vazba**. Otevře stejný formulář v panelu zespodu (s ztmaveným pozadím a křížkem Zavřít).
 - K připomínce se automaticky ukládá stránka (cesta), čas, autor (přihlášený uživatel) a snímek (JPEG, šířka nejvýš 1200 px).
@@ -613,6 +614,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Zpětná vazba v levém menu je nenápadnější: bez karty a pozadí (jen čára nahoře), ostré rohy (2 px), bez stínů, šedý nadpis a ikona; Odeslat je bez textu šedé. |
 | 2026-11-20 | Filtr Skóre: nová volba **Vše** nahoře, je výchozí (Dashboard i nový pohled) – na Dashboardu jsou tak vidět všichni pacienti včetně zelených a žlutých. |
 | 2026-11-19 | Demo data: 4 noví zelení pacienti (Horáková, Veselý, Marková, Bartoš) – všechny aktuální zdroje v pořádku, mohou k aplikaci; doplní se i do uložených dat. |
 | 2026-11-19 | Zrušena tlačítka a boxy **Ke kontrole sestrou** a **Ke kontrole lékařem** – odeberou se i ze šablon a značek uložených v prohlížeči (šablona bez tlačítek dostane výchozí Čekárna / K aplikaci). |

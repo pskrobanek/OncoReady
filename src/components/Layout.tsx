@@ -6,7 +6,7 @@ import { useStore } from '../lib/store'
 import { cx, useToast } from './ui'
 import { NameModal } from '../pages/Dashboard'
 import { FeedbackMobile, FeedbackSidebar } from './Feedback'
-import { DEFAULT_FILTERS } from '../data/programs'
+import { DEFAULT_FILTERS, DEFAULT_PATIENT_FILTERS } from '../data/programs'
 
 export function Logo() {
   // Přibližná rekonstrukce loga OncoReady (kruh ze tří modrých oblouků + text).
@@ -104,6 +104,52 @@ function TemplatesNav() {
   )
 }
 
+/** Podstránky Kartotéky = uložené pohledy Kartotéky (stejně jako pohledy pod Dashboardem). */
+function PatientViewsNav() {
+  const { db, createPatientView } = useStore()
+  const navigate = useNavigate()
+  const toast = useToast()
+  const [naming, setNaming] = useState(false)
+  return (
+    <ul className="ml-[1.1rem] flex flex-col gap-y-0.5 border-l border-gray-200 pl-3">
+      {db.patientViews.map((v) => (
+        <li key={v.id}>
+          <NavLink
+            to={`/kartoteka/pohledy/${v.id}`}
+            className={({ isActive }) =>
+              cx('block truncate rounded-lg px-2 py-1.5 text-sm transition duration-75', isActive ? 'bg-gray-100 font-medium text-primary-600' : 'text-gray-600 hover:bg-gray-100')
+            }
+            title={v.name}
+          >
+            {v.name}
+          </NavLink>
+        </li>
+      ))}
+      <li>
+        <button
+          onClick={() => setNaming(true)}
+          className="flex w-full items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-400 transition duration-75 hover:bg-gray-100 hover:text-gray-600"
+        >
+          <PlusIcon className="h-4 w-4" />
+          Nový pohled
+        </button>
+      </li>
+      <NameModal
+        open={naming}
+        title="Nový pohled Kartotéky"
+        submitLabel="Vytvořit"
+        onClose={() => setNaming(false)}
+        onSubmit={(name) => {
+          const v = createPatientView({ name, filters: DEFAULT_PATIENT_FILTERS })
+          setNaming(false)
+          toast('Pohled vytvořen – nastavte filtr a uložte')
+          navigate(`/kartoteka/pohledy/${v.id}`)
+        }}
+      />
+    </ul>
+  )
+}
+
 /** Podstránky Dashboardu = uživatelské pohledy (uložené kombinace filtrů). */
 function ViewsNav() {
   const { db, createView } = useStore()
@@ -176,7 +222,7 @@ export function Layout() {
                     cx(
                       'flex items-center gap-x-3 rounded-lg px-2 py-2 text-sm font-medium outline-none transition duration-75',
                       // Na podstránce Šablon je zvýrazněná jen podstránka
-                      isActive && !(to === '/sablony' && isTemplateSub(pathname)) ? 'bg-gray-100 text-primary-600' : 'text-gray-700 hover:bg-gray-100',
+                      isActive && !(to === '/sablony' && isTemplateSub(pathname)) && !(to === '/kartoteka' && pathname.startsWith('/kartoteka/pohledy')) ? 'bg-gray-100 text-primary-600' : 'text-gray-700 hover:bg-gray-100',
                     )
                   }
                 >
@@ -189,6 +235,7 @@ export function Layout() {
                 </NavLink>
                 {to === '/' && <ViewsNav />}
                 {to === '/sablony' && inTemplates && <TemplatesNav />}
+                {to === '/kartoteka' && <PatientViewsNav />}
               </div>
             ))}
           </nav>

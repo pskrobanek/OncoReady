@@ -3,7 +3,7 @@ import { seedDB } from '../data/seed'
 import { DEFAULT_ACTIONS } from '../data/programs'
 import { DEFAULT_QUESTIONNAIRE_ID } from '../data/questionnaireLibrary'
 import { DEFAULT_END, planDates, scheduleFromDays } from './schedule'
-import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, Questionnaire, QuestionnaireDef } from './types'
+import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, MonitoringProgram, Patient, PatientView, Questionnaire, QuestionnaireDef } from './types'
 import { todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
@@ -36,6 +36,7 @@ function migrate(db: Partial<DB>): DB {
     feedback: db.feedback ?? [],
     customQuestionnaires: db.customQuestionnaires ?? [],
     // Pohledy uložené před filtrem Příznak
+    patientViews: db.patientViews ?? seed.patientViews,
     views: (db.views ?? seed.views).map((v) => ({ ...v, filters: { ...v.filters, tags: v.filters.tags ?? [] }, tagBoxes: v.tagBoxes ?? (v.id === 'v-stac' ? 'all' : v.id === 'v-akut' ? ['K lékaři'] : v.id === 'v-chron' ? ['Zavolat'] : 'none'), timeline: v.timeline ?? (v.id === 'v-chron' ? 'year' : undefined) })),
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
     // Zrušená tlačítka (Ke kontrole sestrou / lékařem) se odeberou; zůstane-li šablona bez tlačítek, dostane výchozí (Čekárna / K aplikaci).
@@ -164,6 +165,15 @@ function useDBState() {
       },
       updateView: (v: DashboardView) => setDb((s) => ({ ...s, views: s.views.map((x) => (x.id === v.id ? v : x)) })),
       deleteView: (id: string) => setDb((s) => ({ ...s, views: s.views.filter((x) => x.id !== id) })),
+
+      // --- Pohledy Kartotéky ---
+      createPatientView: (data: Omit<PatientView, 'id'>) => {
+        const v = { ...data, id: uid('pv') }
+        setDb((s) => ({ ...s, patientViews: [...s.patientViews, v] }))
+        return v
+      },
+      updatePatientView: (v: PatientView) => setDb((s) => ({ ...s, patientViews: s.patientViews.map((x) => (x.id === v.id ? v : x)) })),
+      deletePatientView: (id: string) => setDb((s) => ({ ...s, patientViews: s.patientViews.filter((x) => x.id !== id) })),
 
       // --- e-Skill ---
       addEskillResult: (r: Omit<ESkillResult, 'id'>) => {

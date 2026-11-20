@@ -8,7 +8,7 @@ import { Dashboard, ViewPage } from './pages/Dashboard'
 import { Sablony } from './pages/Sablony'
 import { ProgramForm } from './pages/ProgramForm'
 import { FillQuestionnaire } from './pages/FillQuestionnaire'
-import { Kartoteka } from './pages/Kartoteka'
+import { Kartoteka, KartotekaView } from './pages/Kartoteka'
 import { PatientForm } from './pages/PatientForm'
 import { Statistiky } from './pages/Statistiky'
 import { ESkill } from './pages/ESkill'
@@ -46,6 +46,7 @@ export function App() {
               {/* Dřívější adresy stránky „Monitorace“ */}
               <Route path="monitorace/*" element={<Navigate to="/sablony" replace />} />
               <Route path="kartoteka" element={<Kartoteka />} />
+              <Route path="kartoteka/pohledy/:id" element={<KartotekaView />} />
               <Route path="kartoteka/vytvorit" element={<PatientForm key="new" mode="create" />} />
               <Route path="kartoteka/:id/upravit" element={<EditPatient />} />
               <Route path="statistiky" element={<Statistiky />} />

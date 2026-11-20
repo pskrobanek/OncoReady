@@ -178,7 +178,7 @@ export function ViewPage() {
 }
 
 /** Nenápadná ikona ⋯ vedle nadpisu pohledu; menu Přejmenovat / Smazat. */
-function ViewMenu({ onRename, onDelete }: { onRename: () => void; onDelete: () => void }) {
+export function ViewMenu({ onRename, onDelete }: { onRename: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {

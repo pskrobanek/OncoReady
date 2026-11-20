@@ -4,7 +4,7 @@
 // Nepoužívat skutečné údaje pacientů.
 import type { Answers, DB, LabResult, Monitoring, Patient, Questionnaire, WearableDay } from '../lib/types'
 import { QUESTIONS, scaleValueForPoints } from './questionnaire'
-import { seedPrograms, seedViews } from './programs'
+import { seedPatientViews, seedPrograms, seedViews } from './programs'
 import { eskillFor } from './eskillSeed'
 import type { Band } from '../lib/scoring'
 import { addDays, todayIso } from '../lib/format'
@@ -186,7 +186,7 @@ const addMonths = (iso: string, n: number) => {
 }
 
 /** Vygeneruje celou databázi demo dat vůči dnešku. */
-function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | 'customQuestionnaires'> {
+function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | 'customQuestionnaires' | 'patientViews'> {
   const programs = seedPrograms()
   const r = rng(20261120)
   const pick = <T,>(odds: [T, number][]) => {
@@ -266,7 +266,7 @@ function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | '
   })
 
   const data = { patients, monitorings, questionnaires, labs, wearables, eskillResults: eskillFor(patients.slice(0, 12).map((p) => p.id), today) }
-  assignTodayTags({ ...data, programs, views: [], feedback: [], customQuestionnaires: [] }, today)
+  assignTodayTags({ ...data, programs, views: [], feedback: [], customQuestionnaires: [], patientViews: [] }, today)
   return data
 }
 
@@ -307,6 +307,7 @@ export const seedDB = (): DB => ({
   ...generate(todayIso()),
   programs: seedPrograms(),
   views: seedViews(),
+  patientViews: seedPatientViews(),
   feedback: [],
   customQuestionnaires: [],
 })

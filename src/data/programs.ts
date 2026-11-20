@@ -1,7 +1,7 @@
 import { DEFAULT_QUESTIONNAIRE_ID } from './questionnaireLibrary'
 import { approxDays, DEFAULT_END, DEFAULT_SCHEDULE } from '../lib/schedule'
 // Číselníky a demo data pro stránku „Šablony“ (šablony monitorace) a uživatelské pohledy.
-import type { Classification, DashboardFilters, DashboardView, MonitoringProgram, NextStepAction } from '../lib/types'
+import type { Classification, DashboardFilters, DashboardView, MonitoringProgram, NextStepAction, PatientFilters, PatientView } from '../lib/types'
 
 export const CLASSIFICATIONS: { value: Classification; label: string; hint: string; badge: string }[] = [
   { value: 'nonMD', label: 'nonMD', hint: 'Mimo zdravotnický prostředek', badge: 'bg-gray-50 text-gray-700 ring-gray-600/20' },
@@ -111,6 +111,15 @@ export const seedPrograms = (): MonitoringProgram[] => [
   tpl('pr-ch-hn', 'Chronická toxicita RT – hlava a krk', ['C01', 'C09', 'C32'], ['questionnaire'], 'lib-eortc-hn43', 0, NEVER, [ACT.telefon()], CHRONIC),
   tpl('pr-ch-pr', 'Chronická toxicita RT – prostata', ['C61'], ['questionnaire'], 'lib-eortc-pr25', 0, NEVER, [ACT.telefon()], CHRONIC),
   tpl('pr-ch-lc', 'Chronická toxicita RT – plíce', ['C34'], ['questionnaire'], 'lib-eortc-lc29', 0, NEVER, [ACT.telefon()], CHRONIC),
+]
+
+/** Výchozí filtry Kartotéky. */
+export const DEFAULT_PATIENT_FILTERS: PatientFilters = { plan: [], programIds: [], sources: [], eskill: 'all' }
+
+/** Demo pohledy Kartotéky. */
+export const seedPatientViews = (): PatientView[] => [
+  { id: 'pv-stac', name: 'Stacionář – aktivní', filters: { ...DEFAULT_PATIENT_FILTERS, plan: ['active'], programIds: ['pr-st-int', 'pr-st-ost'] } },
+  { id: 'pv-eskill', name: 'Bez e-Skillu', filters: { ...DEFAULT_PATIENT_FILTERS, eskill: 'no' } },
 ]
 
 export const DEFAULT_FILTERS: DashboardFilters = {

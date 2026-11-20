@@ -123,6 +123,21 @@ export interface DashboardView {
   timeline?: 'week' | 'month' | 'year' | 'filled'
 }
 
+/** Filtry Kartotéky (prázdný seznam = nefiltruje). */
+export interface PatientFilters {
+  plan: ('active' | 'planned' | 'ended' | 'none')[]
+  programIds: string[]
+  sources: SourceKey[]
+  eskill: 'all' | 'yes' | 'no'
+}
+
+/** Uložený pohled Kartotéky (podstránka Kartotéky v menu). */
+export interface PatientView {
+  id: string
+  name: string
+  filters: PatientFilters
+}
+
 export interface Monitoring {
   id: string
   patientId: string
@@ -207,4 +222,6 @@ export interface DB {
   feedback: Feedback[]
   /** Vlastní dotazníky založené uživatelem (předpřipravené jsou v kódu, src/data/questionnaireLibrary.ts). */
   customQuestionnaires: QuestionnaireDef[]
+  /** Uložené pohledy Kartotéky. */
+  patientViews: PatientView[]
 }

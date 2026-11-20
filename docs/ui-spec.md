@@ -561,12 +561,22 @@ Otevírá se kliknutím na odznak „N/A“ nebo na budoucí termín. Je to **ce
 - Drobečková navigace: Kartotéka › Přehled. Nadpis „Kartotéka“, vpravo tlačítko **Vytvořit**.
 - V kartě vlevo je hledání vpravo nahoře a tabulka se sloupci Celé jméno (`Příjmení Jméno →`), Rodné číslo, **Aktivní plán**, **e-Skill** (NOVÉ) a rychlá akce. Celý řádek je klikací.
 - **e-Skill**: poslední výsledek testu (skóre barvou úrovně + štítek Nízká / Střední / Vysoká), jinak „—“.
-- **Panel Filtr** vpravo (NOVÉ 2026-11-20; stejný vzhled jako záložka Filtr na Dashboardu, šířka 288 px, na menší obrazovce pod seznamem): nadpis „Filtr“ s ikonou trychtýře (při změně modrá tečka), vpravo odkaz **Obnovit výchozí** jen při změně. Ve skupině zaškrtávacích polí platí NEBO, mezi skupinami A ZÁROVEŇ; nic nezaškrtnuto = nefiltruje. Filtr se neukládá (po opuštění stránky je zase výchozí).
-  - *Stav monitorace*: Aktivní, Naplánováno, Ukončeno, Bez plánu (jako sloupec Aktivní plán).
-  - *Šablona*: rozbalovací výběr více šablon (stejný jako na Dashboardu, „Všechny šablony“) – šablona monitorace ze sloupce Aktivní plán.
-  - *Data ze zdroje* (s ikonou): Dotazník (aspoň jeden vyplněný), Laboratoř (aspoň jeden odběr), Wearables (aspoň jeden den z hodinek).
-  - *e-Skill* (přepínač): Vše (výchozí) / Má výsledek / Bez výsledku.
-  - Změna filtru vrátí stránkování na 1. stránku. Bez výsledků: „Nenalezeny žádné záznamy“.
+- **Panel nástrojů** vpravo (NOVÉ 2026-11-20; stejný jako na Dashboardu, šířka 288 px, na menší obrazovce pod seznamem) se záložkami **Filtr**, **Řazení**, **Zobrazení** (při změně modrá tečka u záložky).
+  - **Filtr** (ve skupině zaškrtávacích polí NEBO, mezi skupinami A ZÁROVEŇ; nic nezaškrtnuto = nefiltruje; „Obnovit výchozí“, v pohledu „Zahodit změny“):
+    - *Stav monitorace*: Aktivní, Naplánováno, Ukončeno, Bez plánu (jako sloupec Aktivní plán);
+    - *Šablona*: rozbalovací výběr více šablon („Všechny šablony“) – šablona monitorace ze sloupce Aktivní plán;
+    - *Data ze zdroje* (s ikonou): Dotazník (aspoň jeden vyplněný), Laboratoř (aspoň jeden odběr), Wearables (aspoň jeden den z hodinek);
+    - *e-Skill* (přepínač): Vše (výchozí) / Má výsledek / Bez výsledku;
+    - dole tlačítko **Uložit jako pohled** (na Kartotéce) / **Uložit změny filtru** – „Filtr je uložen“ (v pohledu).
+    - Změna filtru vrátí stránkování na 1. stránku. Bez výsledků: „Nenalezeny žádné záznamy“.
+  - **Řazení**: *Řadit podle* Jména (výchozí), Rodného čísla, Stavu monitorace (Aktivní → Naplánováno → Ukončeno → Bez plánu), Konce monitorace, Skóre e-Skill; *Pořadí* s popisky podle zvoleného řazení (např. „A → Z / Z → A“, „Aktivní nahoře / Bez plánu nahoře“, „Nejbližší konec nahoře“). „Obnovit výchozí řazení“. Řazení se neukládá do pohledu.
+  - **Zobrazení**: *Sloupce* (zaškrtávací) – Rodné číslo, Datum narození, Kontakt (e-mail, telefon), Aktivní plán, e-Skill, Rychlá akce; Celé jméno je vždy („Celé jméno je vidět vždy.“). Výchozí: Rodné číslo, Aktivní plán, e-Skill, Rychlá akce. Pamatuje se v prohlížeči zvlášť pro Kartotéku a každý pohled; „Obnovit výchozí zobrazení“.
+- **Pohledy Kartotéky** (NOVÉ 2026-11-20) – stejně jako pohledy Dashboardu:
+  - v levém menu pod položkou **Kartotéka** jsou vždy vidět uložené pohledy a **+ Nový pohled** (dialog „Nový pohled Kartotéky“ → pohled s výchozím filtrem, otevře se);
+  - **Uložit jako pohled** na Kartotéce uloží aktuální filtr (dialog s názvem) a pohled otevře;
+  - stránka pohledu `/kartoteka/pohledy/:id`: drobečková navigace Kartotéka › Pohledy, nadpis = název pohledu, vedle něj ikona **⋯** s menu Přejmenovat / Smazat (s potvrzením → zpět na Kartotéku); na pohledu je v menu zvýrazněný jen pohled;
+  - pohled ukládá **jen filtr** (řazení a zobrazení ne);
+  - demo pohledy: **Stacionář – aktivní** (Aktivní + obě stacionářové šablony), **Bez e-Skillu** (e-Skill = Bez výsledku).
 - **Rychlá akce „+ Monitorace“** (NOVÉ, modrý odkaz vpravo v řádku): otevře dialog *Nová monitorace — Příjmení Jméno* (stejný jako v kartě pacienta: kalendář, délka 1–6 týdnů, výběr šablony). Po vytvoření se zobrazí notifikace „Monitorace vytvořena – Příjmení Jméno“ a sloupec Aktivní plán se aktualizuje. Kliknutí na odkaz neotevírá kartu pacienta.
 - **Aktivní plán** ukazuje stav monitorace pacienta k dnešku:
   - 🟢 **Aktivní** + název šablony + „do 11.11.2026“: monitorace je označená jako aktivní a dnešek je mezi startem a koncem;
@@ -723,6 +733,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | **Kartotéka**: panel se záložkami Filtr / Řazení / Zobrazení (sloupce) a **pohledy Kartotéky** v levém menu (Uložit jako pohled, + Nový pohled, menu ⋯ Přejmenovat / Smazat); demo pohledy Stacionář – aktivní, Bez e-Skillu. |
 | 2026-11-20 | **Kartotéka** a **Šablony**: panel Filtr vpravo (Kartotéka: stav monitorace, šablona, data ze zdroje, e-Skill; Šablony: zdroje, frekvence, druh dotazníku, pacienti). |
 | 2026-11-20 | Demo: každý pohled má jen své příznaky – **Chronická toxicita RT: Zavolat**, **Akutní toxicita RT: K lékaři** (Čekárna z demo šablon zmizela), Stacionář: K aplikaci, K lékaři; box Zavolat zapnutý v pohledu Chronická toxicita; úložiště v12. |
 | 2026-11-20 | Demo: Stacionář má příznaky **K aplikaci, K lékaři**; dnešní příznaky podle stavu pacienta (chronická: Zavolat jen červeným/modrým a 2 žlutým; akutní: K lékaři; stacionář: K lékaři / K aplikaci); víc červených pacientů; pohled Akutní toxicita RT má výchozí zapnutý box **K lékaři**; úložiště v11. |

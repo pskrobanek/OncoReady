@@ -105,13 +105,12 @@ export const seedPrograms = (): MonitoringProgram[] => [
     ACT.lekar(),
   ]),
   tpl('pr-ak', 'Akutní toxicita RT', ['C50', 'C61', 'C20', 'C53', 'C32'], ['questionnaire', 'lab'], DEFAULT_QUESTIONNAIRE_ID, 1, { ...NEVER, kind: 'duration', amount: 8, unit: 'week' }, [
-    ACT.cekarna(),
     ACT.lekar(),
   ]),
-  tpl('pr-ch-br', 'Chronická toxicita RT – prs', ['C50'], ['questionnaire'], 'lib-eortc-br45', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
-  tpl('pr-ch-hn', 'Chronická toxicita RT – hlava a krk', ['C01', 'C09', 'C32'], ['questionnaire'], 'lib-eortc-hn43', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
-  tpl('pr-ch-pr', 'Chronická toxicita RT – prostata', ['C61'], ['questionnaire'], 'lib-eortc-pr25', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
-  tpl('pr-ch-lc', 'Chronická toxicita RT – plíce', ['C34'], ['questionnaire'], 'lib-eortc-lc29', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
+  tpl('pr-ch-br', 'Chronická toxicita RT – prs', ['C50'], ['questionnaire'], 'lib-eortc-br45', 0, NEVER, [ACT.telefon()], CHRONIC),
+  tpl('pr-ch-hn', 'Chronická toxicita RT – hlava a krk', ['C01', 'C09', 'C32'], ['questionnaire'], 'lib-eortc-hn43', 0, NEVER, [ACT.telefon()], CHRONIC),
+  tpl('pr-ch-pr', 'Chronická toxicita RT – prostata', ['C61'], ['questionnaire'], 'lib-eortc-pr25', 0, NEVER, [ACT.telefon()], CHRONIC),
+  tpl('pr-ch-lc', 'Chronická toxicita RT – plíce', ['C34'], ['questionnaire'], 'lib-eortc-lc29', 0, NEVER, [ACT.telefon()], CHRONIC),
 ]
 
 export const DEFAULT_FILTERS: DashboardFilters = {
@@ -125,7 +124,7 @@ export const DEFAULT_FILTERS: DashboardFilters = {
 
 /** Demo pohledy pod Dashboardem: Chronická toxicita RT, Akutní toxicita RT, Stacionář. */
 export const seedViews = (): DashboardView[] => [
-  { id: 'v-chron', name: 'Chronická toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ch-br', 'pr-ch-hn', 'pr-ch-pr', 'pr-ch-lc'] }, timeline: 'year' },
+  { id: 'v-chron', name: 'Chronická toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ch-br', 'pr-ch-hn', 'pr-ch-pr', 'pr-ch-lc'] }, timeline: 'year', tagBoxes: ['Zavolat'] },
   { id: 'v-akut', name: 'Akutní toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ak'] }, tagBoxes: ['K lékaři'] },
   { id: 'v-stac', name: 'Stacionář', filters: { ...DEFAULT_FILTERS, programIds: ['pr-st-int', 'pr-st-ost'] }, tagBoxes: 'all' },
 ]

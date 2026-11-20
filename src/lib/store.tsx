@@ -7,7 +7,7 @@ import type { Answers, DB, DashboardView, ESkillResult, Feedback, Monitoring, Mo
 import { todayIso } from './format'
 
 // Jednoduché úložiště v prohlížeči (localStorage). Žádný backend – jde o UI prototyp.
-const KEY = 'oncoready-mvp-db-v11' // při změně dat zvýšit verzi (v7 nová demo data, v8 EORTC, v9 stacionář bez Čekárny, v10 chronická toxicita po letech, v11 příznaky podle stavu)
+const KEY = 'oncoready-mvp-db-v12' // při změně dat zvýšit verzi (v7 nová demo data, v8 EORTC, v9 stacionář bez Čekárny, v10 chronická toxicita po letech, v11 příznaky podle stavu)
 
 function load(): DB {
   try {
@@ -36,7 +36,7 @@ function migrate(db: Partial<DB>): DB {
     feedback: db.feedback ?? [],
     customQuestionnaires: db.customQuestionnaires ?? [],
     // Pohledy uložené před filtrem Příznak
-    views: (db.views ?? seed.views).map((v) => ({ ...v, filters: { ...v.filters, tags: v.filters.tags ?? [] }, tagBoxes: v.tagBoxes ?? (v.id === 'v-stac' ? 'all' : v.id === 'v-akut' ? ['K lékaři'] : 'none'), timeline: v.timeline ?? (v.id === 'v-chron' ? 'year' : undefined) })),
+    views: (db.views ?? seed.views).map((v) => ({ ...v, filters: { ...v.filters, tags: v.filters.tags ?? [] }, tagBoxes: v.tagBoxes ?? (v.id === 'v-stac' ? 'all' : v.id === 'v-akut' ? ['K lékaři'] : v.id === 'v-chron' ? ['Zavolat'] : 'none'), timeline: v.timeline ?? (v.id === 'v-chron' ? 'year' : undefined) })),
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
     // Zrušená tlačítka (Ke kontrole sestrou / lékařem) se odeberou; zůstane-li šablona bez tlačítek, dostane výchozí (Čekárna / K aplikaci).
     programs: (db.programs ?? seed.programs).map((p) => {

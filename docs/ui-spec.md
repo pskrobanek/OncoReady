@@ -245,20 +245,20 @@ Pravidla se vyhodnocují v tomto pořadí:
 
 **Demo data** (přepracováno 2026-11-20 – simulují běžný chod kliniky; generátor `src/data/seed.ts`, laboratoř a wearables `src/data/readinessSeed.ts`)
 - Všichni pacienti jsou **smyšlení**. Rodná čísla jsou formálně platná (ženy měsíc +50, platné datum, 10 číslic dělitelných 11), datum narození se dopočítá. E-maily `jmeno.prijmeni@example.com`.
-- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v11** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
+- Data se generují **deterministicky vůči dnešku** (stejná při každém obnovení dema). Verze úložiště **v12** – starší data v prohlížeči (včetně vlastních dotazníků a úprav šablon) se nahradí novým demem.
 - **Šablony** (pořadí určuje i pořadí příznaků / boxů):
 
 | Šablona | Zdroje | Dotazník | Frekvence | Konec | Příznaky | Pacienti |
 | --- | --- | --- | --- | --- | --- | --- |
 | Stacionář – intenzivní léčba | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každý týden od zahájení | nikdy | K aplikaci, K lékaři | 6 |
 | Stacionář – ostatní | dotazník, laboratoř, wearables | OncoReady – akutní toxicita | každé 3 týdny od zahájení | nikdy | K aplikaci, K lékaři | 6 |
-| Akutní toxicita RT | dotazník, laboratoř | OncoReady – akutní toxicita | každý týden od zahájení | po dobu 8 týdnů | Čekárna, K lékaři | 10 |
-| Chronická toxicita RT – prs | dotazník | EORTC QLQ-BR45 | každé 4 měsíce (15. den) | nikdy | K lékaři, Zavolat | 3 |
-| Chronická toxicita RT – hlava a krk | dotazník | EORTC QLQ-H&N43 | každé 4 měsíce (15. den) | nikdy | K lékaři, Zavolat | 3 |
-| Chronická toxicita RT – prostata | dotazník | EORTC QLQ-PR25 | každé 4 měsíce (15. den) | nikdy | K lékaři, Zavolat | 3 |
-| Chronická toxicita RT – plíce | dotazník | EORTC QLQ-LC29 | každé 4 měsíce (15. den) | nikdy | K lékaři, Zavolat | 3 |
+| Akutní toxicita RT | dotazník, laboratoř | OncoReady – akutní toxicita | každý týden od zahájení | po dobu 8 týdnů | K lékaři | 10 |
+| Chronická toxicita RT – prs | dotazník | EORTC QLQ-BR45 | každé 4 měsíce (15. den) | nikdy | Zavolat | 3 |
+| Chronická toxicita RT – hlava a krk | dotazník | EORTC QLQ-H&N43 | každé 4 měsíce (15. den) | nikdy | Zavolat | 3 |
+| Chronická toxicita RT – prostata | dotazník | EORTC QLQ-PR25 | každé 4 měsíce (15. den) | nikdy | Zavolat | 3 |
+| Chronická toxicita RT – plíce | dotazník | EORTC QLQ-LC29 | každé 4 měsíce (15. den) | nikdy | Zavolat | 3 |
 
-- **Pohledy** pod Dashboardem (Stacionář má výchozí zobrazené všechny boxy příznaků, **Akutní toxicita RT box K lékaři**, **Chronická toxicita RT výchozí časovou osu Po letech**): **Chronická toxicita RT** (4 chronické šablony, 12 pacientů jen s dotazníkem), **Akutní toxicita RT** (10 pacientů s dotazníkem a laboratoří), **Stacionář** (obě stacionářové šablony, 12 pacientů se všemi 3 zdroji). Filtr Skóre = Vše.
+- **Pohledy** pod Dashboardem (Stacionář má výchozí zobrazené všechny boxy příznaků, **Akutní toxicita RT box K lékaři**, **Chronická toxicita RT box Zavolat a výchozí časovou osu Po letech**): **Chronická toxicita RT** (4 chronické šablony, 12 pacientů jen s dotazníkem), **Akutní toxicita RT** (10 pacientů s dotazníkem a laboratoří), **Stacionář** (obě stacionářové šablony, 12 pacientů se všemi 3 zdroji). Filtr Skóre = Vše.
 - **Monitorace**: chronická toxicita sleduje pacienty **1–4 roky** – v dřívějších letech **1 dotazník za rok** (roční kontrola), **letos nejvýš 3** (každé 4 měsíce podle šablony) a 1 plánovaný; ostatní: akutní před 1–7 týdny, stacionář intenzivní před 3–16 týdny, ostatní před 1,5–9 měsíci. Termíny dotazníků se počítají z frekvence šablony (včetně plánovaných do budoucna).
 - **Vyplnění ~75 %**: minulý termín je vyplněný s pravděpodobností 75 % (v den termínu nebo do 2 dnů; dnešní termín 40 %, ráno). Laboratoř: akutní toxicita v den termínu, stacionář den před termínem, k dispozici ~80 %. Wearables (stacionář): posledních 8 týdnů, výpadky synchronizace po 1–3 dnech (~75 % dní).
 - **Profil pacienta** určuje pásma: dobrý (82 % zelená), střední (50 % zelená, 33 % žlutá, 10 % červená), horší (30 % červená). Laboratoř u stacionáře hlavně neutropenie a trombocytopenie, u RT hemoglobin a kreatinin; wearables občas zvýšená teplota u horšího profilu.
@@ -290,7 +290,7 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Šablony** – „Podle šablony monitorace pacienta“: skupiny podle názvu šablony abecedně, pacienti bez šablony na konci („Bez šablony“).
   - Skupiny jsou jen uvnitř boxu **Všichni pacienti**. Nadpis skupiny je řádek přes celou šířku tabulky (šedé pozadí, 14 px tučně, u závažnosti barevná tečka, za názvem šedě počet pacientů). Při vodorovném posunu zůstává vlevo.
   - Uvnitř skupiny platí zvolené řazení. Pořadí skupin je pevné (nemění se směrem řazení).
-- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak s ikonou (Čekárna, K aplikaci, …) – **jen příznaky šablon vybraných ve filtru Šablona** (nic nevybráno = všechny šablony). Např. v pohledu Chronická toxicita RT jen K lékaři a Zavolat, ve Stacionáři K aplikaci, K lékaři. Totéž platí pro boxy příznaků v hlavním okně a pro volby filtru Příznak. Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. **Výchozí: nic nezaškrtnuto**, v pohledu **Stacionář všechny příznaky** (K aplikaci, K lékaři), v pohledu **Akutní toxicita RT box K lékaři** – pohled má nastavení výchozích boxů (všechny / žádný). Volba se pamatuje v prohlížeči **zvlášť pro Dashboard a každý pohled**; „Obnovit výchozí zobrazení“ vrátí výchozí boxy daného pohledu. Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
+- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak s ikonou (Čekárna, K aplikaci, …) – **jen příznaky šablon vybraných ve filtru Šablona** (nic nevybráno = všechny šablony). Např. v pohledu Chronická toxicita RT jen Zavolat, v Akutní toxicitě jen K lékaři, ve Stacionáři K aplikaci, K lékaři. Totéž platí pro boxy příznaků v hlavním okně a pro volby filtru Příznak. Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. **Výchozí: nic nezaškrtnuto**, v pohledu **Stacionář všechny příznaky** (K aplikaci, K lékaři), v pohledu **Akutní toxicita RT box K lékaři**, v pohledu **Chronická toxicita RT box Zavolat** – pohled má nastavení výchozích boxů (všechny / žádný). Volba se pamatuje v prohlížeči **zvlášť pro Dashboard a každý pohled**; „Obnovit výchozí zobrazení“ vrátí výchozí boxy daného pohledu. Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
 - Časová osa a boxy příznaků se pamatují **zvlášť pro Dashboard a každý pohled**; pohled může mít vlastní výchozí časovou osu (Chronická toxicita RT = **Po letech**, ostatní Po týdnech).
 - Odkaz „Obnovit výchozí zobrazení“ (vrátí časovou osu, seskupení i boxy příznaků na výchozí daného pohledu) se zobrazí jen při změně.
 - Poznámka: „Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.“ **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
@@ -712,6 +712,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Demo: každý pohled má jen své příznaky – **Chronická toxicita RT: Zavolat**, **Akutní toxicita RT: K lékaři** (Čekárna z demo šablon zmizela), Stacionář: K aplikaci, K lékaři; box Zavolat zapnutý v pohledu Chronická toxicita; úložiště v12. |
 | 2026-11-20 | Demo: Stacionář má příznaky **K aplikaci, K lékaři**; dnešní příznaky podle stavu pacienta (chronická: Zavolat jen červeným/modrým a 2 žlutým; akutní: K lékaři; stacionář: K lékaři / K aplikaci); víc červených pacientů; pohled Akutní toxicita RT má výchozí zapnutý box **K lékaři**; úložiště v11. |
 | 2026-11-20 | Pohled **Chronická toxicita RT** má výchozí časovou osu **Po letech** (časová osa se pamatuje zvlášť pro každý pohled). Demo: chronická toxicita 1–4 roky, dřívější roky 1 dotazník, letos nejvýš 3 (šablony každé 4 měsíce); úložiště v10. |
 | 2026-11-20 | Demo: šablony Stacionáře mají místo příznaku Čekárna příznak **K lékaři** (příznaky K lékaři, K aplikaci); úložiště v9. |

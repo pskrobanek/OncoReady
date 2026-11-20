@@ -2,7 +2,8 @@ import { Fragment, useMemo, useRef, useState, type ReactNode, type UIEvent } fro
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeLegend } from '../components/BadgeLegend'
 import { QuestionnaireTile, statusOf, worstQuestionnaire } from '../components/QuestionnaireBadges'
-import { ArrowsUpDownIcon, ClockIcon, FunnelIcon, TagIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { ArrowsUpDownIcon, FunnelIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/outline'
+import { tagIconByLabel, TagIconView } from '../components/TagIcons'
 import { activeStep, NextStepButtons } from '../components/NextStep'
 import { EmptySlot, LabTile, MissingTile, SourceIcon, WearTile } from '../components/Readiness'
 import { ReadinessModal } from '../components/ReadinessModal'
@@ -66,6 +67,13 @@ function loadHiddenTags(): string[] {
     return []
   }
 }
+/** Název příznaku s jeho ikonou (filtr, zobrazení). */
+const TagLabel = ({ programs, label }: { programs: MonitoringProgram[]; label: string }) => (
+  <span className="flex items-center gap-2">
+    <TagIconView name={tagIconByLabel(programs, label)} className="h-4 w-4 text-gray-400" />
+    {label}
+  </span>
+)
 /** Všechny příznaky: tlačítka ze šablon v jejich pořadí + příznaky pacientů, jejichž tlačítko už v šabloně není. */
 const allTagLabels = (programs: MonitoringProgram[], extra: string[] = []) => [...new Set([...programs.flatMap((p) => p.actions.map((a) => a.label)), ...extra])]
 const loadGroupBy = (): GroupBy => {
@@ -426,15 +434,14 @@ function PatientsBoard({
             .map((name) => ({ key: name || '-', label: name || 'Bez šablony', dot: null, rows: shown.filter((r) => (r.program?.name ?? '') === name) }))
         : []
   // Box pro každý příznak (tlačítka ze šablon v jejich pořadí + příznaky, jejichž tlačítko už v šabloně není),
-  // jen ty, které nejsou skryté v Zobrazení. Čekárna (tlačítko s volbou čekárna) má ikonu hodin.
+  // jen ty, které nejsou skryté v Zobrazení. Hlavička boxu má ikonu příznaku.
   const tagLabels = allTagLabels(db.programs, tagged.map((r) => r.step!.label))
-  const waitingLabels = new Set(db.programs.flatMap((p) => p.actions.filter((a) => a.waiting).map((a) => a.label)))
   const boxes: Box[] = [
     ...tagLabels
       .filter((label) => !hiddenTags.includes(label))
       .map((label) => {
         const list = tagged.filter((r) => r.step!.label === label)
-        return { key: `tag:${label}`, label, kind: waitingLabels.has(label) ? ('waiting' as const) : ('tag' as const), count: list.length, parts: single(list) }
+        return { key: `tag:${label}`, label, kind: 'tag' as const, count: list.length, parts: single(list) }
       }),
     { key: 'all', label: 'Všichni pacienti', kind: 'all', count: rows.length, parts: subGroups.length ? subGroups.filter((g) => g.rows.length > 0) : single(shown) },
   ]
@@ -576,8 +583,7 @@ function PatientsBoard({
           {boxes.map((box) => (
             <Card key={box.key} className="overflow-hidden">
               <div className="flex items-center gap-2 px-6 py-4">
-                {box.kind === 'waiting' && <ClockIcon className="h-5 w-5 text-gray-400" />}
-                {box.kind === 'tag' && <TagIcon className="h-5 w-5 text-gray-400" />}
+                {box.kind !== 'all' && <TagIconView name={tagIconByLabel(db.programs, box.label)} className="h-5 w-5 text-gray-400" />}
                 {box.kind === 'all' && <UsersIcon className="h-5 w-5 text-gray-400" />}
                 <h3 className="text-base font-semibold leading-6 text-gray-950">{box.label}</h3>
                 <span className="text-sm tabular-nums text-gray-500">{box.count}</span>
@@ -719,7 +725,12 @@ function PatientsBoard({
               <FilterGroup title="Boxy příznaků">
                 {/* Které příznaky mají v hlavním okně vlastní box (nad boxem Všichni pacienti) */}
                 {tagLabels.map((label) => (
-                  <Checkbox key={label} checked={!hiddenTags.includes(label)} onChange={(v) => changeHiddenTags(v ? hiddenTags.filter((x) => x !== label) : [...hiddenTags, label])} label={label} />
+                  <Checkbox
+                    key={label}
+                    checked={!hiddenTags.includes(label)}
+                    onChange={(v) => changeHiddenTags(v ? hiddenTags.filter((x) => x !== label) : [...hiddenTags, label])}
+                    label={<TagLabel programs={db.programs} label={label} />}
+                  />
                 ))}
                 {tagLabels.length === 0 && <p className="text-sm text-gray-500">Šablony nemají žádné příznaky.</p>}
               </FilterGroup>
@@ -782,7 +793,7 @@ function PatientsBoard({
                 key={label || '-'}
                 checked={(filters.tags ?? []).includes(label)}
                 onChange={(v) => onChange({ ...filters, tags: toggleIn(filters.tags ?? [], label, v) })}
-                label={label || <span className="text-gray-500">Bez příznaku</span>}
+                label={label ? <TagLabel programs={db.programs} label={label} /> : <span className="text-gray-500">Bez příznaku</span>}
               />
             ))}
           </FilterGroup>

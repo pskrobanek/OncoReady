@@ -5,6 +5,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, ConfirmModal, cx, Field, PageHeader, Radio, TextInput, useToast } from '../components/ui'
 import { DEFAULT_ACTIONS } from '../data/programs'
 import { SourceIcon } from '../components/Readiness'
+import { tagIconKey, TagIconPicker, TagIconView } from '../components/TagIcons'
 import { QuestionnairePicker } from '../components/QuestionnairePicker'
 import { DEFAULT_QUESTIONNAIRE_ID, questionnaireName } from '../data/questionnaireLibrary'
 import { fullDate, todayIso } from '../lib/format'
@@ -467,13 +468,14 @@ function TagsCard({ value, error, onChange }: { value: NextStepAction[]; error?:
     <Card className="p-6">
       <h2 className="text-base font-semibold text-gray-950">Příznaky</h2>
       <p className="mt-1 text-sm text-gray-500">
-        Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Příznak. Klik pacientovi nastaví příznak pro dnešní den. Podle příznaku lze
+        Tlačítka s ikonou, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Příznak. Klik pacientovi nastaví příznak pro dnešní den. Podle příznaku lze
         filtrovat a každý příznak může mít na Dashboardu vlastní box (Zobrazení › Boxy příznaků).
       </p>
       <div className="mt-6 flex flex-col gap-3">
         {value.map((a, i) => (
           <div key={a.id} className="flex items-center gap-3">
             <span className="w-5 shrink-0 text-right text-sm tabular-nums text-gray-400">{i + 1}.</span>
+            <TagIconPicker value={tagIconKey(a)} onChange={(icon) => onChange(value.map((x) => (x.id === a.id ? { ...x, icon } : x)))} />
             <TextInput value={a.label} placeholder="Název příznaku, např. K aplikaci" invalid={!!error && !a.label.trim()} onChange={(e) => set(a.id, e.target.value)} />
             <button
               type="button"
@@ -488,7 +490,7 @@ function TagsCard({ value, error, onChange }: { value: NextStepAction[]; error?:
         {value.length === 0 && <p className="text-sm text-gray-500">Šablona nemá žádné příznaky – sloupec Příznak bude u jejích pacientů prázdný.</p>}
         <button
           type="button"
-          onClick={() => onChange([...value, { id: tagId(), label: '' }])}
+          onClick={() => onChange([...value, { id: tagId(), label: '', icon: 'tag' }])}
           className="inline-flex items-center gap-1 self-start text-sm font-semibold text-primary-600 hover:underline"
         >
           <PlusIcon className="h-4 w-4" />
@@ -502,7 +504,8 @@ function TagsCard({ value, error, onChange }: { value: NextStepAction[]; error?:
           {value
             .filter((a) => a.label.trim())
             .map((a) => (
-              <span key={a.id} className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10">
+              <span key={a.id} className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-950 shadow-sm ring-1 ring-gray-950/10">
+                <TagIconView name={tagIconKey(a)} className="h-4 w-4 text-gray-500" />
                 {a.label}
               </span>
             ))}

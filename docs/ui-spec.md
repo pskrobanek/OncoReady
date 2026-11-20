@@ -109,14 +109,14 @@ Stránka má dvě části: vlevo **boxy s pacienty** pod sebou, vpravo samostatn
    - V boxu jsou pacienti s tímto **dnešním příznakem**, seřazení podle času označení (nejdéle čekající nahoře), **nezávisle na filtrech**; hledání je zužuje.
    - Box je vidět i prázdný: „Dnes zatím nikdo.“
    - Pacient z boxu zmizí, když dostane jiný příznak, když se příznak zruší, nebo další den.
-   - Ikona v hlavičce: Čekárna (tlačítko s dřívější volbou čekárna) hodiny, ostatní příznaky šedý štítek (tag).
+   - Ikona v hlavičce boxu = **ikona příznaku** ze šablony (šedá, 20 px). Má-li příznak se stejným názvem v různých šablonách různé ikony, použije se z první šablony.
 3. **Všichni pacienti** – celý seznam podle filtrů, řazení a seskupení z pravého panelu, dole výběr počtu na stránku.
    - **Pacient s příznakem je i tady** (je tedy vidět dvakrát: ve svém boxu a v seznamu). ⚠️ OVĚŘIT, zda to tak má zůstat.
    - Seskupení podle závažnosti / šablon (záložka *Zobrazení*) se zobrazuje jen uvnitř tohoto boxu jako světle šedé mezinadpisy.
    - Když filtru nikdo neodpovídá: „Žádní pacienti neodpovídají filtru“.
 
 Vzhled boxů 2–3:
-- hlavička boxu je klidná: šedá ikona (hodiny / štítek / skupina osob), název 16 px tučně a šedě počet pacientů; **žádné barevné pruhy**;
+- hlavička boxu je klidná: šedá ikona (ikona příznaku / skupina osob), název 16 px tučně a šedě počet pacientů; **žádné barevné pruhy**;
 - pod hlavičkou je tabulka se **stejnou hlavičkou sloupců v každém boxu** (Pacient, zdroj, Aktuální, Příznak, časová osa);
 - **řádek pacienta vypadá ve všech boxech stejně** (pruh, zdroje, Aktuální, tlačítka, časová osa);
 - sloupce mají pevné nejmenší šířky, takže **lícují pod sebou napříč boxy**; vodorovný posun časové osy je pro všechny boxy **společný**.
@@ -159,7 +159,7 @@ Vzhled boxů 2–3:
   - pod sebou **tlačítka ze šablony pacienta** (nastavují se v boxu *Příznaky* šablony), výchozí: **Čekárna** a **K aplikaci** (od 2026-11-19; dřívější „Ke kontrole sestrou / lékařem“ jsou zrušené a z uložených dat se odeberou);
   - **Čekárna**: zmáčkne sestra, pacient se objeví v boxu Čekárna (pokud je box zapnutý v Zobrazení), kde ho lékař hned najde;
   - **K aplikaci**: označí sestra nebo lékař; pacient tím z čekárny odejde;
-  - nezvolené tlačítko je bílé s šedým rámečkem (12 px tučně), **zvolené je modré s ✓** a pod tlačítky je šedě čas „od 8:34“;
+  - tlačítko má vlevo **ikonu příznaku** (16 px, od 2026-11-20); nezvolené je bílé s šedým rámečkem a šedou ikonou (12 px tučně), **zvolené je modré s bílou ikonou** (dříve ✓) a pod tlačítky je šedě čas „od 8:34“;
   - pacient má vždy nejvýš jeden příznak: klik na jiné tlačítko ji změní, klik na zvolené ji zruší; notifikace „Čekárna – Příjmení Jméno“ / „Příznak zrušen – …“; tooltip zvoleného „Zrušit příznak“;
   - **příznak platí jen v den, kdy byl nastaven** – další den je pacient zase bez příznaku;
   - příznak se ukládá k monitoraci pacienta (tlačítko, popisek, čas); když tlačítko ze šablony později zmizí, zůstane u času jeho popisek;
@@ -276,7 +276,7 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Šablony** – „Podle šablony monitorace pacienta“: skupiny podle názvu šablony abecedně, pacienti bez šablony na konci („Bez šablony“).
   - Skupiny jsou jen uvnitř boxu **Všichni pacienti**. Nadpis skupiny je řádek přes celou šířku tabulky (šedé pozadí, 14 px tučně, u závažnosti barevná tečka, za názvem šedě počet pacientů). Při vodorovném posunu zůstává vlevo.
   - Uvnitř skupiny platí zvolené řazení. Pořadí skupin je pevné (nemění se směrem řazení).
-- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak ze šablon (Čekárna, K aplikaci, …). Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. Výchozí: všechny zaškrtnuté (nový příznak se zobrazí hned). Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
+- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak ze šablon s ikonou (Čekárna, K aplikaci, …). Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. Výchozí: všechny zaškrtnuté (nový příznak se zobrazí hned). Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
 - Odkaz „Obnovit výchozí zobrazení“ (vrátí časovou osu, seskupení i boxy příznaků) se zobrazí jen při změně.
 - Poznámka: „Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.“ **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
 - Do záložky lze později přidat další volby zobrazení (např. výběr zdrojů).
@@ -299,7 +299,7 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Vše** je zaškrtnuté, když jsou zaškrtnutá všechna pásma. Zaškrtnutí Vše zaškrtne všechna pásma, odškrtnutí všechna odškrtne (prázdná skupina nefiltruje, takže se ukážou všichni). Odškrtnutí kteréhokoli pásma odškrtne i Vše.
   - **Výchozí stav: Vše** (od 2026-11-20; dříve zaškrtnuté Červené pásmo, Vyžádal kontrolu a Nevyplněno). Platí i pro nový pohled.
 - *Datum vyplnění* (přepínač): Vše, Poslední týden, Posledních 10 dní, Poslední 2 týdny.
-- *Příznak* (zaškrtávací pole, NOVÉ 2026-11-20): každý příznak ze šablon a šedě **Bez příznaku**. Filtruje **Všichni pacienti** podle dnešního příznaku; nic nezaškrtnuto = nefiltruje. Ukládá se i do pohledu (starší pohledy dostanou prázdný výběr). Při hledání se nepoužije.
+- *Příznak* (zaškrtávací pole, NOVÉ 2026-11-20): každý příznak ze šablon (s šedou ikonou před názvem) a šedě **Bez příznaku**. Filtruje **Všichni pacienti** podle dnešního příznaku; nic nezaškrtnuto = nefiltruje. Ukládá se i do pohledu (starší pohledy dostanou prázdný výběr). Při hledání se nepoužije.
 - *Šablona* (od 2026-10-26 **rozbalovací výběr více možností** místo zaškrtávacích polí, Filament Select multiple):
   - prázdné pole ukazuje šedě „Všechny šablony“ a nefiltruje;
   - klik do pole otevře seznam šablon; klik na šablonu ji přidá nebo odebere (vybraná je modře s ✓); seznam se zavře klikem mimo nebo klávesou Esc;
@@ -444,10 +444,13 @@ Karty pod sebou (od 2026-11-20): **Název → Frekvence → Zdroje → Příznak
 
 **Karta 4 – Příznaky** (NOVÉ 2026-11-20; nahrazuje dřívější kartu Další postup, bez volby Čekárna):
 - Nadpis „Příznaky“, popis „Tlačítka, která se u pacientů s touto šablonou zobrazí na Dashboardu ve sloupci Příznak. Klik pacientovi nastaví příznak pro dnešní den. Podle příznaku lze filtrovat a každý příznak může mít na Dashboardu vlastní box (Zobrazení › Boxy příznaků).“
-- Seznam: pořadové číslo, textové pole „Název příznaku, např. K aplikaci“ a koš (Odebrat příznak). Pod ním **+ Přidat příznak**.
+- Seznam: pořadové číslo, **tlačítko s ikonou** (36 × 36 px), textové pole „Název příznaku, např. K aplikaci“ a koš (Odebrat příznak). Pod ním **+ Přidat příznak** (nový příznak má ikonu Štítek).
+- **Výběr ikony** (NOVÉ 2026-11-20): klik na tlačítko s ikonou otevře pod ním nabídku – mřížka 5 × 4 ikon (obrys 1,5 px), zvolená modře orámovaná, dole šedě název ikony; tooltip u každé ikony. Klik na ikonu ji vybere a nabídku zavře; zavře se i klikem mimo nebo Esc.
+  - Ikony: Štítek, Čekání (hodiny), Pokračovat (šipka v kroužku), Hotovo, Zrušeno, Pozor, Riziko, Vlajka, Upozornění, Hvězda, Lékař / osoba, Telefonát, Konzultace, Laboratoř, Zdraví, Sledovat, Termín, Dokument, Domů, Doprava.
+  - Výchozí: Čekárna = Čekání, K aplikaci = Pokračovat, ostatní Štítek (i u starších šablon bez zvolené ikony).
 - Nová šablona má předvyplněné **Čekárna** a **K aplikaci**. Bez příznaků: „Šablona nemá žádné příznaky – sloupec Příznak bude u jejích pacientů prázdný.“
 - Validace: „Vyplňte název příznaku, nebo ho odeberte.“; „Dva příznaky mají stejný název.“
-- **Náhled** tlačítek tak, jak se zobrazí na Dashboardu.
+- **Náhled** tlačítek tak, jak se zobrazí na Dashboardu (s ikonou).
 - Příznaky se napříč šablonami spojují **podle názvu** – „K aplikaci“ ve dvou šablonách = jeden box a jedna volba ve filtru.
 
 Tlačítka: **Vytvořit/Uložit** a **Zrušit**.
@@ -688,6 +691,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Příznaky: **výběr ikony** u každého příznaku v šabloně (20 ikon); ikona se ukazuje na tlačítku ve sloupci Příznak (zvolené tlačítko místo ✓ bílou ikonou), v hlavičce boxu, ve filtru i v Zobrazení. |
 | 2026-11-20 | **Příznaky**: v šabloně nová karta Příznaky (tlačítka, která pacientovi nastaví příznak); na Dashboardu sloupec **Příznak** (dříve Další postup), boxy pro každý příznak volitelné v **Zobrazení › Boxy příznaků**, nový filtr **Příznak** (včetně Bez příznaku, ukládá se do pohledu). |
 | 2026-11-20 | Šablona: odebráno **Zahájení monitorace**. Menu: pod Šablonami podstránky **Dotazníky** a **Laboratoř**. Dotazníky: levý box s menu Přehled / Statické / Dynamické / Vlastní (nový druh dotazníku dynamický – PRO-CTCAE, EORTC CAT Core). Laboratoř: tabulka parametrů a mezí. |
 | 2026-11-20 | Šablona › Frekvence: u týdne volba **Od data zahájení** (vedle dnů v týdnu); Konec monitorace má volby jen jako text a pole (počet / doba) se nabídnou až pod zvolenou volbou. |

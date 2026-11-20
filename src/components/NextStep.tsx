@@ -1,9 +1,9 @@
 // Příznak pacienta: tlačítka ze šablony (box Příznaky), která pacientovi nastaví příznak pro dnešní den
 // (např. Čekárna, K aplikaci). Používá je sloupec Příznak na Dashboardu i souhrnný prescoring.
-import { CheckIcon } from '@heroicons/react/20/solid'
 import { tableName } from '../lib/format'
 import { currentMonitoring, useStore } from '../lib/store'
 import type { Monitoring } from '../lib/types'
+import { tagIconKey, TagIconView } from './TagIcons'
 import { cx, useToast } from './ui'
 
 /** Příznak platí jen v den, kdy byl zvolen – další den je pacient zase bez příznaku. */
@@ -49,7 +49,7 @@ export function NextStepButtons({ patientId, row = false }: { patientId: string;
               on ? 'bg-primary-600 text-white hover:bg-primary-500' : 'bg-white text-gray-950 ring-1 ring-gray-950/10 hover:bg-gray-50',
             )}
           >
-            {on && <CheckIcon className="h-4 w-4" />}
+            <TagIconView name={tagIconKey(a)} className={cx('h-4 w-4', on ? 'text-white' : 'text-gray-500')} />
             {a.label}
           </button>
         )

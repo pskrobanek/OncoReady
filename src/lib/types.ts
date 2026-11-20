@@ -23,8 +23,10 @@ export interface ScoreRange {
 export interface NextStepAction {
   id: string
   label: string
-  /** Pacient s touto značkou se zobrazí nahoře v čekárně. */
+  /** Dřívější volba „Čekárna“ (už se nenastavuje); bez ikony určuje výchozí ikonu hodin. */
   waiting?: boolean
+  /** Ikona příznaku – klíč z TAG_ICONS (src/components/TagIcons.tsx). */
+  icon?: string
 }
 
 /** Šablona monitorace = program sledování (stránka „Šablony“). Pacientům se přiřazuje v kartotéce. */

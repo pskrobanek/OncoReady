@@ -125,5 +125,5 @@ export const DEFAULT_FILTERS: DashboardFilters = {
 export const seedViews = (): DashboardView[] => [
   { id: 'v-chron', name: 'Chronická toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ch-br', 'pr-ch-hn', 'pr-ch-pr', 'pr-ch-lc'] } },
   { id: 'v-akut', name: 'Akutní toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ak'] } },
-  { id: 'v-stac', name: 'Stacionář', filters: { ...DEFAULT_FILTERS, programIds: ['pr-st-int', 'pr-st-ost'] } },
+  { id: 'v-stac', name: 'Stacionář', filters: { ...DEFAULT_FILTERS, programIds: ['pr-st-int', 'pr-st-ost'] }, tagBoxes: 'all' },
 ]

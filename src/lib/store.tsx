@@ -36,7 +36,7 @@ function migrate(db: Partial<DB>): DB {
     feedback: db.feedback ?? [],
     customQuestionnaires: db.customQuestionnaires ?? [],
     // Pohledy uložené před filtrem Příznak
-    views: (db.views ?? seed.views).map((v) => ({ ...v, filters: { ...v.filters, tags: v.filters.tags ?? [] } })),
+    views: (db.views ?? seed.views).map((v) => ({ ...v, filters: { ...v.filters, tags: v.filters.tags ?? [] }, tagBoxes: v.tagBoxes ?? (v.id === 'v-stac' ? 'all' : 'none') })),
     // Šablony uložené před zavedením tlačítek „Další postup“ dostanou výchozí tlačítka.
     // Zrušená tlačítka (Ke kontrole sestrou / lékařem) se odeberou; zůstane-li šablona bez tlačítek, dostane výchozí (Čekárna / K aplikaci).
     programs: (db.programs ?? seed.programs).map((p) => {

@@ -105,7 +105,7 @@ Stránka má dvě části: vlevo **boxy s pacienty** pod sebou, vpravo samostatn
 1. **Vyhledat pacienta** (od 2026-11-20; dříve nadpis „Pacienti“, krátce „Hledat“) – nadpis „Vyhledat pacienta“, vpravo počet pacientů, pod ním hledání (jméno a rodné číslo) přes celou šířku.
    - **Hledání prohledává všechny pacienty** – při zadaném textu se filtry (Skóre, Datum vyplnění, Šablona) nepoužijí. Sestra tak najde i pacienta, kterého aktuální filtr skrývá.
 2. **Boxy příznaků** (od 2026-11-20) – jeden box pro každý **příznak** ze šablon (tlačítka v boxu *Příznaky* šablony, viz *Šablony*), v pořadí podle šablon; výchozí **Čekárna** a **K aplikaci**.
-   - **Které boxy jsou vidět, se volí v Zobrazení › Boxy příznaků** – tím se určuje, kolik boxů v hlavním okně je. **Výchozí: žádný** (od 2026-11-20) – hlavní okno má jen box Všichni pacienti.
+   - **Které boxy jsou vidět, se volí v Zobrazení › Boxy příznaků** – tím se určuje, kolik boxů v hlavním okně je. **Výchozí: žádný** (od 2026-11-20) – hlavní okno má jen box Všichni pacienti; v pohledu **Stacionář** jsou výchozí všechny příznaky jeho šablon.
    - V boxu jsou pacienti s tímto **dnešním příznakem**, seřazení podle času označení (nejdéle čekající nahoře). Uplatní se jen **filtr Šablona** (od 2026-11-20 – v pohledu Stacionář jsou jen jeho pacienti) a hledání; Skóre, Datum ani Příznak je neskryjí.
    - Box je vidět i prázdný: „Dnes zatím nikdo.“
    - Pacient z boxu zmizí, když dostane jiný příznak, když se příznak zruší, nebo další den.
@@ -258,7 +258,7 @@ Pravidla se vyhodnocují v tomto pořadí:
 | Chronická toxicita RT – prostata | dotazník | EORTC QLQ-PR25 | každé 4 týdny | nikdy | K lékaři, Zavolat | 3 |
 | Chronická toxicita RT – plíce | dotazník | EORTC QLQ-LC29 | každé 4 týdny | nikdy | K lékaři, Zavolat | 3 |
 
-- **Pohledy** pod Dashboardem: **Chronická toxicita RT** (4 chronické šablony, 12 pacientů jen s dotazníkem), **Akutní toxicita RT** (10 pacientů s dotazníkem a laboratoří), **Stacionář** (obě stacionářové šablony, 12 pacientů se všemi 3 zdroji). Filtr Skóre = Vše.
+- **Pohledy** pod Dashboardem (Stacionář má výchozí zobrazené všechny boxy příznaků): **Chronická toxicita RT** (4 chronické šablony, 12 pacientů jen s dotazníkem), **Akutní toxicita RT** (10 pacientů s dotazníkem a laboratoří), **Stacionář** (obě stacionářové šablony, 12 pacientů se všemi 3 zdroji). Filtr Skóre = Vše.
 - **Monitorace**: chronická toxicita začala před 3–11 měsíci, akutní před 1–7 týdny, stacionář intenzivní před 3–16 týdny, ostatní před 1,5–9 měsíci. Termíny dotazníků se počítají z frekvence šablony (včetně plánovaných do budoucna).
 - **Vyplnění ~75 %**: minulý termín je vyplněný s pravděpodobností 75 % (v den termínu nebo do 2 dnů; dnešní termín 40 %, ráno). Laboratoř: akutní toxicita v den termínu, stacionář den před termínem, k dispozici ~80 %. Wearables (stacionář): posledních 8 týdnů, výpadky synchronizace po 1–3 dnech (~75 % dní).
 - **Profil pacienta** určuje pásma: dobrý (82 % zelená), střední (50 % zelená, 33 % žlutá, 10 % červená), horší (30 % červená). Laboratoř u stacionáře hlavně neutropenie a trombocytopenie, u RT hemoglobin a kreatinin; wearables občas zvýšená teplota u horšího profilu.
@@ -286,7 +286,7 @@ Pravidla se vyhodnocují v tomto pořadí:
   - **Šablony** – „Podle šablony monitorace pacienta“: skupiny podle názvu šablony abecedně, pacienti bez šablony na konci („Bez šablony“).
   - Skupiny jsou jen uvnitř boxu **Všichni pacienti**. Nadpis skupiny je řádek přes celou šířku tabulky (šedé pozadí, 14 px tučně, u závažnosti barevná tečka, za názvem šedě počet pacientů). Při vodorovném posunu zůstává vlevo.
   - Uvnitř skupiny platí zvolené řazení. Pořadí skupin je pevné (nemění se směrem řazení).
-- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak s ikonou (Čekárna, K aplikaci, …) – **jen příznaky šablon vybraných ve filtru Šablona** (nic nevybráno = všechny šablony). Např. v pohledu Chronická toxicita RT jen K lékaři a Zavolat, ve Stacionáři Čekárna, K aplikaci, K lékaři. Totéž platí pro boxy příznaků v hlavním okně a pro volby filtru Příznak. Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. **Výchozí: nic nezaškrtnuto** (od 2026-11-20). Volba se pamatuje v prohlížeči (seznam zapnutých příznaků) a platí pro Dashboard i pohledy. Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
+- *Boxy příznaků* (zaškrtávací pole, NOVÉ 2026-11-20): jeden řádek pro každý příznak s ikonou (Čekárna, K aplikaci, …) – **jen příznaky šablon vybraných ve filtru Šablona** (nic nevybráno = všechny šablony). Např. v pohledu Chronická toxicita RT jen K lékaři a Zavolat, ve Stacionáři Čekárna, K aplikaci, K lékaři. Totéž platí pro boxy příznaků v hlavním okně a pro volby filtru Příznak. Zaškrtnutý = příznak má v hlavním okně vlastní box nad boxem Všichni pacienti. **Výchozí: nic nezaškrtnuto**, v pohledu **Stacionář všechny příznaky** (Čekárna, K aplikaci, K lékaři) – pohled má nastavení výchozích boxů (všechny / žádný). Volba se pamatuje v prohlížeči **zvlášť pro Dashboard a každý pohled**; „Obnovit výchozí zobrazení“ vrátí výchozí boxy daného pohledu. Bez příznaků v šablonách: „Šablony nemají žádné příznaky.“
 - Odkaz „Obnovit výchozí zobrazení“ (vrátí časovou osu, seskupení i boxy příznaků) se zobrazí jen při změně.
 - Poznámka: „Zobrazení se pamatuje v tomto prohlížeči a neukládá se do pohledu.“ **⚠️ OVĚŘIT**, jestli má být součástí pohledu.
 - Do záložky lze později přidat další volby zobrazení (např. výběr zdrojů).
@@ -707,6 +707,7 @@ Klik na řádek otevře **detail výsledku**:
 
 | Datum | Změna |
 | --- | --- |
+| 2026-11-20 | Pohled **Stacionář** má výchozí zobrazené všechny boxy příznaků (Čekárna, K aplikaci, K lékaři); volba boxů se pamatuje zvlášť pro Dashboard a každý pohled. |
 | 2026-11-20 | Horní box **Vyhledat pacienta**. Filtr Příznak má volbu **Vše** (výchozí). Zobrazení › Boxy příznaků: výchozí **žádný box** – hlavní Dashboard ukazuje všechny pacienty v jednom seznamu. |
 | 2026-11-20 | Pohled: Přejmenovat / Smazat schované v menu pod ikonou ⋯ vedle nadpisu. Filtr Příznak má výchozí **Bez příznaku** (seznam Všichni pacienti bez pacientů, kteří jsou v boxech příznaků). |
 | 2026-11-20 | Zobrazení › Boxy příznaků (i boxy a filtr Příznak) nabízí jen příznaky šablon vybraných ve filtru Šablona. |

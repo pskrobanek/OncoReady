@@ -58,14 +58,18 @@ const GROUP_BY: { key: GroupBy; label: string; hint: string }[] = [
   { key: 'program', label: 'Šablony', hint: 'Podle šablony monitorace pacienta' },
 ]
 const GROUP_KEY = 'oncoready-dashboard-seskupeni'
-/** Příznaky, které mají v hlavním okně vlastní box (Zobrazení › Boxy příznaků). Výchozí: žádný. */
+/**
+ * Příznaky, které mají v hlavním okně vlastní box (Zobrazení › Boxy příznaků) – pamatuje se zvlášť pro Dashboard a každý pohled.
+ * null = nic nezvoleno → výchozí boxů (Dashboard žádný, pohled podle `tagBoxes`).
+ */
 const SHOWN_TAGS_KEY = 'oncoready-dashboard-boxy-priznaku'
-function loadShownTags(): string[] {
+function loadShownTags(boardId: string): string[] | null {
   try {
-    const v = JSON.parse(localStorage.getItem(SHOWN_TAGS_KEY) ?? '[]')
-    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []
+    const raw = localStorage.getItem(`${SHOWN_TAGS_KEY}:${boardId}`)
+    const v = raw === null ? null : JSON.parse(raw)
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : null
   } catch {
-    return []
+    return null
   }
 }
 /** Název příznaku s jeho ikonou (filtr, zobrazení). */
@@ -230,6 +234,8 @@ function ViewEditor({ viewId }: { viewId: string }) {
     <>
       <PatientsBoard
         title={view.name}
+        boardId={`pohled-${view.id}`}
+        defaultTagBoxes={view.tagBoxes ?? 'none'}
         breadcrumbs={[{ label: 'Dashboard', to: '/' }, { label: 'Pohledy' }]}
         titleAside={<ViewMenu onRename={() => setRenaming(true)} onDelete={() => setDeleting(true)} />}
         filters={draft}
@@ -341,7 +347,13 @@ function PatientsBoard({
   onReset,
   resetLabel = 'Obnovit výchozí',
   panelFooter,
+  boardId = 'dashboard',
+  defaultTagBoxes = 'none',
 }: {
+  /** Kde se pamatuje Zobrazení › Boxy příznaků (Dashboard / id pohledu). */
+  boardId?: string
+  /** Výchozí boxy příznaků, dokud si je uživatel nezmění. */
+  defaultTagBoxes?: 'all' | 'none'
   title: string
   breadcrumbs?: { label: string; to?: string }[]
   headerActions?: ReactNode
@@ -377,12 +389,13 @@ function PatientsBoard({
       /* ignorovat */
     }
   }
-  // Boxy příznaků zapnuté v Zobrazení (výchozí žádný – všichni pacienti jsou v jednom seznamu)
-  const [shownTags, setShownTags] = useState<string[]>(loadShownTags)
-  const changeShownTags = (h: string[]) => {
-    setShownTags(h)
+  // Boxy příznaků zapnuté v Zobrazení; null = výchozí (Dashboard žádný, pohled Stacionář všechny)
+  const [storedTags, setStoredTags] = useState<string[] | null>(() => loadShownTags(boardId))
+  const changeShownTags = (h: string[] | null) => {
+    setStoredTags(h)
     try {
-      localStorage.setItem(SHOWN_TAGS_KEY, JSON.stringify(h))
+      if (h === null) localStorage.removeItem(`${SHOWN_TAGS_KEY}:${boardId}`)
+      else localStorage.setItem(`${SHOWN_TAGS_KEY}:${boardId}`, JSON.stringify(h))
     } catch {
       /* ignorovat */
     }
@@ -479,6 +492,8 @@ function PatientsBoard({
   // Jen příznaky šablon vybraných ve filtru Šablona (nic nevybráno = všechny) – platí pro boxy, Zobrazení i filtr Příznak.
   const filteredPrograms = filters.programIds.length ? db.programs.filter((p) => filters.programIds.includes(p.id)) : db.programs
   const tagLabels = allTagLabels(filteredPrograms, tagged.map((r) => r.step!.label))
+  const shownTags = storedTags ?? (defaultTagBoxes === 'all' ? tagLabels : [])
+  const tagBoxesChanged = storedTags !== null
   const boxes: Box[] = [
     ...tagLabels
       .filter((label) => shownTags.includes(label))
@@ -683,7 +698,7 @@ function PatientsBoard({
           <div className="flex border-b border-gray-200 px-3" role="tablist">
             {TOOLS.map(({ key, label, icon: Icon }) => {
               const active = tool === key
-              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none' || shownTags.length > 0
+              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none' || tagBoxesChanged
               return (
                 <button
                   key={key}
@@ -777,12 +792,12 @@ function PatientsBoard({
                 ))}
                 {tagLabels.length === 0 && <p className="text-sm text-gray-500">Šablony nemají žádné příznaky.</p>}
               </FilterGroup>
-              {(mode !== 'week' || groupBy !== 'none' || shownTags.length > 0) && (
+              {(mode !== 'week' || groupBy !== 'none' || tagBoxesChanged) && (
                 <button
                   onClick={() => {
                     changeMode('week')
                     changeGroupBy('none')
-                    changeShownTags([])
+                    changeShownTags(null)
                   }}
                   className="mt-6 self-start text-sm font-medium text-primary-600 hover:underline"
                 >

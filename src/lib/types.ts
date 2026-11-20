@@ -117,6 +117,8 @@ export interface DashboardView {
   id: string
   name: string
   filters: DashboardFilters
+  /** Výchozí boxy příznaků v pohledu: všechny příznaky jeho šablon, nebo žádný (dokud si uživatel nevybere v Zobrazení). */
+  tagBoxes?: 'all' | 'none'
 }
 
 export interface Monitoring {

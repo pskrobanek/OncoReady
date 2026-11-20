@@ -60,8 +60,10 @@ const tpl = (
   everyWeeks: number,
   ending: MonitoringProgram['ending'],
   actions: NextStepAction[],
+  /** Jiná frekvence než „každých N týdnů od zahájení“. */
+  scheduleOverride?: Partial<MonitoringProgram['schedule']>,
 ): MonitoringProgram => {
-  const schedule = { ...DEFAULT_SCHEDULE(), unit: 'week' as const, every: everyWeeks, weekday: 0 }
+  const schedule = { ...DEFAULT_SCHEDULE(), unit: 'week' as const, every: everyWeeks, weekday: 0, ...scheduleOverride }
   return {
     id,
     name,
@@ -84,10 +86,12 @@ const ACT = {
   telefon: (): NextStepAction => ({ id: 'a-telefon', label: 'Zavolat', icon: 'phone' }),
 }
 const NEVER = DEFAULT_END()
+/** Chronická toxicita: každé 4 měsíce (15. den) – nejvýš 3 dotazníky za rok. */
+const CHRONIC = { unit: 'month' as const, every: 4, monthDay: 15 }
 
 /**
  * Demo šablony (2026-11-20) – pořadí určuje i pořadí příznaků (boxů) na Dashboardu:
- * - Chronická toxicita RT – 4 šablony s moduly EORTC, jen dotazník, každé 4 týdny;
+ * - Chronická toxicita RT – 4 šablony s moduly EORTC, jen dotazník, každé 4 měsíce (dřívější roky v demu po 1 dotazníku);
  * - Akutní toxicita RT – dotazník OncoReady + laboratoř, každý týden po dobu 8 týdnů;
  * - Stacionář – intenzivní léčba (každý týden) a ostatní (každé 3 týdny), dotazník + laboratoř + wearables; příznaky K lékaři, K aplikaci.
  */
@@ -104,10 +108,10 @@ export const seedPrograms = (): MonitoringProgram[] => [
     ACT.cekarna(),
     ACT.lekar(),
   ]),
-  tpl('pr-ch-br', 'Chronická toxicita RT – prs', ['C50'], ['questionnaire'], 'lib-eortc-br45', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
-  tpl('pr-ch-hn', 'Chronická toxicita RT – hlava a krk', ['C01', 'C09', 'C32'], ['questionnaire'], 'lib-eortc-hn43', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
-  tpl('pr-ch-pr', 'Chronická toxicita RT – prostata', ['C61'], ['questionnaire'], 'lib-eortc-pr25', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
-  tpl('pr-ch-lc', 'Chronická toxicita RT – plíce', ['C34'], ['questionnaire'], 'lib-eortc-lc29', 4, NEVER, [ACT.lekar(), ACT.telefon()]),
+  tpl('pr-ch-br', 'Chronická toxicita RT – prs', ['C50'], ['questionnaire'], 'lib-eortc-br45', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
+  tpl('pr-ch-hn', 'Chronická toxicita RT – hlava a krk', ['C01', 'C09', 'C32'], ['questionnaire'], 'lib-eortc-hn43', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
+  tpl('pr-ch-pr', 'Chronická toxicita RT – prostata', ['C61'], ['questionnaire'], 'lib-eortc-pr25', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
+  tpl('pr-ch-lc', 'Chronická toxicita RT – plíce', ['C34'], ['questionnaire'], 'lib-eortc-lc29', 0, NEVER, [ACT.lekar(), ACT.telefon()], CHRONIC),
 ]
 
 export const DEFAULT_FILTERS: DashboardFilters = {
@@ -121,7 +125,7 @@ export const DEFAULT_FILTERS: DashboardFilters = {
 
 /** Demo pohledy pod Dashboardem: Chronická toxicita RT, Akutní toxicita RT, Stacionář. */
 export const seedViews = (): DashboardView[] => [
-  { id: 'v-chron', name: 'Chronická toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ch-br', 'pr-ch-hn', 'pr-ch-pr', 'pr-ch-lc'] } },
+  { id: 'v-chron', name: 'Chronická toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ch-br', 'pr-ch-hn', 'pr-ch-pr', 'pr-ch-lc'] }, timeline: 'year' },
   { id: 'v-akut', name: 'Akutní toxicita RT', filters: { ...DEFAULT_FILTERS, programIds: ['pr-ak'] } },
   { id: 'v-stac', name: 'Stacionář', filters: { ...DEFAULT_FILTERS, programIds: ['pr-st-int', 'pr-st-ost'] }, tagBoxes: 'all' },
 ]

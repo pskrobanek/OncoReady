@@ -170,6 +170,28 @@ const TODAY_TAGS: [string, string, string, string][] = [
   ['Král', 'a-telefon', 'Zavolat', '09:05'],
 ]
 
+/**
+ * Termíny chronické toxicity: v dřívějších letech 1 dotazník za rok (roční kontrola), v letošním roce
+ * podle šablony každé 4 měsíce – nejvýš 3 (jen ty do dneška + nejbližší plánovaný).
+ * Počet let sledování podle `startWeeksAgo` (cca 1–4 roky zpět).
+ */
+function chronicDates(today: string, startWeeksAgo: number, int: (a: number, b: number) => number): string[] {
+  const year = Number(today.slice(0, 4))
+  const yearsBack = Math.max(1, Math.min(4, Math.round(startWeeksAgo / 12)))
+  const out: string[] = []
+  for (let y = year - yearsBack; y < year; y++) out.push(`${y}-${String(int(2, 11)).padStart(2, '0')}-${String(int(1, 28)).padStart(2, '0')}`)
+  const anchor = addDays(`${year}-01-10`, int(0, 50))
+  const thisYear = [anchor, addMonths(anchor, 4), addMonths(anchor, 8)]
+  const past = thisYear.filter((d) => d <= today)
+  const next = [...thisYear, addMonths(anchor, 12)].find((d) => d > today)
+  return [...out, ...past, ...(next ? [next] : [])]
+}
+const addMonths = (iso: string, n: number) => {
+  const [y, m, d] = iso.split('-').map(Number)
+  const t = new Date(y, m - 1 + n, Math.min(d, 28))
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
+}
+
 /** Vygeneruje celou databázi demo dat vůči dnešku. */
 function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | 'customQuestionnaires'> {
   const programs = seedPrograms()
@@ -195,15 +217,18 @@ function generate(today: string): Omit<DB, 'programs' | 'views' | 'feedback' | '
     patients.push({ id, prijmeni: sp.prijmeni, jmeno: sp.jmeno, rodneCislo: rc, datumNarozeni: birthDate(rc), telefon: '', email: `${ascii(sp.jmeno)}.${ascii(sp.prijmeni)}@example.com` })
 
     const program = programs.find((p) => p.id === sp.program)!
-    const start = addDays(today, -7 * sp.startWeeksAgo - int(0, 3))
-    const end = program.ending.kind === 'duration' ? addDays(start, 7 * program.ending.amount) : addDays(start, sp.program.startsWith('pr-ch') ? 365 * 2 : 365)
+    const chronic = sp.program.startsWith('pr-ch')
+    // Chronická toxicita: termíny po letech (viz chronicDates), začátek = před prvním termínem
+    const chronicPlan = chronic ? chronicDates(today, sp.startWeeksAgo, int) : []
+    const start = chronic ? addDays(chronicPlan[0], -int(3, 20)) : addDays(today, -7 * sp.startWeeksAgo - int(0, 3))
+    const end = program.ending.kind === 'duration' ? addDays(start, 7 * program.ending.amount) : addDays(start, chronic ? 365 * 6 : 365)
     const mon: Monitoring = { id: `m${i + 1}`, patientId: id, programId: program.id, start, end, active: true, nextStep: null }
     const tag = TODAY_TAGS.find((t) => t[0] === sp.prijmeni)
     if (tag) mon.nextStep = { actionId: tag[1], label: tag[2], at: `${today}T${tag[3]}:00` }
     monitorings.push(mon)
 
     // Dotazníky: termíny podle frekvence šablony; minulé vyplněné s pravděpodobností ~75 % (v den termínu nebo do 2 dnů).
-    const dates = planDates(program.schedule, program.ending, start, end)
+    const dates = chronic ? chronicPlan : planDates(program.schedule, program.ending, start, end)
     for (const date of dates) {
       q++
       const filled = date < today ? r() < FILL_RATE : date === today && r() < 0.4

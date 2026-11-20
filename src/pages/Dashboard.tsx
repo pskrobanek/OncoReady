@@ -40,13 +40,14 @@ const TIMELINE_MODES: { key: TimelineMode; label: string; hint: string }[] = [
   { key: 'year', label: 'Po letech', hint: 'Sloupec = rok, všechny položky' },
   { key: 'filled', label: 'Jen vyplněné', hint: 'Bez prázdných období a bez nevyplněných dotazníků' },
 ]
+/** Členění časové osy – pamatuje se zvlášť pro Dashboard a každý pohled; null = výchozí daného pohledu. */
 const MODE_KEY = 'oncoready-dashboard-osa'
-const loadMode = (): TimelineMode => {
+const loadMode = (boardId: string): TimelineMode | null => {
   try {
-    const v = localStorage.getItem(MODE_KEY)
-    return TIMELINE_MODES.some((m) => m.key === v) ? (v as TimelineMode) : 'week'
+    const v = localStorage.getItem(`${MODE_KEY}:${boardId}`)
+    return TIMELINE_MODES.some((m) => m.key === v) ? (v as TimelineMode) : null
   } catch {
-    return 'week'
+    return null
   }
 }
 
@@ -236,6 +237,7 @@ function ViewEditor({ viewId }: { viewId: string }) {
         title={view.name}
         boardId={`pohled-${view.id}`}
         defaultTagBoxes={view.tagBoxes ?? 'none'}
+        defaultMode={view.timeline ?? 'week'}
         breadcrumbs={[{ label: 'Dashboard', to: '/' }, { label: 'Pohledy' }]}
         titleAside={<ViewMenu onRename={() => setRenaming(true)} onDelete={() => setDeleting(true)} />}
         filters={draft}
@@ -349,7 +351,10 @@ function PatientsBoard({
   panelFooter,
   boardId = 'dashboard',
   defaultTagBoxes = 'none',
+  defaultMode = 'week',
 }: {
+  /** Výchozí členění časové osy (pohled Chronická toxicita RT = po letech). */
+  defaultMode?: TimelineMode
   /** Kde se pamatuje Zobrazení › Boxy příznaků (Dashboard / id pohledu). */
   boardId?: string
   /** Výchozí boxy příznaků, dokud si je uživatel nezmění. */
@@ -371,11 +376,13 @@ function PatientsBoard({
   const [tool, setTool] = useState<ToolKey>('filter')
   const [sort, setSort] = useState<SortKey>('urgency')
   const [desc, setDesc] = useState(false)
-  const [mode, setMode] = useState<TimelineMode>(loadMode)
-  const changeMode = (m: TimelineMode) => {
-    setMode(m)
+  const [storedMode, setStoredMode] = useState<TimelineMode | null>(() => loadMode(boardId))
+  const mode = storedMode ?? defaultMode
+  const changeMode = (m: TimelineMode | null) => {
+    setStoredMode(m === defaultMode ? null : m)
     try {
-      localStorage.setItem(MODE_KEY, m)
+      if (m === null || m === defaultMode) localStorage.removeItem(`${MODE_KEY}:${boardId}`)
+      else localStorage.setItem(`${MODE_KEY}:${boardId}`, m)
     } catch {
       /* ignorovat */
     }
@@ -698,7 +705,7 @@ function PatientsBoard({
           <div className="flex border-b border-gray-200 px-3" role="tablist">
             {TOOLS.map(({ key, label, icon: Icon }) => {
               const active = tool === key
-              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== 'week' || groupBy !== 'none' || tagBoxesChanged
+              const changed = key === 'filter' ? !!onReset : key === 'sort' ? sort !== 'urgency' || desc : mode !== defaultMode || groupBy !== 'none' || tagBoxesChanged
               return (
                 <button
                   key={key}
@@ -792,10 +799,10 @@ function PatientsBoard({
                 ))}
                 {tagLabels.length === 0 && <p className="text-sm text-gray-500">Šablony nemají žádné příznaky.</p>}
               </FilterGroup>
-              {(mode !== 'week' || groupBy !== 'none' || tagBoxesChanged) && (
+              {(mode !== defaultMode || groupBy !== 'none' || tagBoxesChanged) && (
                 <button
                   onClick={() => {
-                    changeMode('week')
+                    changeMode(null)
                     changeGroupBy('none')
                     changeShownTags(null)
                   }}

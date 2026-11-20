@@ -119,6 +119,8 @@ export interface DashboardView {
   filters: DashboardFilters
   /** Výchozí boxy příznaků v pohledu: všechny příznaky jeho šablon, nebo žádný (dokud si uživatel nevybere v Zobrazení). */
   tagBoxes?: 'all' | 'none'
+  /** Výchozí členění časové osy v pohledu (week / month / year / filled). */
+  timeline?: 'week' | 'month' | 'year' | 'filled'
 }
 
 export interface Monitoring {
